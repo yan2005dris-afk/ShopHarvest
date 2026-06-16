@@ -1,0 +1,29 @@
+// ─── Domain Rule ───────────────────────────────────────────────────────────
+// Reglas de extracción por dominio (Temu, Shein, etc.)
+// El usuario define visualmente los selectores CSS/XPath desde Angular.
+
+model DomainRule {
+  id              String   @id @default(uuid()) @db.Uuid
+  domain          String   @unique // "temu.com", "shein.com"
+  name            String   // Nombre descriptivo: "Temu", "Shein"
+
+  // Selectores para extracción
+  selectorTitle   String   // CSS o XPath para el título del producto
+  selectorPrice   String   // Selector del precio
+  selectorImage   String?  // Selector de la imagen principal (opcional)
+  selectorSku     String?  // Selector del SKU / ID del producto
+
+  // Metadatos del selector
+  selectorType    String   @default("css") // "css" | "xpath"
+  paginationType  String   @default("scroll") // "scroll" | "pagination" | "load-more"
+  paginationSelector String? // Selector para botón "cargar más" o "siguiente"
+
+  // URLs de ejemplo usadas para mapear
+  sampleUrl       String?
+  lastScrapedAt   DateTime?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  products        Product[]
+}

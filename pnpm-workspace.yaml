@@ -1,0 +1,13 @@
+packages:
+  - 'backend'
+  - 'frontend'
+  - 'worker'
+
+allowBuilds:
+  '@nestjs/core': true
+  '@prisma/engines': true
+  'prisma': true
+  'esbuild': true
+  'playwright': true
+  'sharp': true
+  unrs-resolver: set this to true or false

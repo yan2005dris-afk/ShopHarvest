@@ -1,0 +1,43 @@
+# ─── Dependencies ──────────────────────────────
+node_modules/
+.pnpm-store/
+
+# ─── Build ─────────────────────────────────────
+dist/
+build/
+*.tsbuildinfo
+
+# ─── Environment ──────────────────────────────
+.env
+.env.local
+.env.*.local
+
+# ─── IDE / OS ─────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ─── Logs ─────────────────────────────────────
+*.log
+logs/
+
+# ─── Docker ───────────────────────────────────
+.docker/
+
+# ─── Angular ──────────────────────────────────
+frontend/.angular/
+frontend/dist/
+
+# ─── Prisma ───────────────────────────────────
+backend/src/generated/
+
+# ─── Crawlee ──────────────────────────────────
+worker/storage/
+
+# ─── Misc ─────────────────────────────────────
+*.tgz
+coverage/

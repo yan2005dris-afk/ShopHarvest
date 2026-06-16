@@ -1,0 +1,82 @@
+// ─── Entry Point ─────────────────────────────────────────────────────────
+// Este archivo se genera a partir de los archivos en prisma/schema/
+// Para regenerarlo: pnpm prisma:generate-schema
+
+// Generator & Datasource
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextSearchPostgres"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Models ──────────────────────────────────────────────────────────────
+// DomainRule — Reglas de extracción por dominio
+model DomainRule {
+  id              String   @id @default(uuid()) @db.Uuid
+  domain          String   @unique
+  name            String
+
+  selectorTitle   String
+  selectorPrice   String
+  selectorImage   String?
+  selectorSku     String?
+
+  selectorType    String   @default("css")
+  paginationType  String   @default("scroll")
+  paginationSelector String?
+
+  sampleUrl       String?
+  lastScrapedAt   DateTime?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  products        Product[]
+}
+
+// Product — Datos normalizados extraídos
+model Product {
+  id          String   @id @default(uuid()) @db.Uuid
+  domainRuleId String  @db.Uuid
+  domainRule  DomainRule @relation(fields: [domainRuleId], references: [id])
+
+  externalId  String?
+  title       String
+  price       Decimal  @db.Decimal(12, 2)
+  currency    String   @default("USD")
+  imageUrl    String?
+  productUrl  String
+  sku         String?
+  description String?
+
+  rawData     Json?
+  extractedAt DateTime @default(now())
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  priceHistory PriceHistory[]
+
+  @@index([domainRuleId])
+  @@index([externalId])
+  @@index([productUrl])
+}
+
+// PriceHistory — Historial de precios
+model PriceHistory {
+  id        String   @id @default(uuid()) @db.Uuid
+  productId String   @db.Uuid
+  product   Product  @relation(fields: [productId], references: [id])
+
+  price     Decimal  @db.Decimal(12, 2)
+  currency  String   @default("USD")
+  capturedAt DateTime @default(now())
+
+  createdAt DateTime @default(now())
+
+  @@index([productId])
+  @@index([capturedAt])
+}

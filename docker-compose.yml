@@ -1,0 +1,117 @@
+# ============================================================
+# WebScraper ETL - Docker Compose
+# Incluye: PostgreSQL, RabbitMQ, Backend, Frontend, Worker
+# ============================================================
+# Uso: docker compose up -d --build
+#       docker compose logs -f backend worker
+
+services:
+  # ─── PostgreSQL ──────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: scraper-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-scraper}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-scraperpass}
+      POSTGRES_DB: ${POSTGRES_DB:-scraperdb}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-scraper} -d ${POSTGRES_DB:-scraperdb}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - scraper-network
+
+  # ─── RabbitMQ ────────────────────────────────────────────────
+  rabbitmq:
+    image: rabbitmq:4-management-alpine
+    container_name: scraper-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-scraper}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-scraperpass}
+    ports:
+      - "${RABBITMQ_PORT:-5672}:5672"    # AMQP
+      - "${RABBITMQ_MGMT_PORT:-15672}:15672" # Management UI
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+    networks:
+      - scraper-network
+
+  # ─── Backend API (NestJS) ────────────────────────────────────
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    container_name: scraper-backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-scraper}:${POSTGRES_PASSWORD:-scraperpass}@postgres:5432/${POSTGRES_DB:-scraperdb}
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-scraper}:${RABBITMQ_PASS:-scraperpass}@rabbitmq:5672
+      NODE_ENV: production
+      PORT: 3000
+    ports:
+      - "${BACKEND_PORT:-3000}:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - scraper-network
+
+  # ─── Frontend (Angular + Nginx) ─────────────────────────────
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+    container_name: scraper-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+    depends_on:
+      - backend
+    networks:
+      - scraper-network
+
+  # ─── Worker (Crawlee) ────────────────────────────────────────
+  worker:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.worker
+    container_name: scraper-worker
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-scraper}:${POSTGRES_PASSWORD:-scraperpass}@postgres:5432/${POSTGRES_DB:-scraperdb}
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-scraper}:${RABBITMQ_PASS:-scraperpass}@rabbitmq:5672
+      NODE_ENV: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - scraper-network
+    # El worker no expone puertos — escucha la cola internamente
+
+networks:
+  scraper-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  rabbitmq_data:

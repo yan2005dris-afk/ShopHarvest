@@ -1,0 +1,36 @@
+.visual-mapper-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.mapper-header {
+  padding: 1rem 2rem;
+  background: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.mapper-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.mapper-sidebar {
+  width: 300px;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-right: 1px solid #dee2e6;
+}
+
+.mapper-preview {
+  flex: 1;
+  padding: 1rem;
+}
+
+.preview-frame {
+  width: 100%;
+  height: 100%;
+  border: 1px solid #dee2e6;
+  border-radius: 0.5rem;
+}
