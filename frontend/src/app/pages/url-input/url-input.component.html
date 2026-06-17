@@ -1,12 +1,109 @@
 <div class="url-input-container">
   <h1>Web Scraper</h1>
-  <p>Ingresa la URL del sitio web que deseas scrapear</p>
-  <div class="input-group">
-    <input
-      type="url"
-      placeholder="https://ejemplo.com"
-      class="url-input"
-    />
-    <button class="btn-primary">Iniciar Scraping</button>
+  <p class="subtitle">Seleccioná un dominio, ingresá una URL y scrapeá el producto</p>
+
+  <!-- Domain Selector -->
+  <div class="form-group">
+    <label for="domain-select">Dominio</label>
+    @if (domainsLoading) {
+      <select id="domain-select" class="form-select" disabled>
+        <option>Cargando dominios...</option>
+      </select>
+    } @else if (domains.length === 0) {
+      <div class="empty-state">
+        <p>No hay dominios configurados. Primero agregá un dominio en la sección de mapeo visual.</p>
+      </div>
+    } @else {
+      <select
+        id="domain-select"
+        class="form-select"
+        [(ngModel)]="selectedDomainId"
+        (ngModelChange)="onDomainChange()"
+      >
+        <option value="" disabled>Seleccioná un dominio</option>
+        <option *ngFor="let domain of domains" [value]="domain.id">
+          {{ domain.name }} ({{ domain.domain }})
+        </option>
+      </select>
+    }
   </div>
+
+  <!-- URL Input -->
+  <div class="form-group">
+    <label for="url-input">URL del Producto</label>
+    <input
+      id="url-input"
+      type="url"
+      class="form-input"
+      [(ngModel)]="url"
+      (ngModelChange)="onUrlChange()"
+      placeholder="https://ejemplo.com/producto/123"
+      [disabled]="domains.length === 0"
+    />
+    @if (urlWarning) {
+      <p class="warning">{{ urlWarning }}</p>
+    }
+  </div>
+
+  <!-- Submit Button -->
+  <button
+    class="btn-primary"
+    (click)="submit()"
+    [disabled]="!selectedDomainId || !url || isLoading || domains.length === 0"
+  >
+    @if (isLoading) {
+      <span class="spinner"></span>
+    }
+    {{ isLoading ? 'Encolando...' : 'Iniciar Scraping' }}
+  </button>
+
+  <!-- Error -->
+  @if (error) {
+    <div class="error-card">
+      <p>{{ error }}</p>
+      <button class="btn-secondary" (click)="tryAgain()">Intentar de nuevo</button>
+    </div>
+  }
+
+  <!-- Job Status -->
+  @if (currentJob) {
+    <div class="job-card">
+      <h3>Estado del Scraping</h3>
+      <div class="job-info">
+        <span class="job-id">ID: {{ currentJob.id }}</span>
+        <span class="status-badge" [class.queued]="currentJob.status === 'queued'"
+                                   [class.processing]="currentJob.status === 'processing'"
+                                   [class.completed]="currentJob.status === 'completed'"
+                                   [class.failed]="currentJob.status === 'failed'">
+          {{ currentJob.status }}
+        </span>
+      </div>
+
+      <!-- Completed Result -->
+      @if (currentJob.status === 'completed' && jobResult) {
+        <div class="result-card">
+          @if (jobResult.title) {
+            <h4>{{ jobResult.title }}</h4>
+          }
+          <div class="result-details">
+            @if (jobResult.price) {
+              <span class="price">{{ jobResult.currency || 'USD' }} {{ jobResult.price }}</span>
+            }
+            @if (jobResult.imageUrl) {
+              <img [src]="jobResult.imageUrl" alt="Product image" class="result-image" />
+            }
+          </div>
+          <a routerLink="/products" class="btn-link">Ver todos los productos</a>
+        </div>
+      }
+
+      <!-- Failed Result -->
+      @if (currentJob.status === 'failed') {
+        <div class="failed-card">
+          <p>Error: {{ currentJob.errorMessage || 'Error desconocido' }}</p>
+          <button class="btn-secondary" (click)="tryAgain()">Reintentar</button>
+        </div>
+      }
+    </div>
+  }
 </div>

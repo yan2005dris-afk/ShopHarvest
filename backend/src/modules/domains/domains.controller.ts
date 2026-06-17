@@ -37,6 +37,9 @@ export class DomainsController {
       paginationType?: string;
       paginationSelector?: string;
       sampleUrl?: string;
+      fieldMappings?: Record<string, unknown>[];
+      containerSelector?: string;
+      productLimit?: number;
     },
   ) {
     return this.domainsService.create(data);
@@ -57,6 +60,9 @@ export class DomainsController {
       paginationType: string;
       paginationSelector: string;
       sampleUrl: string;
+      fieldMappings: Record<string, unknown>[];
+      containerSelector: string;
+      productLimit: number;
     }>,
   ) {
     return this.domainsService.update(id, data);

@@ -1,0 +1,17 @@
+// ─── Scraping Schedule ───────────────────────────────────────────────────────
+// Programación cron para scraping automático de dominios.
+
+model ScrapingSchedule {
+  id              String    @id @default(uuid()) @db.Uuid
+  domainRuleId    String    @db.Uuid
+  domainRule      DomainRule @relation(fields: [domainRuleId], references: [id])
+
+  cronExpression  String
+  enabled         Boolean   @default(true)
+  lastRunAt       DateTime?
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([enabled])
+}

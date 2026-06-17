@@ -41,3 +41,6 @@ worker/storage/
 # ─── Misc ─────────────────────────────────────
 *.tgz
 coverage/
+/.agents
+/.claude
+/.junie

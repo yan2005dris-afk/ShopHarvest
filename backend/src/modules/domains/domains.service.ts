@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 
 @Injectable()
@@ -29,8 +30,16 @@ export class DomainsService {
     paginationType?: string;
     paginationSelector?: string;
     sampleUrl?: string;
+    fieldMappings?: Record<string, unknown>[];
+    containerSelector?: string;
+    productLimit?: number;
   }) {
-    return this.prisma.domainRule.create({ data });
+    return this.prisma.domainRule.create({
+      data: {
+        ...data,
+        fieldMappings: data.fieldMappings as Prisma.InputJsonValue,
+      },
+    });
   }
 
   async update(
@@ -46,9 +55,18 @@ export class DomainsService {
       paginationType: string;
       paginationSelector: string;
       sampleUrl: string;
+      fieldMappings: Record<string, unknown>[];
+      containerSelector: string;
+      productLimit: number;
     }>,
   ) {
-    return this.prisma.domainRule.update({ where: { id }, data });
+    return this.prisma.domainRule.update({
+      where: { id },
+      data: {
+        ...data,
+        fieldMappings: data.fieldMappings as Prisma.InputJsonValue,
+      },
+    });
   }
 
   async remove(id: string) {

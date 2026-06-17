@@ -13,43 +13,44 @@ RUN corepack enable && corepack prepare pnpm@11 --activate
 
 WORKDIR /app
 
-# ─── Stage: Builder ───────────────────────────────────────────────────────────
-FROM base AS builder
+# ─── Stage: Installer ─────────────────────────────────────────────────────────
+FROM base AS installer
 
-# Cache layers: lockfile first
-COPY pnpm-lock.yaml pnpm-workspace.yaml ./
-RUN pnpm fetch
-
-# Manifests
-COPY package.json ./
+# Copy workspace manifests and config
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc ./
 COPY backend/package.json ./backend/
+COPY frontend/package.json ./frontend/
+COPY worker/package.json ./worker/
 
-# Install (offline — uses virtual store from pnpm fetch)
-RUN pnpm install --frozen-lockfile --offline
+RUN pnpm install --frozen-lockfile
 
-# Source
+# ─── Stage: Builder ───────────────────────────────────────────────────────────
+FROM installer AS builder
+
 COPY backend/ ./backend/
 
-# Generate Prisma client and build NestJS
+# Generate Prisma client and build
 RUN pnpm --filter backend exec prisma generate
 RUN pnpm --filter backend run build
 
-# Extract prod deps into standalone dir
+# Deploy: extract flat production node_modules (no symlinks, Docker-safe)
 RUN pnpm deploy --filter=backend --prod --legacy /prod/backend
 
-# ─── Stage: Runner ────────────────────────────────────────────────────────────
-FROM node:22-alpine AS runner
+# Fix: pnpm deploy doesn't preserve .prisma/client node_modules entry
+RUN cp -r /app/node_modules/.pnpm/@prisma+client@*/node_modules/.prisma /prod/backend/node_modules/.prisma
 
-RUN apk add --no-cache openssl libc6-compat
+# ─── Stage: Runner ────────────────────────────────────────────────────────────
+FROM base AS runner
 
 WORKDIR /app
 
-COPY --chown=node:node --from=builder /prod/backend/node_modules ./node_modules
-COPY --chown=node:node --from=builder /prod/backend/package.json ./package.json
-COPY --chown=node:node --from=builder /app/backend/dist ./dist
-COPY --chown=node:node --from=builder /app/backend/prisma ./prisma
+COPY --from=builder /prod/backend/node_modules ./node_modules
+COPY --from=builder /prod/backend/package.json ./package.json
+COPY --from=builder /app/backend/dist ./dist
+COPY --from=builder /app/backend/prisma ./prisma
+COPY --from=builder /app/backend/prisma.config.ts ./prisma.config.ts
 
 USER node
 EXPOSE 3000
 
-CMD ["sh", "-c", "node_modules/.bin/prisma migrate deploy && node dist/main.js"]
+CMD ["sh", "-c", "node node_modules/prisma/build/index.js migrate deploy && node dist/main.js"]

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Visual Scraper</title>
+  <link rel="stylesheet" href="./popup.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- Home view -->
+    <div id="view-home" class="view">
+      <div class="header">
+        <h1>Visual Scraper</h1>
+        <span id="domain-badge" class="badge"></span>
+      </div>
+      <div id="rule-status" class="rule-status hidden">
+        <span class="status-dot"></span> Rule saved
+      </div>
+      <div class="actions">
+        <button id="btn-start-mapping" class="btn btn-primary">Start Mapping</button>
+        <button id="btn-extract" class="btn btn-secondary">Extract Data</button>
+        <button id="btn-view-data" class="btn btn-ghost">View Data</button>
+      </div>
+      <div id="home-error" class="error hidden"></div>
+    </div>
+
+    <!-- Mapping view -->
+    <div id="view-mapping" class="view hidden">
+      <div class="header">
+        <h1>Mapping Mode</h1>
+        <span class="badge badge-active">Active</span>
+      </div>
+      <p class="hint">Click elements on the page to assign fields.</p>
+      <div class="fields-list" id="fields-list">
+        <div class="field-row" data-field="container">
+          <span class="field-name">Container</span>
+          <span class="field-selector" id="field-container">not set</span>
+        </div>
+        <div class="field-row required" data-field="title">
+          <span class="field-name">Title <em>*</em></span>
+          <span class="field-selector" id="field-title">not set</span>
+        </div>
+        <div class="field-row required" data-field="price">
+          <span class="field-name">Price <em>*</em></span>
+          <span class="field-selector" id="field-price">not set</span>
+        </div>
+        <div class="field-row" data-field="imageUrl">
+          <span class="field-name">Image URL</span>
+          <span class="field-selector" id="field-imageUrl">not set</span>
+        </div>
+        <div class="field-row" data-field="sku">
+          <span class="field-name">SKU</span>
+          <span class="field-selector" id="field-sku">not set</span>
+        </div>
+        <div class="field-row" data-field="currency">
+          <span class="field-name">Currency</span>
+          <span class="field-selector" id="field-currency">not set</span>
+        </div>
+        <div class="field-row" data-field="description">
+          <span class="field-name">Description</span>
+          <span class="field-selector" id="field-description">not set</span>
+        </div>
+      </div>
+      <div class="actions">
+        <button id="btn-save-rule" class="btn btn-primary" disabled>Save Rule</button>
+        <button id="btn-cancel-mapping" class="btn btn-ghost">Cancel</button>
+      </div>
+    </div>
+
+    <!-- Data view -->
+    <div id="view-data" class="view hidden">
+      <div class="header">
+        <h1>Extracted Data</h1>
+      </div>
+      <p id="product-count" class="count"></p>
+      <div id="data-table-wrapper" class="table-wrapper">
+        <table id="data-table">
+          <thead><tr id="table-head"></tr></thead>
+          <tbody id="table-body"></tbody>
+        </table>
+      </div>
+      <div class="actions">
+        <button id="btn-export-csv" class="btn btn-primary">Export CSV</button>
+        <button id="btn-clear-data" class="btn btn-danger">Clear Data</button>
+        <button id="btn-back" class="btn btn-ghost">Back</button>
+      </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="toast hidden"></div>
+  </div>
+  <script type="module" src="./popup.ts"></script>
+</body>
+</html>

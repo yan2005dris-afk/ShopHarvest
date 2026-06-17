@@ -10,10 +10,9 @@ RUN corepack enable && corepack prepare pnpm@11 --activate
 WORKDIR /app
 
 # Cache layers
-COPY pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc ./
 RUN pnpm fetch
 
-COPY package.json ./
 COPY frontend/package.json ./frontend/
 RUN pnpm install --frozen-lockfile --offline
 

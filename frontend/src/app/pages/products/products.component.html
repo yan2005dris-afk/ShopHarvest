@@ -1,0 +1,112 @@
+<div class="products-container">
+  <div class="header">
+    <h1>Productos</h1>
+    @if (!isLoading) {
+      <span class="count">{{ products.length }} producto{{ products.length !== 1 ? 's' : '' }}</span>
+    }
+  </div>
+
+  <!-- Search -->
+  <div class="search-bar">
+    <input
+      type="text"
+      class="search-input"
+      placeholder="Buscar productos..."
+      [(ngModel)]="searchTerm"
+      (ngModelChange)="filterProducts()"
+    />
+  </div>
+
+  <!-- Loading -->
+  @if (isLoading) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Cargando productos...</p>
+    </div>
+  }
+
+  <!-- Error -->
+  @if (error) {
+    <div class="error-state">
+      <p>{{ error }}</p>
+      <button class="btn-secondary" (click)="loadProducts()">Reintentar</button>
+    </div>
+  }
+
+  <!-- Empty -->
+  @if (!isLoading && !error && filteredProducts.length === 0 && !searchTerm) {
+    <div class="empty-state">
+      <p>Todavía no hay productos trackeados.</p>
+      <p>Empezá por <a routerLink="/">scrapear una URL</a>.</p>
+    </div>
+  }
+
+  @if (!isLoading && !error && filteredProducts.length === 0 && searchTerm) {
+    <div class="empty-state">
+      <p>No se encontraron productos que coincidan con "{{ searchTerm }}"</p>
+    </div>
+  }
+
+  <!-- Product List -->
+  @if (!isLoading && !error) {
+    <div class="product-list">
+      @for (product of filteredProducts; track product.id) {
+        <div
+          class="product-card"
+          [class.selected]="selectedProduct?.id === product.id"
+          (click)="selectProduct(product)"
+        >
+          <div class="product-main">
+            @if (product.imageUrl) {
+              <img [src]="product.imageUrl" alt="" class="product-thumb" />
+            }
+            <div class="product-info">
+              <h3>{{ product.title }}</h3>
+              <div class="product-meta">
+                <span class="product-price">{{ product.currency }} {{ product.price }}</span>
+                @if (product.domainRule) {
+                  <span class="product-domain">{{ product.domainRule.name }}</span>
+                }
+                <span class="product-date">Extraído: {{ product.extractedAt | date:'short' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Expanded Detail -->
+          @if (selectedProduct?.id === product.id) {
+            <div class="product-detail">
+              <h4>Historial de Precios</h4>
+
+              @if (priceHistory.length > 0) {
+                <div class="chart-container">
+                  <canvas id="price-chart" width="600" height="300"></canvas>
+                </div>
+
+                <table class="history-table">
+                  <thead>
+                    <tr>
+                      <th>Fecha</th>
+                      <th>Precio</th>
+                      <th>Moneda</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (entry of priceHistory; track entry.id) {
+                      <tr>
+                        <td>{{ entry.capturedAt | date:'medium' }}</td>
+                        <td>{{ entry.price | currency:entry.currency:'symbol':'1.2-2' }}</td>
+                        <td>{{ entry.currency }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              } @else {
+                <p class="no-history">Sin historial de precios disponible.</p>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>

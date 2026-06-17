@@ -7,11 +7,16 @@ model DomainRule {
   domain          String   @unique // "temu.com", "shein.com"
   name            String   // Nombre descriptivo: "Temu", "Shein"
 
-  // Selectores para extracción
+  // Selectores para extracción (legacy — single field selectors)
   selectorTitle   String   // CSS o XPath para el título del producto
   selectorPrice   String   // Selector del precio
   selectorImage   String?  // Selector de la imagen principal (opcional)
   selectorSku     String?  // Selector del SKU / ID del producto
+
+  // Visual mapper: field mappings (supersedes selector* when non-empty)
+  fieldMappings       Json?    // Array de { canonicalField, selector, type, attribute? }
+  containerSelector   String?  // Selector CSS para el contenedor de producto en listing
+  productLimit        Int?     // Límite por defecto al scrapear listing
 
   // Metadatos del selector
   selectorType    String   @default("css") // "css" | "xpath"
