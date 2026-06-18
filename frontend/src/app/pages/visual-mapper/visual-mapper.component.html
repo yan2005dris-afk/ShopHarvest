@@ -2,7 +2,7 @@
   <!-- ═══ Header ═══ -->
   <header class="mapper-header">
     <h1>Web Scraper</h1>
-    <p class="subtitle">Paste a store URL, preview the page, and click elements to assign fields</p>
+    <p class="subtitle">Enter a store URL, map the fields with the extension, then save the rule</p>
   </header>
 
   <!-- ═══ IDLE: URL Input ═══ -->
@@ -19,64 +19,65 @@
             placeholder="https://example.com/products"
             autofocus
           />
-          <button class="btn-primary" (click)="fetchPage()">
-            Fetch Page
+          <button class="btn-primary" (click)="openExtensionMapper()" [disabled]="!extensionAvailable">
+            {{ extensionAvailable ? 'Open in Extension' : 'Extension not detected' }}
           </button>
         </div>
         @if (urlValidationError) {
           <p class="validation-error">{{ urlValidationError }}</p>
         }
+        @if (!extensionAvailable) {
+          <p class="extension-hint">
+            Install the Visual Scraper extension and reload the page to map fields directly on the live site.
+          </p>
+        }
       </div>
+      @if (domains.length > 0) {
+        <div class="saved-rules">
+          <p class="section-label">Saved domain rules</p>
+          <ul class="domain-list">
+            @for (d of domains; track d.id) {
+              <li class="domain-item">{{ d.domain }}</li>
+            }
+          </ul>
+        </div>
+      }
     </div>
   }
 
-  <!-- ═══ FETCHING: Loading spinner ═══ -->
-  @if (currentState === 'fetching') {
+  <!-- ═══ EXTENSION-MAPPING: Waiting for extension ═══ -->
+  @if (currentState === 'extension-mapping') {
     <div class="fetching-section">
       <div class="spinner-container">
         <div class="spinner-lg"></div>
-        <p class="fetching-text">Fetching page…</p>
-        <p class="fetching-hint">Rendering via headless browser</p>
+        <p class="fetching-text">Extension tab is open</p>
+        <p class="fetching-hint">Click elements on the page to assign fields, then click "Finish Mapping"</p>
+        <button class="btn-secondary" style="margin-top: 16px" (click)="cancelExtensionMapping()">Cancel</button>
       </div>
     </div>
   }
 
-  <!-- ═══ CAPTCHA: User-guided resolution ═══ -->
-  @if (currentState === 'captcha') {
-    <div class="captcha-section">
-      <div class="captcha-card">
-        <h2>Security Verification Required</h2>
-        <p>The website is asking you to verify you're human before we can access it.</p>
-        <div class="captcha-steps">
-          <p>1. Click the button below to open this URL in your browser</p>
-          <p>2. Complete the security verification (CAPTCHA)</p>
-          <p>3. Come back here and click "Retry"</p>
-        </div>
-        <div class="captcha-actions">
-          <a [href]="url" target="_blank" class="btn-primary">Open in Browser</a>
-          <button class="btn-primary" (click)="captchaRetry()">Retry</button>
-          <button class="btn-secondary" (click)="tryAgain()">Cancel</button>
-        </div>
-      </div>
-    </div>
-  }
-
-  <!-- ═══ PREVIEW / MAPPING: Sidebar + Iframe ═══ -->
-  @if (currentState === 'preview' || currentState === 'mapping') {
+  <!-- ═══ MAPPING: Review field mappings from extension ═══ -->
+  @if (currentState === 'mapping') {
     <div class="mapper-layout">
-      <!-- Sidebar -->
       <aside class="mapper-sidebar">
         <h2 class="sidebar-title">Field Mappings</h2>
-        <p class="sidebar-hint">Click an element in the preview to assign it</p>
+        @if (pageTitle) {
+          <p class="sidebar-page">{{ pageTitle }}</p>
+        }
 
         <div class="fields-list">
-          @for (field of canonicalFields; track field.key) {
+          @for (field of [  { key: 'title', label: 'Title', required: true },
+                            { key: 'price', label: 'Price', required: true },
+                            { key: 'imageUrl', label: 'Image URL', required: false },
+                            { key: 'sku', label: 'SKU', required: false },
+                            { key: 'currency', label: 'Currency', required: false },
+                            { key: 'description', label: 'Description', required: false },
+                            { key: 'category', label: 'Category', required: false } ]; track field.key) {
             @let mapping = getFieldMapping(field.key);
-            <div
-              class="field-entry"
-              [class.field-assigned]="!!mapping"
-              [class.field-required]="field.required && !mapping"
-            >
+            <div class="field-entry"
+                 [class.field-assigned]="!!mapping"
+                 [class.field-required]="field.required && !mapping">
               <div class="field-header">
                 <span class="field-indicator" [class.indicator-assigned]="!!mapping">
                   {{ mapping ? '✓' : field.required ? '*' : '' }}
@@ -89,20 +90,16 @@
               @if (mapping) {
                 <div class="field-selector-chip">
                   <code class="selector-text">{{ mapping.selector }}</code>
-                  <button
-                    class="chip-remove"
-                    (click)="removeAssignment(field.key)"
-                    title="Remove assignment"
-                  >&times;</button>
+                  <button class="chip-remove" (click)="removeAssignment(field.key)" title="Remove">&times;</button>
                 </div>
               } @else {
-                <span class="field-pending">pending</span>
+                <span class="field-pending">pending — map this in the extension</span>
               }
             </div>
           }
         </div>
 
-        <!-- Container section -->
+        <!-- Container -->
         <div class="container-section">
           <h3 class="sidebar-subtitle">Container</h3>
           @if (containerSelector) {
@@ -113,131 +110,40 @@
               </div>
               <div class="field-selector-chip">
                 <code class="selector-text">{{ containerSelector }}</code>
-                <button
-                  class="chip-remove"
-                  (click)="removeContainer()"
-                  title="Remove container"
-                >&times;</button>
               </div>
-              @if (containerMatchCount > 0) {
-                <p class="container-count">
-                  {{ containerMatchCount }} element{{ containerMatchCount !== 1 ? 's' : '' }} match{{ containerMatchCount !== 1 ? '' : 'es' }}
-                </p>
-              }
             </div>
           } @else {
-            <p class="sidebar-hint">Click an element and choose "Set as product container"</p>
-          }
-
-          <!-- Limit input -->
-          <div class="limit-group">
-            <label for="limit-input" class="input-label">Max products</label>
-            <input
-              id="limit-input"
-              type="number"
-              class="form-input limit-input"
-              [(ngModel)]="productLimit"
-              min="1"
-              max="100"
-            />
-          </div>
-
-          <!-- Save & Scrape -->
-          <button
-            class="btn-primary btn-save"
-            [class.btn-disabled]="!isSaveEnabled"
-            [disabled]="!isSaveEnabled"
-            (click)="saveAndScrape()"
-          >
-            Save &amp; Scrape
-          </button>
-          @if (!isSaveEnabled) {
-            <p class="save-hint">Map title, price, and container to enable scraping</p>
+            <p class="sidebar-hint">No container set — map it in the extension</p>
           }
         </div>
+
+        <!-- Save -->
+        <button class="btn-primary btn-save"
+                [class.btn-disabled]="!isSaveEnabled"
+                [disabled]="!isSaveEnabled"
+                (click)="saveRule()">
+          Save Rule
+        </button>
+        @if (!isSaveEnabled) {
+          <p class="save-hint">Map title, price, and container to save the rule</p>
+        }
       </aside>
 
-      <!-- Main: Screenshot preview -->
-      <main class="mapper-preview" (click)="dismissFloatingMenu()">
-        @if (screenshotData) {
-          <div class="screenshot-container" #screenshotContainer>
-            <img [src]="'data:image/jpeg;base64,' + screenshotData" class="screenshot-img" alt="Page preview" />
-            
-            <!-- Interactive Overlay -->
-            <div class="element-overlay">
-              @for (element of detectedElements; track element.selector) {
-                <div 
-                  class="overlay-box"
-                  [class.box-highlight]="isElementHighlighted(element)"
-                  [class.box-container]="containerSelector === element.selector"
-                  [style.left.px]="element.rect.x"
-                  [style.top.px]="element.rect.y"
-                  [style.width.px]="element.rect.width"
-                  [style.height.px]="element.rect.height"
-                  (click)="onElementClick($event, element)"
-                  (mouseenter)="onElementHover(element)"
-                  (mouseleave)="onElementLeave()"
-                  [title]="element.tag + ': ' + element.text"
-                ></div>
-              }
-            </div>
-          </div>
-        } @else {
-          <div class="preview-empty">
-            <p>No preview available</p>
-          </div>
-        }
-
-        <!-- Floating menu -->
-        @if (floatingMenuVisible && selectedElement) {
-          <div
-            class="floating-menu"
-            [style.left.px]="floatingMenuX"
-            [style.top.px]="floatingMenuY"
-          >
-            <div class="menu-header">
-              <code class="menu-selector">{{ selectedElement.selector }}</code>
-              <button class="menu-close" (click)="dismissFloatingMenu()">&times;</button>
-            </div>
-            <div class="menu-divider"></div>
-            <div class="menu-info">
-              <span class="menu-tag">{{ selectedElement.tag }}</span>
-              <p class="menu-text">{{ selectedElement.text }}</p>
-            </div>
-            <div class="menu-divider"></div>
-            <div class="menu-fields">
-              @for (field of canonicalFields; track field.key) {
-                <button
-                  class="menu-field-btn"
-                  [class.menu-field-assigned]="isFieldMapped(field.key)"
-                  (click)="assignToField(field.key)"
-                >
-                  {{ isFieldMapped(field.key) ? '⇄' : '→' }} Assign to {{ field.label }}
-                </button>
-              }
-            </div>
-            <div class="menu-divider"></div>
-            <button
-              class="menu-container-btn"
-              [class.menu-active]="containerSelector === selectedElement.selector"
-              (click)="setAsContainer()"
-            >
-              📦 Set as product container
-            </button>
-          </div>
-        }
+      <main class="mapper-preview">
+        <div class="preview-empty">
+          <p>✓ Mapping received from extension</p>
+          <p class="preview-sub">Review the fields on the left and save the rule</p>
+        </div>
       </main>
     </div>
   }
 
-  <!-- ═══ SCRAPING ═══ -->
-  @if (currentState === 'scraping') {
-    <div class="scraping-section">
+  <!-- ═══ SAVING ═══ -->
+  @if (currentState === 'saving') {
+    <div class="fetching-section">
       <div class="spinner-container">
         <div class="spinner-lg"></div>
-        <h2>Scraping in progress…</h2>
-        <p class="scraping-info">Job ID: <code>{{ scrapingJobId }}</code></p>
-        <p class="scraping-hint">Extracting products from the listing page</p>
+        <p class="fetching-text">Saving domain rule…</p>
       </div>
     </div>
   }
@@ -247,21 +153,11 @@
     <div class="done-section">
       <div class="done-card">
         <div class="done-icon">✓</div>
-        <h2>Scraping Complete</h2>
-        <div class="done-stats">
-          <div class="stat">
-            <span class="stat-value">{{ productsScraped }}</span>
-            <span class="stat-label">products scraped</span>
-          </div>
-          @if (wasTruncated) {
-            <p class="truncated-warning">
-              Results were truncated. Only {{ productsScraped }} products were extracted.
-            </p>
-          }
-        </div>
+        <h2>Rule saved</h2>
+        <p>The domain rule for <strong>{{ url }}</strong> has been saved.</p>
         <div class="done-actions">
-          <a routerLink="/products" class="btn-primary btn-link-nav">View All Products</a>
-          <button class="btn-secondary" (click)="tryAgain()">Scrape Another Page</button>
+          <button class="btn-primary" (click)="tryAgain()">Map another page</button>
+          <a routerLink="/products" class="btn-secondary btn-link-nav">View Products</a>
         </div>
       </div>
     </div>

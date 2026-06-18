@@ -36,9 +36,32 @@ export type MessageType =
   | 'STOP_MAPPING'
   | 'EXTRACT'
   | 'GET_PAGE_INFO'
-  | 'FIELD_ASSIGNED';
+  | 'FIELD_ASSIGNED'
+  | 'MAPPING_COMPLETE'
+  | 'MAPPING_CANCELLED';
 
 export interface Message {
   type: MessageType;
   payload?: unknown;
+}
+
+// ── Port-based frontend ↔ extension communication ─────────────────────────────
+
+export type PortInboundType = 'OPEN_MAPPER';
+export type PortOutboundType = 'FIELD_ASSIGNED' | 'MAPPING_COMPLETE' | 'MAPPING_CANCELLED' | 'MAPPING_ERROR';
+
+export interface PortInbound {
+  type: PortInboundType;
+  payload?: unknown;
+}
+
+export interface PortOutbound {
+  type: PortOutboundType;
+  payload?: unknown;
+}
+
+export interface MappingSession {
+  scrapingTabId: number;
+  port: chrome.runtime.Port;
+  mappings: Record<string, FieldMapping>;
 }

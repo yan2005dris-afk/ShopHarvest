@@ -20,7 +20,6 @@ FROM base AS installer
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc ./
 COPY backend/package.json ./backend/
 COPY frontend/package.json ./frontend/
-COPY worker/package.json ./worker/
 
 RUN pnpm install --frozen-lockfile
 

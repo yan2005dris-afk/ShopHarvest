@@ -19,9 +19,9 @@ model DomainRule {
   domain          String   @unique
   name            String
 
-  // Legacy single-field selectors
-  selectorTitle   String
-  selectorPrice   String
+  // Legacy single-field selectors (optional — fieldMappings supersedes)
+  selectorTitle   String?
+  selectorPrice   String?
   selectorImage   String?
   selectorSku     String?
 
@@ -111,23 +111,6 @@ model ScrapingJob {
   updatedAt       DateTime  @updatedAt
 
   @@index([domainRuleId])
-}
-
-// FetchRequest — Peticiones de renderizado de página (fetch-page -> worker -> Playwright)
-model FetchRequest {
-  id            String    @id @default(uuid()) @db.Uuid
-  url           String
-
-  status        String    @default("queued") // queued | processing | completed | failed
-  result        Json?
-  errorMessage  String?
-
-  enqueuedAt    DateTime  @default(now())
-  startedAt     DateTime?
-  completedAt   DateTime?
-
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
 }
 
 // ScrapingSchedule — Programación cron para scraping automático

@@ -1,9 +1,34 @@
 import type { DomainRule, ExtractedProduct, FieldMapping, CanonicalField } from '../types';
 
+// ── Handshake: announce extension ID to the Angular frontend ──────────────────
+
+function announceReady(): void {
+  window.postMessage({ type: '__VS_READY__', extensionId: chrome.runtime.id }, '*');
+}
+
+// Announce immediately (covers: Angular already listening when content script loads)
+announceReady();
+
+// Also respond to pings (covers: content script loaded before Angular init)
+window.addEventListener('message', (e) => {
+  if (e.source !== window) return;
+  if ((e.data as Record<string, unknown>)?.type === '__VS_PING__') {
+    announceReady();
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 let mappingActive = false;
+let fromFrontend = false;
 let highlightEl: HTMLDivElement | null = null;
 let menuEl: HTMLDivElement | null = null;
+let panelEl: HTMLDivElement | null = null;
 let currentTarget: Element | null = null;
+
+// Accumulated field assignments (used in frontend-triggered mode)
+const assignedFields: Record<string, FieldMapping> = {};
+let containerSelector: string | null = null;
 
 // ── Message listener ──────────────────────────────────────────────────────────
 
@@ -11,10 +36,13 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   const { type, payload } = message as { type: string; payload: unknown };
 
   switch (type) {
-    case 'START_MAPPING':
+    case 'START_MAPPING': {
+      const opts = (payload ?? {}) as { fromFrontend?: boolean };
+      fromFrontend = opts.fromFrontend ?? false;
       startMapping();
       sendResponse({ success: true });
       break;
+    }
 
     case 'STOP_MAPPING':
       stopMapping();
@@ -44,6 +72,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 function startMapping(): void {
   mappingActive = true;
   ensureHighlight();
+  if (fromFrontend) showPanel();
   document.addEventListener('mouseover', onMouseOver, true);
   document.addEventListener('click', onClick, true);
 }
@@ -54,6 +83,7 @@ function stopMapping(): void {
   document.removeEventListener('click', onClick, true);
   removeHighlight();
   removeMenu();
+  removePanel();
 }
 
 function ensureHighlight(): void {
@@ -82,6 +112,7 @@ function onMouseOver(e: MouseEvent): void {
   if (!mappingActive || !highlightEl) return;
   const target = e.target as Element;
   if (target === highlightEl || target === menuEl || menuEl?.contains(target)) return;
+  if (target === panelEl || panelEl?.contains(target)) return;
 
   const rect = target.getBoundingClientRect();
   Object.assign(highlightEl.style, {
@@ -97,8 +128,8 @@ function onMouseOver(e: MouseEvent): void {
 function onClick(e: MouseEvent): void {
   if (!mappingActive) return;
   const target = e.target as Element;
-  // Don't intercept clicks on our own menu
   if (menuEl?.contains(target)) return;
+  if (panelEl?.contains(target)) return;
 
   e.preventDefault();
   e.stopPropagation();
@@ -205,21 +236,194 @@ function assignField(field: CanonicalField, el: Element): void {
   const type: FieldMapping['type'] = field === 'imageUrl' ? 'attribute' : 'text';
   const attribute = field === 'imageUrl' ? 'src' : undefined;
 
+  const mapping: FieldMapping = {
+    canonicalField: field,
+    selector,
+    type,
+    ...(attribute ? { attribute } : {}),
+  };
+
+  assignedFields[field] = mapping;
+
   chrome.runtime.sendMessage({
     type: 'FIELD_ASSIGNED',
-    payload: { field, selector, type, attribute },
+    payload: mapping,
   });
 
+  if (fromFrontend) updatePanel();
   removeMenu();
 }
 
 function assignContainer(el: Element): void {
   const selector = generateSelector(el);
+  containerSelector = selector;
+
   chrome.runtime.sendMessage({
     type: 'FIELD_ASSIGNED',
-    payload: { field: 'container', selector, type: 'text' },
+    payload: { canonicalField: 'container', selector, type: 'text' } satisfies FieldMapping,
   });
+
+  if (fromFrontend) updatePanel();
   removeMenu();
+}
+
+// ── "Done Mapping" panel (frontend-triggered mode only) ───────────────────────
+
+const REQUIRED_FIELDS: CanonicalField[] = ['title', 'price'];
+
+function showPanel(): void {
+  if (panelEl) return;
+
+  panelEl = document.createElement('div');
+  panelEl.id = '__vs_panel__';
+  Object.assign(panelEl.style, {
+    position: 'fixed',
+    top: '16px',
+    right: '16px',
+    zIndex: '1000001',
+    background: '#1a1a2e',
+    border: '1px solid #0f3460',
+    borderRadius: '8px',
+    padding: '14px',
+    boxShadow: '0 4px 24px rgba(0,0,0,0.7)',
+    fontFamily: 'system-ui, sans-serif',
+    fontSize: '13px',
+    color: '#eaeaea',
+    minWidth: '220px',
+    userSelect: 'none',
+  });
+
+  document.documentElement.appendChild(panelEl);
+  renderPanel();
+}
+
+function renderPanel(): void {
+  if (!panelEl) return;
+  panelEl.innerHTML = '';
+
+  const title = document.createElement('div');
+  title.textContent = 'Visual Scraper';
+  Object.assign(title.style, {
+    fontWeight: '600',
+    marginBottom: '10px',
+    fontSize: '14px',
+    color: '#4a9eff',
+  });
+  panelEl.appendChild(title);
+
+  const allFields: CanonicalField[] = ['title', 'price', 'imageUrl', 'sku', 'currency', 'description'];
+  allFields.forEach((field) => {
+    const row = document.createElement('div');
+    Object.assign(row.style, { display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' });
+
+    const dot = document.createElement('span');
+    dot.textContent = assignedFields[field] ? '✓' : '○';
+    dot.style.color = assignedFields[field] ? '#4caf50' : '#555';
+    dot.style.width = '14px';
+
+    const name = document.createElement('span');
+    name.textContent = field;
+    name.style.color = assignedFields[field] ? '#eaeaea' : '#666';
+
+    if (REQUIRED_FIELDS.includes(field) && !assignedFields[field]) {
+      const req = document.createElement('span');
+      req.textContent = '*';
+      req.style.color = '#e94560';
+      row.appendChild(dot);
+      row.appendChild(name);
+      row.appendChild(req);
+    } else {
+      row.appendChild(dot);
+      row.appendChild(name);
+    }
+
+    panelEl!.appendChild(row);
+  });
+
+  // Container
+  const containerRow = document.createElement('div');
+  Object.assign(containerRow.style, { display: 'flex', alignItems: 'center', gap: '6px', margin: '8px 0' });
+  const cDot = document.createElement('span');
+  cDot.textContent = containerSelector ? '✓' : '○';
+  cDot.style.color = containerSelector ? '#4caf50' : '#555';
+  cDot.style.width = '14px';
+  const cName = document.createElement('span');
+  cName.textContent = 'container';
+  cName.style.color = containerSelector ? '#eaeaea' : '#666';
+  containerRow.appendChild(cDot);
+  containerRow.appendChild(cName);
+  panelEl.appendChild(containerRow);
+
+  const separator = document.createElement('hr');
+  Object.assign(separator.style, { border: 'none', borderTop: '1px solid #0f3460', margin: '10px 0' });
+  panelEl.appendChild(separator);
+
+  const canFinish = REQUIRED_FIELDS.every((f) => assignedFields[f]) && !!containerSelector;
+
+  const finishBtn = document.createElement('button');
+  finishBtn.textContent = 'Finish Mapping';
+  Object.assign(finishBtn.style, {
+    width: '100%',
+    background: canFinish ? '#0f3460' : '#2a2a3e',
+    color: canFinish ? '#eaeaea' : '#555',
+    border: 'none',
+    borderRadius: '4px',
+    padding: '8px',
+    cursor: canFinish ? 'pointer' : 'default',
+    fontSize: '13px',
+    marginBottom: '6px',
+  });
+  if (canFinish) {
+    finishBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      finishMapping();
+    });
+  }
+  panelEl.appendChild(finishBtn);
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.textContent = 'Cancel';
+  Object.assign(cancelBtn.style, {
+    width: '100%',
+    background: 'transparent',
+    color: '#888',
+    border: '1px solid #333',
+    borderRadius: '4px',
+    padding: '6px',
+    cursor: 'pointer',
+    fontSize: '12px',
+  });
+  cancelBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    cancelMapping();
+  });
+  panelEl.appendChild(cancelBtn);
+}
+
+function updatePanel(): void {
+  if (!panelEl) return;
+  renderPanel();
+}
+
+function removePanel(): void {
+  panelEl?.remove();
+  panelEl = null;
+}
+
+function finishMapping(): void {
+  const payload = {
+    fieldMappings: Object.values(assignedFields),
+    containerSelector,
+    domain: location.hostname,
+    pageTitle: document.title,
+  };
+  chrome.runtime.sendMessage({ type: 'MAPPING_COMPLETE', payload });
+  stopMapping();
+}
+
+function cancelMapping(): void {
+  chrome.runtime.sendMessage({ type: 'MAPPING_CANCELLED' });
+  stopMapping();
 }
 
 // ── CSS selector generator ────────────────────────────────────────────────────
@@ -230,15 +434,15 @@ function generateSelector(el: Element): string {
   let current: Element | null = el;
   while (current && current !== document.body) {
     const tag = current.tagName.toLowerCase();
-    const parent = current.parentElement;
-    if (parent) {
-      const siblings = Array.from(parent.children).filter(c => c.tagName === current!.tagName);
+    const parentEl: Element | null = current.parentElement;
+    if (parentEl) {
+      const siblings = Array.from(parentEl.children).filter((c: Element) => c.tagName === current!.tagName);
       const index = siblings.indexOf(current) + 1;
       path.unshift(siblings.length > 1 ? `${tag}:nth-child(${index})` : tag);
     } else {
       path.unshift(tag);
     }
-    current = parent;
+    current = parentEl;
   }
   return path.join(' > ');
 }
@@ -275,5 +479,4 @@ function extractProducts(rule: DomainRule): ExtractedProduct[] {
   return products;
 }
 
-// Suppress unused variable warning — currentTarget is set for potential future use
 void currentTarget;

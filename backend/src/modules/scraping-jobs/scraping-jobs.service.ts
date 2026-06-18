@@ -1,6 +1,4 @@
-import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import * as amqp from 'amqplib';
+import { Injectable, Logger } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { ProductsService } from '../products/products.service';
@@ -8,30 +6,13 @@ import type { ScrapeListingDto } from './dto/scrape-listing.dto';
 import type { SubmitResultDto } from './dto/submit-result.dto';
 
 @Injectable()
-export class ScrapingJobsService implements OnModuleInit, OnModuleDestroy {
+export class ScrapingJobsService {
   private readonly logger = new Logger(ScrapingJobsService.name);
-  private connection: amqp.ChannelModel | null = null;
-  private channel: amqp.Channel | null = null;
 
   constructor(
-    private readonly configService: ConfigService,
     private readonly prisma: PrismaService,
     private readonly productsService: ProductsService,
   ) {}
-
-  async onModuleInit() {
-    const url = this.configService.get<string>('rabbitmq.url')!;
-    this.connection = await amqp.connect(url);
-    this.channel = await this.connection.createChannel();
-
-    const queue = this.configService.get<string>('rabbitmq.queue')!;
-    await this.channel.assertQueue(queue, { durable: true });
-  }
-
-  async onModuleDestroy() {
-    await this.channel?.close();
-    await this.connection?.close();
-  }
 
   async enqueueJob(domainRuleId: string, url?: string) {
     // 1. Look up the DomainRule to get selectors
@@ -55,28 +36,6 @@ export class ScrapingJobsService implements OnModuleInit, OnModuleDestroy {
         url: targetUrl,
         status: 'queued',
       },
-    });
-
-    // 3. Build message payload with selectors
-    const selectors = {
-      title: domainRule.selectorTitle,
-      price: domainRule.selectorPrice,
-      image: domainRule.selectorImage || undefined,
-      sku: domainRule.selectorSku || undefined,
-    };
-
-    const message = JSON.stringify({
-      jobId: job.id,
-      url: targetUrl,
-      domainRuleId,
-      selectors,
-      selectorType: domainRule.selectorType || 'css',
-    });
-
-    // 4. Send to RabbitMQ
-    const queue = this.configService.get<string>('rabbitmq.queue')!;
-    this.channel!.sendToQueue(queue, Buffer.from(message), {
-      persistent: true,
     });
 
     this.logger.log(`Enqueued scraping job ${job.id} for URL ${targetUrl}`);
@@ -116,24 +75,6 @@ export class ScrapingJobsService implements OnModuleInit, OnModuleDestroy {
         type: 'listing',
         status: 'queued',
       },
-    });
-
-    // 3. Build message payload — snapshot fieldMappings + containerSelector
-    const message = JSON.stringify({
-      jobId: job.id,
-      url: dto.url,
-      domainRuleId: dto.domainRuleId,
-      type: 'listing',
-      limit,
-      containerSelector: domainRule.containerSelector,
-      fieldMappings: domainRule.fieldMappings,
-      selectorType: domainRule.selectorType || 'css',
-    });
-
-    // 4. Send to RabbitMQ
-    const queue = this.configService.get<string>('rabbitmq.queue')!;
-    this.channel!.sendToQueue(queue, Buffer.from(message), {
-      persistent: true,
     });
 
     this.logger.log(`Enqueued listing job ${job.id} for URL ${dto.url} (limit: ${limit})`);
@@ -264,13 +205,4 @@ export class ScrapingJobsService implements OnModuleInit, OnModuleDestroy {
     });
   }
 
-  async getQueueStatus() {
-    const queue = this.configService.get<string>('rabbitmq.queue')!;
-    const info = await this.channel!.checkQueue(queue);
-    return {
-      queue,
-      messageCount: info.messageCount,
-      consumerCount: info.consumerCount,
-    };
-  }
 }

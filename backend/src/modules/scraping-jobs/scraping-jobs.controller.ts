@@ -69,11 +69,6 @@ export class ScrapingJobsController {
     return this.scrapingJobsService.findFailed();
   }
 
-  @Get('status')
-  async status() {
-    return this.scrapingJobsService.getQueueStatus();
-  }
-
   @Get(':id')
   async findOne(@Param('id') id: string) {
     const job = await this.scrapingJobsService.findOne(id);

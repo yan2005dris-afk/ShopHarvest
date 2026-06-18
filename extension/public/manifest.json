@@ -9,6 +9,8 @@
     "default_icon": "icon.png"
   },
   "background": {
+    "service_worker": "background.js",
+    "type": "module",
     "scripts": ["background.js"]
   },
   "content_scripts": [
@@ -17,5 +19,12 @@
       "js": ["content.js"],
       "run_at": "document_idle"
     }
-  ]
+  ],
+  "externally_connectable": {
+    "matches": [
+      "http://localhost:8080/*",
+      "http://localhost:4200/*",
+      "https://*.yourdomain.com/*"
+    ]
+  }
 }

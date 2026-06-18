@@ -11,33 +11,6 @@ export interface FieldMapping {
   attribute?: string;
 }
 
-export interface DetectedElement {
-  tag: string;
-  text: string;
-  selector: string;
-  rect: {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-  };
-}
-
-export interface FetchRequestResponse {
-  id: string;
-  url: string;
-  status: string;
-  result?: {
-    html: string;
-    title: string;
-    screenshot: string;
-    viewport: { width: number; height: number };
-    detectedElements: DetectedElement[];
-  };
-  captchaDetected?: boolean;
-  errorMessage?: string;
-}
-
 export interface DomainRule {
   id: string;
   domain: string;
@@ -121,22 +94,6 @@ export class ApiService {
 
   updateDomain(id: string, data: Partial<DomainRule>): Observable<DomainRule> {
     return this.http.patch<DomainRule>(`${this.baseUrl}/domains/${id}`, data);
-  }
-
-  // Fetch Page
-  fetchPage(url: string, cookies?: string): Observable<{ id: string; status: string }> {
-    const body: Record<string, unknown> = { url };
-    if (cookies) body['cookies'] = cookies;
-    return this.http.post<{ id: string; status: string }>(
-      `${this.baseUrl}/fetch-page`,
-      body,
-    );
-  }
-
-  getFetchResult(id: string): Observable<FetchRequestResponse> {
-    return this.http.get<FetchRequestResponse>(
-      `${this.baseUrl}/fetch-page/${id}`,
-    );
   }
 
   // Scrape Listing
