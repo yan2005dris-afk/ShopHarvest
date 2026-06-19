@@ -1,128 +1,147 @@
 # Flujo de Trabajo
 
-Este documento explica el recorrido completo de los datos a través del sistema, desde que el usuario pega una URL hasta que los datos extraídos están disponibles en la base de datos.
+> ⚠️ El worker Crawlee + RabbitMQ fueron eliminados. La extracción ahora la realiza la **extensión Chrome** directamente en el navegador del usuario.
 
-## Fase 1: Mapeo Visual
+Este documento explica el recorrido completo de los datos a través del sistema, desde que el usuario mapea los campos hasta que los datos extraídos están disponibles en la base de datos.
 
-El usuario define las reglas de extracción para un dominio nuevo.
+## Fase 1: Mapeo Visual (vía frontend Angular)
 
-```
-Usuario                  Frontend                  Backend                Worker
-  │                         │                         │                    │
-  │  1. Pega URL            │                         │                    │
-  │────────────────────────▶│                         │                    │
-  │                         │  2. GET /api/preview     │                    │
-  │                         │────────────────────────▶│                    │
-  │                         │                         │  3. Encola preview │
-  │                         │                         │───────────────────▶│
-  │                         │                         │                    │ 4. Descarga HTML
-  │                         │                         │                    │ 5. Devuelve HTML
-  │                         │  6. HTML estático       │                    │
-  │                         │◀────────────────────────│                    │
-  │  7. Renderiza DOM       │                         │                    │
-  │     en iframe           │                         │                    │
-  │                         │                         │                    │
-  │  8. Usuario hace clic   │                         │                    │
-  │     en precio, título   │                         │                    │
-  │     y imagen            │                         │                    │
-  │                         │                         │                    │
-  │  9. Confirma regla      │                         │                    │
-  │────────────────────────▶│                         │                    │
-  │                         │ 10. POST /api/domains   │                    │
-  │                         │────────────────────────▶│                    │
-  │                         │                         │                    │
-  │                         │       11. Guarda        │                    │
-  │                         │    DomainRule en DB      │                    │
-  │                         │◀────────────────────────│                    │
-  │  12. Regla guardada     │                         │                    │
-  │◀────────────────────────│                         │                    │
-```
-
-## Fase 2: Extracción Batch
-
-El sistema procesa URLs en lote usando las reglas ya definidas.
+El usuario define las reglas de extracción desde la interfaz web de Angular, que se comunica con la extensión Chrome.
 
 ```
-Usuario / Cron            Backend                   RabbitMQ                Worker              PostgreSQL
-  │                         │                         │                    │                    │
-  │  1. POST /api/jobs      │                         │                    │                    │
-  │  { url, domainRuleId }  │                         │                    │                    │
-  │────────────────────────▶│                         │                    │                    │
-  │                         │  2. Publica mensaje     │                    │                    │
-  │                         │  a cola scraping-jobs   │                    │                    │
-  │                         │────────────────────────▶│                    │                    │
-  │                         │                         │  3. Entrega msg    │                    │
-  │                         │                         │───────────────────▶│                    │
-  │                         │                         │                    │  4. scrapeUrl()    │
-  │                         │                         │                    │  - Navega a URL    │
-  │                         │                         │                    │  - Aplica selector │
-  │                         │                         │                    │  - Extrae datos    │
-  │                         │                         │                    │                    │
-  │                         │                         │                    │  5. Guarda Product │
-  │                         │                         │                    │  + PriceHistory    │
-  │                         │                         │                    │───────────────────▶│
-  │                         │                         │                    │                    │
-  │                         │                         │  6. ACK mensaje    │                    │
-  │                         │                         │◀───────────────────│                    │
-  │  7. Job completado      │                         │                    │                    │
-  │◀────────────────────────│                         │                    │                    │
+Usuario            Frontend Angular          Extensión (SW)        Página Target
+  │                     │                        │                    │
+  │  1. Pega URL        │                        │                    │
+  │────────────────────▶│                        │                    │
+  │                     │  2. connectExternal    │                    │
+  │                     │  OPEN_MAPPER {url}     │                    │
+  │                     │───────────────────────▶│                    │
+  │                     │                        │  3. Crea tab      │
+  │                     │                        │  con la URL        │
+  │                     │                        │───────────────────▶│
+  │                     │                        │                    │
+  │                     │                        │  4. START_MAPPING  │
+  │                     │                        │  (content script)  │
+  │                     │                        │◀───────────────────│
+  │                     │                        │                    │
+  │                     │                        │                    │
+  │  5. Usuario hace    │                        │                    │
+  │     clic en         │◀── FIELD_ASSIGNED ─────│◀── FIELD_ASSIGNED  │
+  │     elementos       │    (tiempo real)       │    (tiempo real)   │
+  │                     │                        │                    │
+  │  6. Confirma regla  │                        │                    │
+  │────────────────────▶│                        │                    │
+  │                     │  7. POST /api/domains  │                    │
+  │                     │───────────────────────▶│                    │
+  │                     │       (Backend)        │                    │
+  │                     │                        │                    │
+  │                     │  8. Guarda DomainRule  │                    │
+  │                     │  (fieldMappings +      │                    │
+  │                     │   containerSelector)   │                    │
 ```
 
-## Fase 3: Consulta y Analítica
+## Fase 2: Mapeo Visual (vía popup de la extensión)
 
-Los datos extraídos están disponibles para consumo.
+Flujo alternativo — el usuario trabaja directamente desde el popup de la extensión sin abrir Angular.
 
 ```
-Dashboard / API                Backend                      PostgreSQL
-  │                              │                            │
-  │  1. GET /api/products        │                            │
-  │─────────────────────────────▶│                            │
-  │                              │  2. SELECT * FROM products │
-  │                              │───────────────────────────▶│
-  │                              │                            │
-  │  3. Productos normalizados   │                            │
-  │◀─────────────────────────────│                            │
-  │                              │                            │
-  │  4. GET /api/products/:id/history  │                      │
-  │─────────────────────────────▶│                            │
-  │                              │  5. SELECT * FROM          │
-  │                              │  price_history             │
-  │                              │───────────────────────────▶│
-  │                              │                            │
-  │  6. Historial de precios     │                            │
-  │◀─────────────────────────────│                            │
+Usuario            Popup Extensión          Service Worker       Página Target
+  │                     │                        │                    │
+  │  1. Abre popup      │                        │                    │
+  │     en la página    │                        │                    │
+  │────────────────────▶│                        │                    │
+  │                     │  2. START_MAPPING      │                    │
+  │                     │───────────────────────────────────────────▶│
+  │                     │                        │                    │
+  │  3. Clic en         │◀── FIELD_ASSIGNED ─────│◀── FIELD_ASSIGNED  │
+  │     elementos       │                        │                    │
+  │                     │                        │                    │
+  │  4. Save Rule       │                        │                    │
+  │────────────────────▶│  5. SAVE_RULE          │                    │
+  │                     │───────────────────────▶│                    │
+  │                     │                        │  6. chrome.storage │
+  │                     │                        │     .local.set()   │
 ```
 
-## Tipos de Datos
+## Fase 3: Extracción de Datos
 
-### Mensaje en RabbitMQ (ScrapingJob)
+El usuario extrae productos de la página actual usando una regla ya guardada.
+
+```
+Usuario            Popup Extensión          Service Worker       Página Target     Backend NestJS
+  │                     │                        │                    │                │
+  │  1. Extract Data    │                        │                    │                │
+  │────────────────────▶│                        │                    │                │
+  │                     │  2. EXTRACT {rule}     │                    │                │
+  │                     │───────────────────────────────────────────▶│                │
+  │                     │                        │                    │                │
+  │                     │                        │                    │  3. Recorre     │
+  │                     │                        │                    │     containers  │
+  │                     │                        │                    │     y extrae    │
+  │                     │                        │                    │     campos      │
+  │                     │                        │                    │                │
+  │                     │  4. Productos          │                    │                │
+  │                     │◀───────────────────────────────────────────│                │
+  │                     │                        │                    │                │
+  │                     │  5. POST /products/    │                    │                │
+  │                     │     ingest             │                    │                │
+  │                     │─────────────────────────────────────────────────────────────▶│
+  │                     │                        │                    │                │
+  │                     │                        │                    │  6. Persiste    │
+  │                     │                        │                    │     Product +   │
+  │                     │                        │                    │     PriceHistory│
+  │                     │                        │                    │                │
+  │  7. Tabla con       │                        │                    │                │
+  │     datos           │                        │                    │                │
+  │◀────────────────────│                        │                    │                │
+```
+
+## Fase 4: Consulta y Analítica
+
+Los datos extraídos están disponibles para consumo desde el frontend Angular o API.
+
+```
+Dashboard / API            Backend NestJS            PostgreSQL
+  │                              │                      │
+  │  1. GET /api/products        │                      │
+  │─────────────────────────────▶│                      │
+  │                              │  2. SELECT *         │
+  │                              │─────────────────────▶│
+  │                              │                      │
+  │  3. Productos normalizados   │                      │
+  │◀─────────────────────────────│                      │
+  │                              │                      │
+  │  4. GET /api/products/:id/history                   │
+  │─────────────────────────────▶│                      │
+  │                              │  5. SELECT * FROM    │
+  │                              │  price_history       │
+  │                              │─────────────────────▶│
+```
+
+## Formatos de Datos
+
+### DomainRule (guardada en API y chrome.storage.local)
 
 ```json
 {
-  "jobId": "uuid-del-trabajo",
-  "url": "https://www.temu.com/product-123",
-  "domainRuleId": "uuid-de-la-regla",
-  "selectors": {
-    "title": ".product-title",
-    "price": ".price-now",
-    "image": ".main-image img",
-    "sku": ".sku-code"
-  },
-  "selectorType": "css"
+  "domain": "www.temu.com",
+  "containerSelector": "div.product-card",
+  "fieldMappings": [
+    { "canonicalField": "title", "selector": "h2.title", "type": "text" },
+    { "canonicalField": "price", "selector": "span.price-now", "type": "text" },
+    { "canonicalField": "imageUrl", "selector": "img.main-img", "type": "attribute", "attribute": "src" }
+  ]
 }
 ```
 
-### Resultado del Scraping (ScrapedData)
+### Producto extraído
 
 ```json
 {
-  "success": true,
   "title": "Auriculares Bluetooth Pro",
   "price": 29.99,
-  "currency": "USD",
   "imageUrl": "https://img.temu.com/product.jpg",
-  "sku": "TM-12345",
-  "rawHtml": "<html>... (opcional, para debug)"
+  "sku": "TM-12345"
 }
 ```
 
@@ -130,8 +149,8 @@ Dashboard / API                Backend                      PostgreSQL
 
 | Problema | Comportamiento |
 |----------|----------------|
-| Worker caído | Los mensajes se acumulan en RabbitMQ. Al reconectarse, procesa el backlog |
-| Página no carga | Crawlee reintenta 3 veces con backoff exponencial |
-| Selector no encontrado | El worker reporta `success: false` y NACK el mensaje |
-| RabbitMQ caído | Backend lanza excepción al encolar. Worker intenta reconectar cada 5s |
-| PostgreSQL caído | Worker no puede guardar. NACK el mensaje para re-procesar después |
+| Extensión no instalada | El frontend muestra mensaje "Extension not found" y link para instalar |
+| Service worker dormido (MV3) | La conexión puede fallar — reintentar con timeout |
+| Selector no encontrado | El campo se omite en el resultado (producto parcial) |
+| Backend caído | La extensión sigue funcionando offline (chrome.storage.local). Los datos se sincronizan cuando el backend vuelve |
+| Página no carga | El content script no se inyecta — mostrar error en el popup |

@@ -1,56 +1,57 @@
 # WebScrapingDinámico-Automático
 
-Plataforma ETL semi-automatizada para extracción visual de datos en e-commerce (Temu, Shein y afines).
+Plataforma ETL semi-automatizada para extracción visual de datos en e-commerce (Temu, Shein y afines). Usa una **extensión de Chrome** para el scraping en el navegador real del usuario, evitando bloqueos por CAPTCHA.
 
 ## Stack
 
-| Capa           | Tecnología                          |
-|----------------|--------------------------------------|
-| Frontend       | Angular 22 (visor HTML + selector)  |
-| Backend        | NestJS 11 (API REST)                |
-| Worker         | Node.js + Crawlee (Playwright)      |
-| Cola           | RabbitMQ                            |
-| Base de datos  | PostgreSQL 16 + Prisma              |
-| Analítica      | Grafana / Apache Superset (futuro)  |
+| Capa           | Tecnología                         |
+|----------------|------------------------------------|
+| Frontend       | Angular 22                         |
+| Extensión      | Chrome MV3 (Vite + TypeScript)     |
+| Backend        | NestJS 11 (API REST)               |
+| Base de datos  | PostgreSQL 16 + Prisma             |
 
 ## Arquitectura
 
 ```
-[Angular] → API NestJS → RabbitMQ → Worker Crawlee → PostgreSQL
-     ↑                                       │
-     └─────────── visual mapper ──────────────┘
+[Chrome Extension] ←→ [Angular] ←→ [NestJS API] ←→ [PostgreSQL]
+       ↕ (chrome.runtime)
+  [Página web real]
+     (sin CAPTCHA)
 ```
 
-Servicios independientes contenerizados (Docker) que se comunican por API REST y cola de mensajes RabbitMQ. El usuario selecciona visualmente elementos en una página renderizada, se guardan reglas dinámicas por dominio, y un worker batch extrae los datos.
+La extensión reemplazó al stack anterior (RabbitMQ + Worker Crawlee/Playwright headless) que era bloqueado por Cloudflare/CAPTCHA. Ahora el scraping corre en la sesión auténtica del usuario.
 
 ## Estructura del proyecto
 
 ```
-├── .env                    # Variables de entorno
-├── docker-compose.yml      # Orquestación de servicios
-├── docker/                 # Dockerfiles y configs
-│   ├── Dockerfile.backend
-│   ├── Dockerfile.frontend
-│   ├── Dockerfile.worker
-│   └── nginx.conf
+├── extension/              # 🧩 Chrome MV3 Extension
+│   ├── manifest.json       # Permisos: storage, activeTab, scripting
+│   ├── src/
+│   │   ├── background/     # Service Worker (sesiones + storage)
+│   │   ├── content/        # Content script (overlay + extracción)
+│   │   └── popup/          # UI del popup (HTML + TypeScript)
+│   └── vite.config.ts      # Build con Vite
 │
-├── backend/                # 🎯 NestJS + Prisma + RabbitMQ
+├── backend/                # 🎯 NestJS + Prisma
 │   ├── prisma/schema/      # Modelos: DomainRule, Product, PriceHistory
 │   └── src/
-│       ├── common/         # PrismaModule, RabbitmqModule
-│       └── modules/        # domains, products, scraping-jobs
+│       ├── common/         # PrismaModule
+│       └── modules/        # domains, products
 │
 ├── frontend/               # 🎨 Angular 22
-│   ├── src/app/pages/
-│   │   ├── url-input/      # Input de URL
-│   │   └── visual-mapper/  # Render DOM + selector visual
-│   └── src/app/services/   # ApiService
+│   ├── src/app/
+│   │   ├── pages/
+│   │   │   └── visual-mapper/  # Integración con extensión
+│   │   └── services/       # ApiService
+│   └── proxy.conf.json     # Proxy a backend en desarrollo
 │
-└── worker/                 # 🤖 Crawlee + RabbitMQ consumer
-    ├── src/
-    │   ├── consumer.ts     # Escucha cola scraping-jobs
-    │   ├── scraper.ts      # PlaywrightCrawler con selectores
-    │   └── types.ts        # Tipos compartidos
+├── docker/                 # 🐳 Dockerfiles
+│   ├── Dockerfile.backend
+│   └── Dockerfile.frontend
+│
+├── docker-compose.yml      # postgres + backend + frontend
+└── PLAN.md                 # Plan de mejora continua
 ```
 
 ## Inicio rápido
@@ -59,16 +60,16 @@ Servicios independientes contenerizados (Docker) que se comunican por API REST y
 # 1. Instalar dependencias
 pnpm install
 
-# 2. Levantar servicios (PostgreSQL + RabbitMQ)
-docker compose up -d postgres rabbitmq
+# 2. Build de la extensión
+cd extension && pnpm build
+# Cargar extension/dist en chrome://extensions (modo developer)
 
-# 3. Inicializar base de datos
-pnpm prisma:push
+# 3. Levantar servicios (solo PostgreSQL + backend + frontend)
+docker compose up -d
 
-# 4. Arrancar backend + frontend + worker
+# 4. O en modo desarrollo
 pnpm dev:backend
 pnpm dev:frontend
-pnpm dev:worker
 ```
 
 ## Comandos útiles
@@ -77,17 +78,22 @@ pnpm dev:worker
 |-----------------------------|---------------------------------------|
 | `pnpm dev:backend`          | Backend NestJS en modo watch          |
 | `pnpm dev:frontend`         | Frontend Angular con proxy a :3000    |
-| `pnpm dev:worker`           | Worker Crawlee en modo watch          |
 | `pnpm build:backend`        | Compilar backend                      |
 | `pnpm build:frontend`       | Compilar frontend                     |
-| `pnpm build:worker`         | Compilar worker                       |
 | `pnpm prisma:push`          | Sincronizar esquema a PostgreSQL      |
 | `pnpm prisma:migrate`       | Crear migración Prisma                |
+| `cd extension && pnpm build`| Build de la extensión                 |
 | `docker compose up -d`      | Levantar todos los servicios          |
 | `docker compose down`       | Bajar servicios                       |
 
 ## Modelos de datos
 
-- **DomainRule**: Reglas de extracción por dominio (selectores CSS/XPath)
+- **DomainRule**: Reglas de extracción por dominio (`fieldMappings` + `containerSelector`)
 - **Product**: Datos normalizados de productos extraídos
 - **PriceHistory**: Historial de precios para dashboards
+
+## Notas
+
+- La extensión se comunica con Angular via `chrome.runtime.connectExternal`
+- Los datos se guardan localmente en `chrome.storage.local` y se sincronizan con el backend
+- No requiere RabbitMQ ni worker headless — todo corre en el navegador del usuario

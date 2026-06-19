@@ -6,7 +6,6 @@
 
 **Por qué NestJS:**
 - Arquitectura modular por defecto (módulos, controladores, servicios)
-- Integración nativa con RabbitMQ vía `@nestjs/microservices`
 - Soporte de primer clase para Prisma
 - TypeScript estricto desde el inicio
 - CLI madura con generación de código
@@ -16,10 +15,10 @@
 | Paquete | Propósito |
 |---------|-----------|
 | `@nestjs/config` | Variables de entorno |
-| `@nestjs/microservices` | Transporte RabbitMQ |
 | `@prisma/client` | ORM para PostgreSQL |
-| `amqplib` | Cliente AMQP para RabbitMQ |
 | `class-validator` / `class-transformer` | Validación de DTOs |
+
+> RabbitMQ fue eliminado. La extracción la hace la extensión Chrome directamente, no hay worker ni cola de mensajes.
 
 ## Estructura de Módulos
 
@@ -28,25 +27,18 @@ src/
 ├── main.ts                          # Entry point
 ├── app.module.ts                    # Módulo raíz
 ├── common/
-│   ├── prisma/
-│   │   ├── prisma.module.ts         # Módulo global de Prisma
-│   │   └── prisma.service.ts        # Servicio singleton del cliente Prisma
-│   └── rabbitmq/
-│       ├── rabbitmq.config.ts       # Config de conexión RabbitMQ
-│       └── rabbitmq.module.ts       # Módulo RabbitMQ
+│   └── prisma/
+│       ├── prisma.module.ts         # Módulo global de Prisma
+│       └── prisma.service.ts        # Servicio singleton del cliente Prisma
 └── modules/
     ├── domains/                     # CRUD de DomainRule
     │   ├── domains.controller.ts    # Endpoints REST
     │   ├── domains.service.ts       # Lógica de negocio
     │   └── domains.module.ts        # Registro del módulo
-    ├── products/                    # CRUD de Product
-    │   ├── products.controller.ts
-    │   ├── products.service.ts
-    │   └── products.module.ts
-    └── scraping-jobs/               # Encolado de trabajos
-        ├── scraping-jobs.controller.ts
-        ├── scraping-jobs.service.ts
-        └── scraping-jobs.module.ts
+    └── products/                    # CRUD de Product
+        ├── products.controller.ts
+        ├── products.service.ts
+        └── products.module.ts
 ```
 
 ## Endpoints de la API
@@ -56,9 +48,11 @@ src/
 |--------|------|-------------|
 | `GET` | `/api/domains` | Listar todas las reglas |
 | `GET` | `/api/domains/:id` | Obtener una regla |
-| `POST` | `/api/domains` | Crear regla (desde el mapeo visual) |
-| `PUT` | `/api/domains/:id` | Actualizar selectores |
+| `GET` | `/api/domains/:id/products` | Productos de una regla específica |
+| `POST` | `/api/domains` | Crear regla (fieldMappings + containerSelector) |
+| `PUT` | `/api/domains/:id` | Actualizar regla |
 | `DELETE` | `/api/domains/:id` | Eliminar regla |
+| `DELETE` | `/api/domains/:id/products` | Limpiar productos de una regla |
 
 ### Products
 | Método | Ruta | Descripción |
@@ -66,22 +60,28 @@ src/
 | `GET` | `/api/products` | Listar productos (con filtros) |
 | `GET` | `/api/products/:id` | Detalle de producto + historial |
 | `GET` | `/api/products/:id/history` | Historial de precios |
+| `PATCH` | `/api/products/:id` | Editar producto manualmente |
 
-### Scraping Jobs
+### Ingest (desde la extensión)
 | Método | Ruta | Descripción |
 |--------|------|-------------|
-| `POST` | `/api/scraping-jobs` | Encolar nuevo trabajo de scraping |
-| `GET` | `/api/scraping-jobs/:id` | Estado de un trabajo |
+| `POST` | `/products/ingest` | Recibe productos extraídos desde la extensión |
 
-## RabbitMQ
+## DomainRule — Nuevos campos
 
-NestJS se conecta a RabbitMQ usando `@nestjs/microservices` con transporte AMQP.
+Las reglas ya no usan selectores individuales (`selectorTitle`, `selectorPrice`, etc.). En su lugar usan:
 
-**Flujo de encolado:**
-1. El frontend o un cron llama a `POST /api/scraping-jobs`
-2. El servicio `ScrapingJobsService` publica un mensaje en la cola `scraping-jobs`
-3. El mensaje contiene: `{ jobId, url, domainRuleId, selectors, selectorType }`
-4. El worker consume el mensaje y procesa el scraping
+- **`fieldMappings`** (`Json`): Array de `{ canonicalField, selector, type, attribute? }`
+- **`containerSelector`** (`String`): Selector CSS del contenedor de cada producto
+
+```typescript
+interface FieldMapping {
+  canonicalField: 'title' | 'price' | 'imageUrl' | 'sku' | 'currency' | 'description' | 'category';
+  selector: string;        // selector CSS generado por la extensión
+  type: 'text' | 'attribute' | 'html';
+  attribute?: string;      // ej: 'src' para imageUrl
+}
+```
 
 ## Prisma
 
@@ -97,3 +97,19 @@ prisma/
         ├── product.prisma
         └── price_history.prisma
 ```
+
+## Productos desde la extensión
+
+La extensión envía productos vía `POST /products/ingest` con esta estructura:
+
+```json
+{
+  "domain": "www.temu.com",
+  "pageUrl": "https://www.temu.com/category-xxx",
+  "products": [
+    { "title": "Auriculares Pro", "price": 29.99, "imageUrl": "https://..." }
+  ]
+}
+```
+
+El backend los normaliza y persiste como `Product` + `PriceHistory`.

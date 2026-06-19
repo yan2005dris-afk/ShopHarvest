@@ -19,11 +19,7 @@ frontend/src/app/
 ├── app.routes.ts                    # Definición de rutas
 ├── app.ts                           # Componente raíz
 ├── pages/
-│   ├── url-input/                   # Página para pegar URL
-│   │   ├── url-input.component.ts
-│   │   ├── url-input.component.html
-│   │   └── url-input.component.css
-│   └── visual-mapper/               # Visual DOM mapper
+│   └── visual-mapper/               # Página principal — integración con extensión
 │       ├── visual-mapper.component.ts
 │       ├── visual-mapper.component.html
 │       └── visual-mapper.component.css
@@ -33,18 +29,39 @@ frontend/src/app/
 
 ## Páginas
 
-### url-input
-Página inicial donde el usuario pega la URL del sitio que quiere scrapear (ej: `https://www.temu.com/product-xxx.html`). Al enviar, se comunica con el backend para:
-1. Obtener el HTML estático de la URL (vía worker)
-2. Redirigir al `visual-mapper` con ese HTML
-
 ### visual-mapper
-El corazón del sistema. Renderiza el HTML de la página objetivo en un entorno seguro (iframe sandbox) y permite al usuario:
-- Hacer clic en elementos para identificar el título
-- Hacer clic en elementos para identificar el precio
-- Hacer clic en la imagen
-- Confirmar los selectores CSS/XPath generados
-- Guardar la regla en el backend
+Página principal que se comunica con la **extensión Chrome Visual Scraper** para iniciar sesiones de mapeo:
+
+1. El usuario pega una URL de e-commerce
+2. El frontend inicia una sesión de mapeo via `chrome.runtime.connectExternal`
+3. La extensión abre la URL en una nueva pestaña con el content script activo
+4. El usuario selecciona elementos visualmente (overlay highlight + menú flotante)
+5. Las asignaciones se envian en tiempo real al frontend via puerto nativo
+6. Al finalizar, la regla se guarda en el backend
+
+## Comunicación con la Extensión
+
+### Handshake
+El content script de la extensión se anuncia al frontend via `window.postMessage`:
+
+```typescript
+// Content script envía
+window.postMessage({ type: '__VS_READY__', extensionId: chrome.runtime.id }, '*');
+
+// Frontend responde con ping
+window.postMessage({ type: '__VS_PING__' }, '*');
+```
+
+### Sesión de mapeo (puerto nativo)
+```typescript
+const port = chrome.runtime.connect(extensionId, { name: 'mapping-session' });
+port.postMessage({ type: 'OPEN_MAPPER', payload: { url } });
+
+port.onMessage.addListener((msg) => {
+  if (msg.type === 'FIELD_ASSIGNED') { /* actualizar UI */ }
+  if (msg.type === 'MAPPING_COMPLETE') { /* guardar regla */ }
+});
+```
 
 ## Servicios
 
@@ -57,7 +74,6 @@ export class ApiService {
 
   getDomains(): Observable<DomainRule[]> { ... }
   createDomain(rule: CreateDomainDto): Observable<DomainRule> { ... }
-  createJob(url: string, domainRuleId: string): Observable<ScrapingJob> { ... }
   getProducts(): Observable<Product[]> { ... }
 }
 ```

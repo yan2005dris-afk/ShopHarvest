@@ -5,24 +5,22 @@
 ```
 docker/
 ├── Dockerfile.backend     # Build multi-etapa para NestJS
-├── Dockerfile.frontend    # Build multi-etapa para Angular + Nginx
-├── Dockerfile.worker      # Build multi-etapa para Crawlee worker
-└── nginx.conf             # Configuración del servidor Nginx
+└── Dockerfile.frontend    # Build multi-etapa para Angular + Nginx
 ```
+
+> El worker Crawlee fue eliminado. Ya no hay `Dockerfile.worker` ni configuración de RabbitMQ.
 
 ## Servicios
 
 | Servicio | Puerto | Depende de | Descripción |
 |----------|--------|------------|-------------|
 | `postgres` | `5432` | — | Base de datos PostgreSQL 16 |
-| `rabbitmq` | `5672`, `15672` | — | Message broker RabbitMQ 4 |
-| `backend` | `3000` | postgres, rabbitmq | API NestJS |
+| `backend` | `3000` | postgres | API NestJS |
 | `frontend` | `8080` | backend | SPA Angular servida por Nginx |
-| `worker` | — | postgres, rabbitmq | Worker Crawlee (sin puertos expuestos) |
 
 ## Docker Compose
 
-El archivo `docker-compose.yml` en la raíz orquesta todos los servicios en una red compartida llamada `scraper-network`.
+El archivo `docker-compose.yml` en la raíz orquesta los servicios en una red compartida llamada `scraper-network`.
 
 ### Variables de entorno
 
@@ -30,19 +28,11 @@ Todas las variables sensibles se inyectan desde `.env` (raíz). El `docker-compo
 
 ### Healthchecks
 
-Cada servicio tiene healthchecks para garantizar que el backend y el worker no arranquen hasta que PostgreSQL y RabbitMQ estén listos:
-
 ```yaml
 postgres:
   healthcheck:
     test: ["CMD-SHELL", "pg_isready -U scraper -d scraperdb"]
     interval: 10s
-    retries: 5
-
-rabbitmq:
-  healthcheck:
-    test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
-    interval: 15s
     retries: 5
 ```
 
@@ -60,7 +50,7 @@ Builder (pnpm fetch → install → prisma generate → build → pnpm deploy)
 Runner (solo copia node_modules + dist + prisma → corre como node)
 ```
 
-Usa `pnpm deploy --prod` para extraer solo las dependencias de producción a una carpeta limpia, resultando en imágenes más livianas.
+Usa `pnpm deploy --prod` para extraer solo las dependencias de producción, resultando en imágenes más livianas.
 
 ### Frontend
 
@@ -73,19 +63,15 @@ Production (nginx:1.27-alpine + copia bundle compilado)
 
 El frontend en producción es servido por Nginx, no por Node.js.
 
-### Worker
+## Extensión Chrome
 
-```
-Base (node:22-alpine + chromium + corepack + pnpm)
-  │
-  ▼
-Builder (pnpm fetch → install → build → pnpm deploy)
-  │
-  ▼
-Runner (solo node_modules + dist → corre como node)
-```
+La extensión Chrome (`extension/`) **no se conteneriza**. Se build con Vite y se carga manualmente en el navegador:
 
-El worker incluye Chromium directamente en la imagen para que Playwright pueda ejecutar el navegador headless sin dependencias externas.
+```bash
+cd extension
+pnpm build
+# Cargar ./dist en chrome://extensions con modo developer activado
+```
 
 ## Comandos
 
@@ -95,13 +81,10 @@ docker compose up -d --build
 
 # Ver logs de un servicio específico
 docker compose logs -f backend
-docker compose logs -f worker
+docker compose logs -f frontend
 
 # Ejecutar un comando en un servicio
 docker compose exec postgres psql -U scraper -d scraperdb
-
-# Ver colas de RabbitMQ
-docker compose exec rabbitmq rabbitmqctl list_queues
 
 # Detener todo
 docker compose down
@@ -109,13 +92,3 @@ docker compose down
 # Detener y eliminar volúmenes (borra datos)
 docker compose down -v
 ```
-
-## RabbitMQ Management UI
-
-Cuando los servicios están corriendo, abrí:
-
-- **URL**: http://localhost:15672
-- **User**: `scraper`
-- **Password**: `scraperpass`
-
-Desde ahí podés ver las colas, los mensajes, las conexiones activas y el estado del worker en tiempo real.

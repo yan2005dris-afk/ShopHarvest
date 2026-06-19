@@ -6,7 +6,7 @@
 
 **Por qué PostgreSQL:**
 - Maduro, confiable y con excelente soporte de tipos
-- JSONB para almacenar datos raw del scraping
+- JSONB para almacenar `fieldMappings` de las reglas
 - Full-text search para búsqueda de productos
 - Performance probada en cargas de trabajo analíticas
 
@@ -20,30 +20,31 @@
 
 ### DomainRule
 
-Reglas de extracción por dominio. El usuario define estos selectores desde el frontend visual.
+Reglas de extracción por dominio. Almacena `fieldMappings` como JSON y `containerSelector` como string — la extensión Chrome genera estos valores durante el mapeo visual.
 
 ```prisma
 model DomainRule {
-  id              String   @id @default(uuid())
-  domain          String   @unique  // "temu.com", "shein.com"
-  name            String            // "Temu", "Shein"
+  id                String        @id @default(uuid())
+  domain            String        @unique  // "temu.com", "shein.com"
+  name              String                 // "Temu", "Shein"
 
-  selectorTitle   String            // CSS/XPath para el título
-  selectorPrice   String            // Selector del precio
-  selectorImage   String?           // Selector de la imagen
-  selectorSku     String?           // Selector del SKU
+  containerSelector String                 // Selector CSS del contenedor de cada producto
+  fieldMappings     Json?                  // Array de FieldMapping[]
 
-  selectorType    String   @default("css")  // "css" | "xpath"
-  paginationType  String   @default("scroll") // scroll | pagination | load-more
-  paginationSelector String?
+  sampleUrl         String?
+  lastScrapedAt     DateTime?
 
-  sampleUrl       String?
-  lastScrapedAt   DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
 
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  products          Product[]
+}
 
-  products        Product[]
+type FieldMapping {
+  canonicalField String  // "title" | "price" | "imageUrl" | "sku" | "currency" | "description" | "category"
+  selector       String  // Selector CSS generado por la extensión
+  type           String  // "text" | "attribute" | "html"
+  attribute      String? // Ej: "src" para imageUrl
 }
 ```
 
@@ -104,8 +105,11 @@ DomainRule (1) ────── (N) Product (1) ────── (N) PriceHi
      │                   rawData (JSON)
      │
   domain (único por regla)
-  selectores (CSS/XPath)
+  fieldMappings (JSON — array de FieldMapping[])
+  containerSelector (CSS del contenedor)
 ```
+
+> Los campos legacy `selectorTitle`, `selectorPrice`, `selectorImage`, `selectorSku`, `selectorType` fueron reemplazados por `fieldMappings` + `containerSelector`.
 
 ## Comandos Prisma
 

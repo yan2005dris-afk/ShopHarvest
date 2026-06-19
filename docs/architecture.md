@@ -2,55 +2,59 @@
 
 ## Visión General
 
-Plataforma ETL semi-automatizada para extracción visual de datos en sitios de e-commerce (Temu, Shein y afines). El sistema permite al usuario mapear visualmente los selectores CSS de una página web, guardar esas reglas por dominio, y luego ejecutar extracciones batch automatizadas.
+Plataforma ETL semi-automatizada para extracción visual de datos en sitios de e-commerce (Temu, Shein y afines). El usuario mapea visualmente los selectores CSS de una página web mediante una **extensión de Chrome**, guarda esas reglas por dominio, y ejecuta extracciones desde el popup de la extensión directamente en la página real del navegador.
 
 ```
-┌──────────────┐     ┌──────────────┐     ┌──────────────┐     ┌──────────────┐
-│   Angular    │ ──▶ │   NestJS     │ ──▶ │   RabbitMQ   │ ──▶ │   Worker     │
-│  (Frontend)  │     │  (Backend)   │     │   (Cola)     │     │  (Crawlee)   │
-└──────┬───────┘     └──────┬───────┘     └──────────────┘     └──────┬───────┘
-       │                    │                                         │
-       │    Render DOM      │         ┌──────────────┐               │
-       │    + Selector      │         │  PostgreSQL  │               │
-       └────────────────────┼────────▶│   (Prisma)   │◀──────────────┘
-                            │         └──────────────┘
-                            │                                  (Guarda datos
-                            ▼                                   extraídos)
-                     ┌──────────────┐
-                     │   Grafana /  │
-                     │  Superset    │
-                     │  (Futuro)    │
-                     └──────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│                        Chrome Extension                          │
+│  ┌──────────┐  chrome.runtime.sendMessage  ┌──────────────────┐  │
+│  │  Popup   │◀────────────────────────────▶│  Service Worker   │  │
+│  │  (UI)    │                              │  (background.js)  │  │
+│  └────┬─────┘                              └────────┬─────────┘  │
+│       │                                            │             │
+│       │ chrome.tabs.sendMessage                     │ chrome.runtime.sendMessage
+│       ▼                                            ▼             │
+│  ┌─────────────────────────────────────────────────────────────┐  │
+│  │                  Content Script (mapper.ts)                   │  │
+│  │  Se inyecta en <all_urls>, overlay de selección visual       │  │
+│  └──────────────────────────────────────────────────────────────┘  │
+└──────────────────────────────────────────────────────────────────┘
+        ↕ chrome.runtime.connectExternal      ↕ fetch API
+┌────────────────┐                      ┌──────────────────────┐
+│    Angular     │  chrome.runtime      │   NestJS Backend     │
+│   (Frontend)   │  .connectExternal    │   (API REST :3000)   │
+│   :8080/4200   │◀────────────────────▶│                      │
+│               │                      │   PostgreSQL 16       │
+│  Inicia sesión │                      │   + Prisma ORM       │
+│  de mapeo vía  │                      │                      │
+│  puerto nativo │                      └──────────────────────┘
+└────────────────┘
 ```
 
-## Capas del Sistema
+## Componentes del Sistema
 
-### 1. Capa de Presentación — Angular 22
-Interfaz de usuario donde el usuario pega URLs de e-commerce, visualiza el DOM renderizado de la página objetivo, y selecciona visualmente los elementos que quiere extraer (precio, título, imagen). Genera reglas CSS/XPath que se envían al backend.
+### 1. Extensión Chrome (MV3) — Visual Scraper
+El cerebro del sistema. Se ejecuta en el navegador real del usuario, lo que evita bloqueos por CAPTCHA (Temu, Shein, Cloudflare).
 
-### 2. Capa de Orquestación — NestJS 11
-API REST que recibe las reglas del frontend, las persiste en PostgreSQL, y encola trabajos de extracción en RabbitMQ. No hace scraping directo — delega esa responsabilidad al worker para no bloquear el hilo principal.
+Tres capas internas:
+- **Service Worker** (`background/`): Gestiona sesiones de mapeo, almacenamiento en `chrome.storage.local`, y relay de mensajes entre popup, content script y Angular.
+- **Content Script** (`content/mapper.ts`): Se inyecta en `<all_urls>`. Proporciona overlay visual para seleccionar elementos (highlight azul, menú flotante para asignar campos). Ejecuta la extracción de datos usando los selectores guardados. Se comunica con Angular via `window.postMessage`.
+- **Popup** (`popup/`): Interfaz rápida para iniciar mapeo, guardar reglas, extraer datos, ver resultados y exportar a CSV.
 
-### 3. Capa de Mensajería — RabbitMQ
-Cola de mensajes que desacopla el backend del worker. NestJS publica mensajes en la cola `scraping-jobs` y el worker los consume cuando tiene capacidad. Esto permite:
-- Procesamiento asíncrono
-- Escalado horizontal del worker
-- Tolerancia a fallos (los mensajes no se pierden)
+### 2. Angular 22 (Frontend)
+Interfaz de usuario principal. Se comunica con la extensión via `chrome.runtime.connectExternal` para iniciar sesiones de mapeo visual. También consume la API REST del backend para CRUD de reglas y productos.
 
-### 4. Capa de Ejecución — Worker Crawlee + Playwright
-Microservicio Node.js que escucha la cola de RabbitMQ. Cuando recibe un trabajo, levanta un navegador headless con Playwright, navega a la URL objetivo, aplica los selectores CSS definidos en la regla, y extrae los datos estructurados.
+### 3. NestJS 11 (Backend)
+API REST que recibe reglas y productos desde el frontend y la extensión, los persiste en PostgreSQL. Ya **no** tiene worker ni RabbitMQ — la extracción la hace la extensión directamente en el navegador del usuario.
 
-### 5. Capa de Persistencia — PostgreSQL + Prisma ORM
+### 4. PostgreSQL + Prisma ORM
 Base de datos relacional con dos dominios de datos:
-- **Configuración**: Reglas de extracción por dominio (selectores CSS/XPath)
-- **Negocio**: Catálogo de productos normalizados e historial de precios
-
-### 6. Capa de Analítica — Grafana/Superset (Futuro)
-Conexión directa de lectura a PostgreSQL para dashboards de precios, comparativas entre plataformas y alertas.
+- **Configuración**: Reglas de extracción por dominio (`fieldMappings` + `containerSelector`)
+- **Negocio**: Productos normalizados e historial de precios
 
 ## Principios de Diseño
 
-1. **Separación de responsabilidades**: Cada capa hace una cosa y la hace bien.
-2. **Desacoplamiento por cola**: El backend nunca espera por el worker.
-3. **Reglas dinámicas**: Los selectores no están hardcodeados — se guardan por dominio y pueden modificarse sin desplegar código.
+1. **Extracción en el navegador real**: La extensión ejecuta scraping en la sesión autenticada del usuario, sin CABEZA — cero CAPTCHAs.
+2. **Desacoplamiento por API**: El frontend y la extensión se comunican con el backend vía REST, no hay cola de mensajes.
+3. **Reglas dinámicas**: Los selectores no están hardcodeados — se guardan como `fieldMappings` (campo canónico + selector + tipo) y pueden modificarse sin desplegar código.
 4. **Datos normalizados**: Sin importar de qué sitio vengan, todos los productos tienen la misma estructura.
