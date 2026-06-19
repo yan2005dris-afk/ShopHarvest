@@ -9,7 +9,10 @@ import { ScrapingJobsModule } from './modules/scraping-jobs/scraping-jobs.module
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: '../.env',
+    }),
     PrismaModule,
     DomainsModule,
     ProductsModule,
