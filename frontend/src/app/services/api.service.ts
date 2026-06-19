@@ -129,6 +129,17 @@ export class ApiService {
   }
 
   // Products
+  ingestProducts(
+    domain: string,
+    pageUrl: string,
+    products: Record<string, unknown>[],
+  ): Observable<{ ingested: number; domainRuleId: string }> {
+    return this.http.post<{ ingested: number; domainRuleId: string }>(
+      `${this.baseUrl}/products/ingest`,
+      { domain, pageUrl, products },
+    );
+  }
+
   getProducts(includeHistory?: boolean): Observable<Product[]> {
     const params: Record<string, string> = {};
     if (includeHistory !== undefined) params['includeHistory'] = String(includeHistory);

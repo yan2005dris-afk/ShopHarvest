@@ -1,4 +1,7 @@
-export type CanonicalField = 'title' | 'price' | 'imageUrl' | 'sku' | 'currency' | 'description' | 'category' | 'container';
+// ─── Field definitions (user-defined, fully dynamic) ────────────────────────
+
+/** Field name is now a free string — user defines their own. */
+export type CanonicalField = string;
 
 export interface FieldMapping {
   canonicalField: CanonicalField;
@@ -6,6 +9,16 @@ export interface FieldMapping {
   type: 'text' | 'attribute' | 'html';
   attribute?: string;
 }
+
+/** A field definition the user adds in the popup before mapping. */
+export interface FieldDefinition {
+  name: string;       // e.g. "titulo", "descripcion", "precio"
+  type: 'text' | 'attribute' | 'html';
+  attribute?: string; // e.g. "src", "href" — only used when type=attribute
+  required?: boolean;
+}
+
+// ─── Domain rule (stored in backend) ────────────────────────────────────────
 
 export interface DomainRule {
   domain: string;
@@ -19,10 +32,14 @@ export interface ExtractedProduct {
   [key: string]: string | number | null;
 }
 
+// ─── Storage ────────────────────────────────────────────────────────────────
+
 export interface StorageData {
   rules: Record<string, DomainRule>;
   products: Record<string, ExtractedProduct[]>;
 }
+
+// ─── Messaging ──────────────────────────────────────────────────────────────
 
 export type MessageType =
   | 'GET_RULE'
@@ -45,10 +62,14 @@ export interface Message {
   payload?: unknown;
 }
 
-// ── Port-based frontend ↔ extension communication ─────────────────────────────
+// ── Port-based frontend ↔ extension communication ───────────────────────────
 
 export type PortInboundType = 'OPEN_MAPPER';
-export type PortOutboundType = 'FIELD_ASSIGNED' | 'MAPPING_COMPLETE' | 'MAPPING_CANCELLED' | 'MAPPING_ERROR';
+export type PortOutboundType =
+  | 'FIELD_ASSIGNED'
+  | 'MAPPING_COMPLETE'
+  | 'MAPPING_CANCELLED'
+  | 'MAPPING_ERROR';
 
 export interface PortInbound {
   type: PortInboundType;

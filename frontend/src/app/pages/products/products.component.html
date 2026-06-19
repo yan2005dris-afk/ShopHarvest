@@ -1,107 +1,130 @@
-<div class="products-container">
-  <div class="header">
-    <h1>Productos</h1>
-    @if (!isLoading) {
-      <span class="count">{{ products.length }} producto{{ products.length !== 1 ? 's' : '' }}</span>
-    }
-  </div>
-
-  <!-- Search -->
-  <div class="search-bar">
-    <input
-      type="text"
-      class="search-input"
-      placeholder="Buscar productos..."
-      [(ngModel)]="searchTerm"
-      (ngModelChange)="filterProducts()"
-    />
+<div class="products">
+  <div class="products-header">
+    <div class="products-header-left">
+      <h1>Products</h1>
+      @if (!isLoading) {
+        <span class="products-count">{{ products.length }}</span>
+      }
+    </div>
+    <div class="products-search">
+      <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+      </svg>
+      <input
+        type="text"
+        class="search-input"
+        placeholder="Search products…"
+        [(ngModel)]="searchTerm"
+        (ngModelChange)="filterProducts()"
+      />
+    </div>
   </div>
 
   <!-- Loading -->
   @if (isLoading) {
-    <div class="loading-state">
-      <div class="spinner"></div>
-      <p>Cargando productos...</p>
+    <div class="products-state">
+      <div class="prd-spinner"></div>
+      <p>Loading products…</p>
     </div>
   }
 
   <!-- Error -->
   @if (error) {
-    <div class="error-state">
-      <p>{{ error }}</p>
-      <button class="btn-secondary" (click)="loadProducts()">Reintentar</button>
+    <div class="products-state">
+      <div class="error-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+      </div>
+      <p class="error-text">{{ error }}</p>
+      <button class="btn-outline" (click)="loadProducts()">Retry</button>
     </div>
   }
 
-  <!-- Empty -->
-  @if (!isLoading && !error && filteredProducts.length === 0 && !searchTerm) {
-    <div class="empty-state">
-      <p>Todavía no hay productos trackeados.</p>
-      <p>Empezá por <a routerLink="/">scrapear una URL</a>.</p>
+  <!-- Empty: no products -->
+  @if (!isLoading && !error && products.length === 0) {
+    <div class="products-state">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-3)">
+        <rect x="2" y="3" width="6" height="6" rx="1"/><rect x="9" y="3" width="6" height="6" rx="1"/><rect x="16" y="3" width="6" height="6" rx="1"/>
+        <rect x="2" y="10" width="6" height="6" rx="1"/><rect x="9" y="10" width="6" height="6" rx="1"/>
+      </svg>
+      <p>No products tracked yet.</p>
+      <a routerLink="/" class="btn-accent-link">Scrape a URL to get started →</a>
     </div>
   }
 
-  @if (!isLoading && !error && filteredProducts.length === 0 && searchTerm) {
-    <div class="empty-state">
-      <p>No se encontraron productos que coincidan con "{{ searchTerm }}"</p>
+  <!-- Empty: no search results -->
+  @if (!isLoading && !error && products.length > 0 && filteredProducts.length === 0 && searchTerm) {
+    <div class="products-state">
+      <p style="color: var(--text-2)">No results for "{{ searchTerm }}"</p>
     </div>
   }
 
-  <!-- Product List -->
-  @if (!isLoading && !error) {
-    <div class="product-list">
+  <!-- Product grid -->
+  @if (!isLoading && !error && filteredProducts.length > 0) {
+    <div class="products-grid">
       @for (product of filteredProducts; track product.id) {
-        <div
-          class="product-card"
-          [class.selected]="selectedProduct?.id === product.id"
-          (click)="selectProduct(product)"
-        >
-          <div class="product-main">
+        <div class="prd-card" [class.prd-card--selected]="selectedProduct?.id === product.id" (click)="selectProduct(product)">
+          <div class="prd-card-main">
             @if (product.imageUrl) {
-              <img [src]="product.imageUrl" alt="" class="product-thumb" />
-            }
-            <div class="product-info">
-              <h3>{{ product.title }}</h3>
-              <div class="product-meta">
-                <span class="product-price">{{ product.currency }} {{ product.price }}</span>
-                @if (product.domainRule) {
-                  <span class="product-domain">{{ product.domainRule.name }}</span>
-                }
-                <span class="product-date">Extraído: {{ product.extractedAt | date:'short' }}</span>
+              <div class="prd-img-wrap">
+                <img [src]="product.imageUrl" alt="" class="prd-img" />
               </div>
+            } @else {
+              <div class="prd-img-placeholder">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+                  <polyline points="21 15 16 10 5 21"/>
+                </svg>
+              </div>
+            }
+            <div class="prd-info">
+              <h3 class="prd-title">{{ product.title }}</h3>
+              <div class="prd-meta">
+                <span class="prd-price">{{ product.currency }} {{ product.price }}</span>
+                @if (product.domainRule) {
+                  <span class="prd-domain">{{ product.domainRule.name }}</span>
+                }
+              </div>
+              <p class="prd-date">{{ product.extractedAt | date:'MMM d, y' }}</p>
+            </div>
+            <div class="prd-chevron" [class.prd-chevron--open]="selectedProduct?.id === product.id">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
             </div>
           </div>
 
-          <!-- Expanded Detail -->
+          <!-- Expanded detail -->
           @if (selectedProduct?.id === product.id) {
-            <div class="product-detail">
-              <h4>Historial de Precios</h4>
+            <div class="prd-detail">
+              <h4 class="prd-detail-title">Price History</h4>
 
               @if (priceHistory.length > 0) {
-                <div class="chart-container">
-                  <canvas id="price-chart" width="600" height="300"></canvas>
+                <div class="chart-wrap">
+                  <canvas id="price-chart" width="600" height="240"></canvas>
                 </div>
 
                 <table class="history-table">
                   <thead>
                     <tr>
-                      <th>Fecha</th>
-                      <th>Precio</th>
-                      <th>Moneda</th>
+                      <th>Date</th>
+                      <th>Price</th>
+                      <th>Currency</th>
                     </tr>
                   </thead>
                   <tbody>
                     @for (entry of priceHistory; track entry.id) {
                       <tr>
                         <td>{{ entry.capturedAt | date:'medium' }}</td>
-                        <td>{{ entry.price | currency:entry.currency:'symbol':'1.2-2' }}</td>
+                        <td class="price-cell">{{ entry.price | currency:entry.currency:'symbol':'1.2-2' }}</td>
                         <td>{{ entry.currency }}</td>
                       </tr>
                     }
                   </tbody>
                 </table>
               } @else {
-                <p class="no-history">Sin historial de precios disponible.</p>
+                <p class="no-history">No price history available yet.</p>
               }
             </div>
           }

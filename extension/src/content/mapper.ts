@@ -1,4 +1,4 @@
-import type { DomainRule, ExtractedProduct, FieldMapping, CanonicalField } from '../types';
+import type { DomainRule, ExtractedProduct, FieldMapping, FieldDefinition } from '../types';
 
 // ── Handshake: announce extension ID to the Angular frontend ──────────────────
 
@@ -26,7 +26,10 @@ let menuEl: HTMLDivElement | null = null;
 let panelEl: HTMLDivElement | null = null;
 let currentTarget: Element | null = null;
 
-// Accumulated field assignments (used in frontend-triggered mode)
+/** Dynamic field definitions received from the popup. */
+let fieldDefs: FieldDefinition[] = [];
+
+/** Accumulated field assignments (used in popup + frontend-triggered modes). */
 const assignedFields: Record<string, FieldMapping> = {};
 let containerSelector: string | null = null;
 
@@ -37,8 +40,15 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
   switch (type) {
     case 'START_MAPPING': {
-      const opts = (payload ?? {}) as { fromFrontend?: boolean };
+      const opts = (payload ?? {}) as {
+        fromFrontend?: boolean;
+        fields?: FieldDefinition[];
+      };
       fromFrontend = opts.fromFrontend ?? false;
+      // Use provided field definitions, or keep current ones
+      if (opts.fields && opts.fields.length > 0) {
+        fieldDefs = opts.fields;
+      }
       startMapping();
       sendResponse({ success: true });
       break;
@@ -140,15 +150,6 @@ function onClick(e: MouseEvent): void {
 
 // ── Floating field-assignment menu ────────────────────────────────────────────
 
-const FIELD_LABELS: Array<{ label: string; field: CanonicalField }> = [
-  { label: 'Title', field: 'title' },
-  { label: 'Price', field: 'price' },
-  { label: 'Image', field: 'imageUrl' },
-  { label: 'SKU', field: 'sku' },
-  { label: 'Currency', field: 'currency' },
-  { label: 'Description', field: 'description' },
-];
-
 function showMenu(x: number, y: number, target: Element): void {
   removeMenu();
 
@@ -180,15 +181,77 @@ function showMenu(x: number, y: number, target: Element): void {
   });
   menuEl.appendChild(label);
 
-  const grid = document.createElement('div');
-  Object.assign(grid.style, { display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '8px' });
+  // Dynamic field buttons from fieldDefs
+  if (fieldDefs.length > 0) {
+    const grid = document.createElement('div');
+    Object.assign(grid.style, { display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '8px' });
 
-  FIELD_LABELS.forEach(({ label: btnLabel, field }) => {
-    const btn = createMenuButton(btnLabel, '#0f3460', () => assignField(field, target));
-    grid.appendChild(btn);
-  });
-  menuEl.appendChild(grid);
+    for (const def of fieldDefs) {
+      const btn = createMenuButton(def.name, '#0f3460', () =>
+        assignField(def.name, target, def.type, def.attribute),
+      );
+      if (assignedFields[def.name]) {
+        btn.textContent = `✓ ${def.name}`;
+        btn.style.border = '1px solid #4caf50';
+      }
+      grid.appendChild(btn);
+    }
+    menuEl.appendChild(grid);
+  } else {
+    // Fallback: allow typing a custom field name on the fly
+    const inputRow = document.createElement('div');
+    Object.assign(inputRow.style, { display: 'flex', gap: '4px', marginBottom: '8px' });
 
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.placeholder = 'Field name…';
+    Object.assign(nameInput.style, {
+      flex: '1',
+      background: '#0d0d1a',
+      border: '1px solid #333',
+      borderRadius: '4px',
+      padding: '5px 8px',
+      color: '#eaeaea',
+      fontSize: '12px',
+      outline: 'none',
+    });
+
+    const addBtn = document.createElement('button');
+    addBtn.textContent = 'Assign';
+    Object.assign(addBtn.style, {
+      background: '#0f3460',
+      color: '#eaeaea',
+      border: 'none',
+      borderRadius: '4px',
+      padding: '5px 10px',
+      cursor: 'pointer',
+      fontSize: '12px',
+    });
+    addBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const name = nameInput.value.trim();
+      if (name) {
+        assignField(name, target, 'text');
+        removeMenu();
+      }
+    });
+    nameInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.stopPropagation();
+        const name = nameInput.value.trim();
+        if (name) {
+          assignField(name, target, 'text');
+          removeMenu();
+        }
+      }
+    });
+
+    inputRow.appendChild(nameInput);
+    inputRow.appendChild(addBtn);
+    menuEl.appendChild(inputRow);
+  }
+
+  // Container button (always available)
   const containerBtn = createMenuButton('Set as Container', '#e94560', () => assignContainer(target));
   Object.assign(containerBtn.style, { width: '100%', marginBottom: '6px' });
   menuEl.appendChild(containerBtn);
@@ -231,16 +294,20 @@ function removeMenu(): void {
   menuEl = null;
 }
 
-function assignField(field: CanonicalField, el: Element): void {
+function assignField(
+  field: string,
+  el: Element,
+  type: FieldMapping['type'],
+  attribute?: string,
+): void {
   const selector = generateSelector(el);
-  const type: FieldMapping['type'] = field === 'imageUrl' ? 'attribute' : 'text';
-  const attribute = field === 'imageUrl' ? 'src' : undefined;
+  const effectiveType = type === 'attribute' && !attribute ? 'text' : type;
 
   const mapping: FieldMapping = {
     canonicalField: field,
     selector,
-    type,
-    ...(attribute ? { attribute } : {}),
+    type: effectiveType,
+    ...(effectiveType === 'attribute' && attribute ? { attribute } : {}),
   };
 
   assignedFields[field] = mapping;
@@ -260,7 +327,11 @@ function assignContainer(el: Element): void {
 
   chrome.runtime.sendMessage({
     type: 'FIELD_ASSIGNED',
-    payload: { canonicalField: 'container', selector, type: 'text' } satisfies FieldMapping,
+    payload: {
+      canonicalField: 'container',
+      selector,
+      type: 'text',
+    } satisfies FieldMapping,
   });
 
   if (fromFrontend) updatePanel();
@@ -268,8 +339,6 @@ function assignContainer(el: Element): void {
 }
 
 // ── "Done Mapping" panel (frontend-triggered mode only) ───────────────────────
-
-const REQUIRED_FIELDS: CanonicalField[] = ['title', 'price'];
 
 function showPanel(): void {
   if (panelEl) return;
@@ -311,34 +380,25 @@ function renderPanel(): void {
   });
   panelEl.appendChild(title);
 
-  const allFields: CanonicalField[] = ['title', 'price', 'imageUrl', 'sku', 'currency', 'description'];
-  allFields.forEach((field) => {
+  // Dynamic fields from fieldDefs
+  for (const def of fieldDefs) {
     const row = document.createElement('div');
     Object.assign(row.style, { display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' });
 
     const dot = document.createElement('span');
-    dot.textContent = assignedFields[field] ? '✓' : '○';
-    dot.style.color = assignedFields[field] ? '#4caf50' : '#555';
+    const assigned = assignedFields[def.name];
+    dot.textContent = assigned ? '✓' : '○';
+    dot.style.color = assigned ? '#4caf50' : '#555';
     dot.style.width = '14px';
 
     const name = document.createElement('span');
-    name.textContent = field;
-    name.style.color = assignedFields[field] ? '#eaeaea' : '#666';
+    name.textContent = def.name;
+    name.style.color = assigned ? '#eaeaea' : '#666';
 
-    if (REQUIRED_FIELDS.includes(field) && !assignedFields[field]) {
-      const req = document.createElement('span');
-      req.textContent = '*';
-      req.style.color = '#e94560';
-      row.appendChild(dot);
-      row.appendChild(name);
-      row.appendChild(req);
-    } else {
-      row.appendChild(dot);
-      row.appendChild(name);
-    }
-
+    row.appendChild(dot);
+    row.appendChild(name);
     panelEl!.appendChild(row);
-  });
+  }
 
   // Container
   const containerRow = document.createElement('div');
@@ -358,7 +418,9 @@ function renderPanel(): void {
   Object.assign(separator.style, { border: 'none', borderTop: '1px solid #0f3460', margin: '10px 0' });
   panelEl.appendChild(separator);
 
-  const canFinish = REQUIRED_FIELDS.every((f) => assignedFields[f]) && !!containerSelector;
+  // Can finish if container + at least one field assigned
+  const hasFields = Object.keys(assignedFields).length > 0;
+  const canFinish = hasFields && !!containerSelector;
 
   const finishBtn = document.createElement('button');
   finishBtn.textContent = 'Finish Mapping';
@@ -411,11 +473,21 @@ function removePanel(): void {
 }
 
 function finishMapping(): void {
+  // Extraer productos usando los selectores elegidos
+  const products = extractProducts({
+    domain: location.hostname,
+    containerSelector: containerSelector ?? '',
+    fieldMappings: Object.values(assignedFields),
+    createdAt: 0,
+    updatedAt: 0,
+  } as DomainRule);
+
   const payload = {
     fieldMappings: Object.values(assignedFields),
     containerSelector,
     domain: location.hostname,
     pageTitle: document.title,
+    products,
   };
   chrome.runtime.sendMessage({ type: 'MAPPING_COMPLETE', payload });
   stopMapping();
@@ -430,50 +502,100 @@ function cancelMapping(): void {
 
 function generateSelector(el: Element): string {
   if (el.id) return `#${CSS.escape(el.id)}`;
+
   const path: string[] = [];
   let current: Element | null = el;
-  while (current && current !== document.body) {
+  let depth = 0;
+  const MAX_DEPTH = 4;
+
+  while (current && current !== document.body && current !== document.documentElement && depth < MAX_DEPTH) {
     const tag = current.tagName.toLowerCase();
-    const parentEl: Element | null = current.parentElement;
-    if (parentEl) {
-      const siblings = Array.from(parentEl.children).filter((c: Element) => c.tagName === current!.tagName);
-      const index = siblings.indexOf(current) + 1;
-      path.unshift(siblings.length > 1 ? `${tag}:nth-child(${index})` : tag);
-    } else {
-      path.unshift(tag);
+    const parent = current.parentElement;
+
+    const meaningfulClasses = Array.from(current.classList).filter(
+      (c) => typeof c === 'string' && c.length > 1 && !c.startsWith('_'),
+    );
+
+    let segment = tag;
+    if (meaningfulClasses.length > 0) {
+      const topClasses = meaningfulClasses.slice(0, 2);
+      segment += topClasses.map((c) => `.${CSS.escape(c)}`).join('');
+    } else if (parent) {
+      const sameTagSiblings = Array.from(parent.children).filter(
+        (c: Element) => c.tagName === current!.tagName,
+      );
+      const index = sameTagSiblings.indexOf(current) + 1;
+      if (sameTagSiblings.length > 1) {
+        segment += `:nth-child(${index})`;
+      }
     }
-    current = parentEl;
+
+    if (parent?.id) {
+      path.unshift(segment);
+      return `#${CSS.escape(parent.id)} > ${path.join(' > ')}`;
+    }
+
+    path.unshift(segment);
+    current = parent;
+    depth++;
   }
+
   return path.join(' > ');
 }
 
-// ── Extraction ────────────────────────────────────────────────────────────────
+// ── Extraction helpers ────────────────────────────────────────────────────────
+
+function extractFieldsFrom(
+  root: Element,
+  mappings: FieldMapping[],
+): ExtractedProduct | null {
+  const product: ExtractedProduct = {};
+  for (const mapping of mappings) {
+    const el = root.querySelector(mapping.selector);
+    if (!el) continue;
+
+    if (mapping.type === 'text') {
+      product[mapping.canonicalField] = el.textContent?.trim() ?? null;
+    } else if (mapping.type === 'attribute') {
+      product[mapping.canonicalField] = el.getAttribute(mapping.attribute ?? '') ?? null;
+    } else if (mapping.type === 'html') {
+      product[mapping.canonicalField] = el.innerHTML?.trim() ?? null;
+    }
+
+    // Price parsing (only if field looks like a price)
+    if (typeof product[mapping.canonicalField] === 'string') {
+      const raw = product[mapping.canonicalField] as string;
+      const parsed = parseFloat(raw.replace(/[^0-9.]/g, '') ?? '');
+      if (!isNaN(parsed)) {
+        product[mapping.canonicalField] = parsed;
+      }
+    }
+  }
+  const hasValue = Object.values(product).some((v) => v !== null && v !== undefined);
+  return hasValue ? product : null;
+}
 
 function extractProducts(rule: DomainRule): ExtractedProduct[] {
   const containers = document.querySelectorAll(rule.containerSelector);
   const products: ExtractedProduct[] = [];
 
   containers.forEach(container => {
-    const product: ExtractedProduct = {};
-    for (const mapping of rule.fieldMappings) {
-      const el = container.querySelector(mapping.selector);
-      if (!el) continue;
+    // If the container has children that themselves have children, treat each
+    // child as a product item (list-wrapper pattern, e.g. a grid of cards).
+    const items = Array.from(container.children).filter(
+      (child) => child.children.length > 0,
+    );
 
-      if (mapping.type === 'text') {
-        product[mapping.canonicalField] = el.textContent?.trim() ?? null;
-      } else if (mapping.type === 'attribute') {
-        product[mapping.canonicalField] = el.getAttribute(mapping.attribute ?? '') ?? null;
-      } else if (mapping.type === 'html') {
-        product[mapping.canonicalField] = el.innerHTML?.trim() ?? null;
+    if (items.length > 0) {
+      for (const item of items) {
+        const p = extractFieldsFrom(item, rule.fieldMappings);
+        if (p) products.push(p);
       }
-
-      if (mapping.canonicalField === 'price') {
-        const raw = product[mapping.canonicalField] as string;
-        const parsed = parseFloat(raw?.replace(/[^0-9.]/g, '') ?? '');
-        product[mapping.canonicalField] = isNaN(parsed) ? null : parsed;
-      }
+    } else {
+      // Direct product pattern — the container IS the product
+      const p = extractFieldsFrom(container, rule.fieldMappings);
+      if (p) products.push(p);
     }
-    if (product['title'] || product['price']) products.push(product);
   });
 
   return products;

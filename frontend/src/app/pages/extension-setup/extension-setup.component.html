@@ -1,0 +1,110 @@
+<div class="setup">
+  <div class="setup-hero">
+    <div class="setup-hero-icon">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"/><line x1="16" y1="8" x2="2" y2="22"/><line x1="17.5" y1="15" x2="9" y2="15"/>
+      </svg>
+    </div>
+    <h1>Visual Scraper Extension</h1>
+    <p class="setup-subtitle">Install the extension to map and extract data visually</p>
+  </div>
+
+  @if (!extensionBuilt) {
+    <div class="setup-alert setup-alert--warn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="m10.29 3.86-8.22 14.22A2 2 0 0 0 3.78 21h16.44a2 2 0 0 0 1.71-3l-8.22-14.22a2 2 0 0 0-3.42 0z"/>
+        <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+      </svg>
+      <div>
+        <strong>Extension not packaged yet</strong>
+        <p>Run <code>pnpm package:extension</code> at the repo root to generate the zip files.</p>
+      </div>
+    </div>
+  }
+
+  @if (detected) {
+    <div class="setup-detected">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+      <span>Detected browser: <strong>{{ detected.label }}</strong></span>
+    </div>
+
+    <div class="setup-actions">
+      <button class="btn-accent-lg" (click)="downloadExtension()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Download extension ({{ detected.size }})
+      </button>
+      <button class="btn-outline-lg" (click)="openConfigUrl()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>
+        </svg>
+        Open {{ detected.label }} extensions
+      </button>
+    </div>
+
+    <details class="setup-other">
+      <summary>Using a different browser?</summary>
+      <div class="setup-browser-grid">
+        @for (b of browsers; track b.browser) {
+          <button
+            class="setup-browser-btn"
+            [class.setup-browser-btn--active]="selected?.browser === b.browser"
+            (click)="selectBrowser(b.browser)"
+          >
+            {{ b.label }}
+          </button>
+        }
+      </div>
+    </details>
+
+    @if (selected) {
+      <div class="setup-steps-card">
+        <h3>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
+            <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+          </svg>
+          Installation steps
+        </h3>
+        <ol class="setup-steps">
+          @for (step of getSteps(selected.browser); track step.number) {
+            <li>
+              <span class="step-num">{{ step.number }}</span>
+              <span>{{ step.text }}</span>
+            </li>
+          }
+        </ol>
+      </div>
+
+      <div class="setup-tips-card">
+        <h3>Tips for {{ selected.label }}</h3>
+        @if (selected.browser === 'firefox') {
+          <p>The extension loads temporarily — it won't survive a browser restart.</p>
+          <p>For permanent install, sign it through
+            <a [href]="selected.docsUrl" target="_blank" rel="noopener">Firefox Add-ons</a>.
+          </p>
+        } @else if (selected.browser === 'safari') {
+          <p>Xcode is required to build the Safari native wrapper.</p>
+          <p>See <a [href]="selected.docsUrl" target="_blank" rel="noopener">Apple's guide</a> for details.</p>
+        } @else {
+          <p>Developer mode must be enabled — Chrome blocks unsigned extensions without it.</p>
+          <p>For permanent distribution, package as <code>.crx</code> or publish to the
+            <a [href]="selected.docsUrl" target="_blank" rel="noopener">Chrome Web Store</a>.
+          </p>
+        }
+      </div>
+    }
+
+    <div class="setup-verify-card">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+      <p>Extension already installed?
+        <a routerLink="/">Go to Visual Mapper</a> to start scraping.
+      </p>
+    </div>
+  }
+</div>

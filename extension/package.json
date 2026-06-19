@@ -4,6 +4,11 @@
   "private": true,
   "scripts": {
     "build": "node_modules/.bin/vite build",
+    "build:chrome": "BROWSER=chrome node_modules/.bin/vite build",
+    "build:firefox": "BROWSER=firefox node_modules/.bin/vite build",
+    "build:edge": "BROWSER=edge node_modules/.bin/vite build",
+    "build:safari": "BROWSER=safari node_modules/.bin/vite build",
+    "package": "npx tsx scripts/package.ts",
     "dev": "node_modules/.bin/vite build --watch"
   },
   "devDependencies": {

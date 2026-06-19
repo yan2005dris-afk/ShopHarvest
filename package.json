@@ -13,6 +13,12 @@
     "prisma:generate": "pnpm --filter backend prisma generate",
     "prisma:push": "pnpm --filter backend prisma db push",
     "prisma:migrate": "pnpm --filter backend prisma migrate dev",
+    "build:extension": "pnpm --filter visual-scraper-extension build",
+    "build:extension:chrome": "BROWSER=chrome pnpm --filter visual-scraper-extension build",
+    "build:extension:firefox": "BROWSER=firefox pnpm --filter visual-scraper-extension build",
+    "build:extension:edge": "BROWSER=edge pnpm --filter visual-scraper-extension build",
+    "build:extension:safari": "BROWSER=safari pnpm --filter visual-scraper-extension build",
+    "package:extension": "pnpm --filter visual-scraper-extension package",
     "docker:up": "docker compose up -d --build",
     "docker:down": "docker compose down",
     "docker:logs": "docker compose logs -f"

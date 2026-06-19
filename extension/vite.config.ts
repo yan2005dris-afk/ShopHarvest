@@ -1,6 +1,6 @@
 import { defineConfig, type Plugin } from 'vite';
 import { resolve } from 'path';
-import { renameSync, existsSync, mkdirSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, renameSync } from 'fs';
 
 /**
  * Moves the HTML output from its mirrored source path to the dist root.
@@ -10,8 +10,8 @@ function flattenHtmlPlugin(): Plugin {
   return {
     name: 'flatten-html',
     closeBundle() {
-      const nested = resolve(__dirname, 'dist/src/popup/popup.html');
-      const flat = resolve(__dirname, 'dist/popup.html');
+      const nested = resolve(__dirname, `${outDir}/src/popup/popup.html`);
+      const flat = resolve(__dirname, `${outDir}/popup.html`);
       if (existsSync(nested)) {
         renameSync(nested, flat);
       }
@@ -19,11 +19,96 @@ function flattenHtmlPlugin(): Plugin {
   };
 }
 
+/**
+ * Generates browser-specific manifest.json based on the BROWSER env var.
+ *
+ *   BROWSER=chrome  → Chrome MV3 manifest (+ externally_connectable)
+ *   BROWSER=firefox → Firefox MV3 manifest (+ browser_specific_settings)
+ *   BROWSER=edge    → Edge (Chromium, same as Chrome)
+ *   BROWSER=opera   → Opera (Chromium, same as Chrome)
+ *   BROWSER=brave   → Brave (Chromium, same as Chrome)
+ *   BROWSER=safari  → Safari (no externally_connectable)
+ *
+ * Defaults to Chrome if BROWSER is unset.
+ */
+function generateManifestPlugin(): Plugin {
+  type Manifest = Record<string, unknown>;
+
+  interface BrowserPatch {
+    patch: Partial<Manifest>;
+    remove: string[];
+  }
+
+  const patches: Record<string, BrowserPatch> = {
+    chrome: {
+      patch: {
+        background: { service_worker: 'background.js', type: 'module' },
+        externally_connectable: {
+          matches: ['http://localhost:8080/*', 'http://localhost:4200/*'],
+        },
+        minimum_chrome_version: '112',
+      },
+      remove: [],
+    },
+    firefox: {
+      patch: {
+        background: { scripts: ['background.js'] },
+        browser_specific_settings: {
+          gecko: {
+            id: '{b7cdf983-8415-7235-dc7b-95b7dcb7b2ca}',
+            strict_min_version: '112.0',
+          },
+        },
+      },
+      remove: ['externally_connectable', 'minimum_chrome_version'],
+    },
+    safari: {
+      patch: {
+        background: { scripts: ['background.js'] },
+      },
+      remove: ['externally_connectable', 'minimum_chrome_version'],
+    },
+  };
+
+  // Chromium-based browsers share Chrome config
+  for (const name of ['edge', 'opera', 'brave', 'chromium']) {
+    patches[name] = patches.chrome;
+  }
+
+  return {
+    name: 'generate-manifest',
+    closeBundle() {
+      const browser = (process.env.BROWSER || 'chrome').toLowerCase();
+      const basePath = resolve(__dirname, 'manifest.json');
+      const distDir = resolve(__dirname, outDir);
+
+      const base = JSON.parse(readFileSync(basePath, 'utf-8')) as Manifest;
+      const config = patches[browser] ?? patches.chrome;
+
+      // Merge patches
+      const manifest: Manifest = { ...base, ...config.patch };
+      // Remove keys that don't apply
+      for (const key of config.remove) {
+        delete manifest[key];
+      }
+
+      if (!existsSync(distDir)) mkdirSync(distDir, { recursive: true });
+      writeFileSync(
+        resolve(distDir, 'manifest.json'),
+        JSON.stringify(manifest, null, 2) + '\n',
+      );
+      console.log(`  ✅ manifest.json generated for ${browser}`);
+    },
+  };
+}
+
+const outDir = process.env.EXTENSION_DIST || 'dist';
+
 export default defineConfig({
   publicDir: 'public',
-  plugins: [flattenHtmlPlugin()],
+  plugins: [flattenHtmlPlugin(), generateManifestPlugin()],
   build: {
-    outDir: 'dist',
+    outDir,
     emptyOutDir: true,
     rollupOptions: {
       input: {

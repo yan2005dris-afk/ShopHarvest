@@ -111,8 +111,14 @@ export class ProductsComponent implements OnInit {
     // Clear
     ctx.clearRect(0, 0, width, height);
 
+    // Read theme colors at render time so dark/light switch is reflected
+    const computedStyle = getComputedStyle(document.documentElement);
+    const colorBorder = computedStyle.getPropertyValue('--border').trim() || '#252b45';
+    const colorText3 = computedStyle.getPropertyValue('--text-3').trim() || '#4d5a7a';
+    const colorAccent = computedStyle.getPropertyValue('--accent').trim() || '#7c6fcd';
+
     // Grid lines
-    ctx.strokeStyle = '#e0e0e0';
+    ctx.strokeStyle = colorBorder;
     ctx.lineWidth = 1;
     for (let i = 0; i <= 4; i++) {
       const y = padding.top + (chartH / 4) * i;
@@ -123,7 +129,7 @@ export class ProductsComponent implements OnInit {
 
       // Y-axis labels
       const val = maxPrice - (priceRange / 4) * i;
-      ctx.fillStyle = '#666';
+      ctx.fillStyle = colorText3;
       ctx.font = '12px sans-serif';
       ctx.textAlign = 'right';
       ctx.fillText(val.toFixed(2), padding.left - 8, y + 4);
@@ -134,13 +140,13 @@ export class ProductsComponent implements OnInit {
       // Single point — draw a dot
       const x = padding.left + chartW / 2;
       const y = padding.top + chartH - ((prices[0] - minPrice) / priceRange) * chartH;
-      ctx.fillStyle = '#007bff';
+      ctx.fillStyle = colorAccent;
       ctx.beginPath();
       ctx.arc(x, y, 5, 0, Math.PI * 2);
       ctx.fill();
     } else {
       // Multiple points — draw line
-      ctx.strokeStyle = '#007bff';
+      ctx.strokeStyle = colorAccent;
       ctx.lineWidth = 2;
       ctx.beginPath();
 
@@ -157,7 +163,7 @@ export class ProductsComponent implements OnInit {
       sorted.forEach((h, i) => {
         const x = padding.left + (i / (sorted.length - 1)) * chartW;
         const y = padding.top + chartH - ((Number(h.price) - minPrice) / priceRange) * chartH;
-        ctx.fillStyle = '#007bff';
+        ctx.fillStyle = colorAccent;
         ctx.beginPath();
         ctx.arc(x, y, 3, 0, Math.PI * 2);
         ctx.fill();
@@ -165,7 +171,7 @@ export class ProductsComponent implements OnInit {
     }
 
     // X-axis title
-    ctx.fillStyle = '#666';
+    ctx.fillStyle = colorText3;
     ctx.font = '12px sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('Fecha', width / 2, height - 5);

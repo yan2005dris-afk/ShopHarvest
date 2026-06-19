@@ -49,11 +49,24 @@ export class VisualMapperComponent implements OnInit, OnDestroy {
   // Container
   containerSelector: string | null = null;
 
+  // Products extracted by extension
+  extractedProducts: Record<string, string | number | null>[] = [];
+
   // Page info
   pageTitle: string | null = null;
 
   // Error
   errorMessage = '';
+
+  // ── Independent save states ───────────────────────
+  /** True after Save Domain Rule succeeds */
+  domainRuleSaved = false;
+  /** True after Save Products succeeds */
+  productsIngested = false;
+  /** Loading state for products ingest */
+  savingProducts = false;
+  /** Error from products ingest (rule can succeed, products can fail) */
+  ingestError = '';
 
   constructor(
     private readonly apiService: ApiService,
@@ -147,13 +160,14 @@ export class VisualMapperComponent implements OnInit, OnDestroy {
 
   private applyExtensionResult(payload: MappingCompletePayload): void {
     this.fieldMappings = payload.fieldMappings.map((m) => ({
-      canonicalField: m.canonicalField as FieldMapping['canonicalField'],
+      canonicalField: m.canonicalField,
       selector: m.selector,
       type: m.type,
       ...(m.attribute ? { attribute: m.attribute } : {}),
     }));
     this.containerSelector = payload.containerSelector;
     this.pageTitle = payload.pageTitle;
+    this.extractedProducts = payload.products ?? [];
     this.currentState = 'mapping';
     this.cdr.markForCheck();
   }
@@ -186,16 +200,17 @@ export class VisualMapperComponent implements OnInit, OnDestroy {
     return this.fieldMappings.length;
   }
 
+  get totalFieldCount(): number {
+    return this.fieldMappings.length;
+  }
+
   get isSaveEnabled(): boolean {
-    return (
-      this.isFieldMapped('title') &&
-      this.isFieldMapped('price') &&
-      !!this.containerSelector
-    );
+    return this.fieldMappings.length > 0 && !!this.containerSelector;
   }
 
   // ─── Save Domain Rule ─────────────────────────────────────
 
+  /** Saves ONLY the domain rule (no products) */
   saveRule(): void {
     if (!this.isSaveEnabled || !this.url.trim()) return;
 
@@ -223,6 +238,7 @@ export class VisualMapperComponent implements OnInit, OnDestroy {
 
     saveOp.subscribe({
       next: () => {
+        this.domainRuleSaved = true;
         this.currentState = 'done';
         this.cdr.markForCheck();
       },
@@ -237,6 +253,32 @@ export class VisualMapperComponent implements OnInit, OnDestroy {
     });
   }
 
+  /** Saves ONLY the extracted products (separate from domain rule) */
+  saveProducts(): void {
+    if (this.extractedProducts.length === 0 || !this.url.trim()) return;
+
+    this.savingProducts = true;
+    this.ingestError = '';
+    this.cdr.markForCheck();
+
+    const hostname = this.extractHostname(this.url);
+
+    this.apiService.ingestProducts(hostname, this.url, this.extractedProducts as Record<string, unknown>[])
+      .subscribe({
+        next: () => {
+          this.productsIngested = true;
+          this.savingProducts = false;
+          this.currentState = 'done';
+          this.cdr.markForCheck();
+        },
+        error: (err) => {
+          this.ingestError = `Failed to ingest products: ${err.message ?? err}`;
+          this.savingProducts = false;
+          this.cdr.markForCheck();
+        },
+      });
+  }
+
   // ─── Utils ────────────────────────────────────────────────
 
   private extractHostname(url: string): string {
@@ -247,6 +289,12 @@ export class VisualMapperComponent implements OnInit, OnDestroy {
     }
   }
 
+  // ─── Template helpers ─────────────────────────────────────
+
+  isUrlValue(value: unknown): boolean {
+    return String(value ?? '').startsWith('http');
+  }
+
   // ─── Reset ────────────────────────────────────────────────
 
   tryAgain(): void {
@@ -254,6 +302,11 @@ export class VisualMapperComponent implements OnInit, OnDestroy {
     this.errorMessage = '';
     this.fieldMappings = [];
     this.containerSelector = null;
+    this.extractedProducts = [];
+    this.domainRuleSaved = false;
+    this.productsIngested = false;
+    this.savingProducts = false;
+    this.ingestError = '';
     this.cdr.markForCheck();
   }
 }

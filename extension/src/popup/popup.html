@@ -17,6 +17,19 @@
       <div id="rule-status" class="rule-status hidden">
         <span class="status-dot"></span> Rule saved
       </div>
+
+      <!-- Field definitions -->
+      <div class="section">
+        <div class="section-header">
+          <span>Fields</span>
+          <button id="btn-add-field" class="btn-small">+ Add Field</button>
+        </div>
+        <p class="hint">Define the fields you want to scrape, then click <strong>Start Mapping</strong>.</p>
+        <div id="field-defs-list" class="field-defs-list">
+          <!-- Dynamic field definition rows rendered by popup.ts -->
+        </div>
+      </div>
+
       <div class="actions">
         <button id="btn-start-mapping" class="btn btn-primary">Start Mapping</button>
         <button id="btn-extract" class="btn btn-secondary">Extract Data</button>
@@ -37,30 +50,7 @@
           <span class="field-name">Container</span>
           <span class="field-selector" id="field-container">not set</span>
         </div>
-        <div class="field-row required" data-field="title">
-          <span class="field-name">Title <em>*</em></span>
-          <span class="field-selector" id="field-title">not set</span>
-        </div>
-        <div class="field-row required" data-field="price">
-          <span class="field-name">Price <em>*</em></span>
-          <span class="field-selector" id="field-price">not set</span>
-        </div>
-        <div class="field-row" data-field="imageUrl">
-          <span class="field-name">Image URL</span>
-          <span class="field-selector" id="field-imageUrl">not set</span>
-        </div>
-        <div class="field-row" data-field="sku">
-          <span class="field-name">SKU</span>
-          <span class="field-selector" id="field-sku">not set</span>
-        </div>
-        <div class="field-row" data-field="currency">
-          <span class="field-name">Currency</span>
-          <span class="field-selector" id="field-currency">not set</span>
-        </div>
-        <div class="field-row" data-field="description">
-          <span class="field-name">Description</span>
-          <span class="field-selector" id="field-description">not set</span>
-        </div>
+        <!-- Dynamic field rows rendered by popup.ts -->
       </div>
       <div class="actions">
         <button id="btn-save-rule" class="btn btn-primary" disabled>Save Rule</button>
@@ -68,7 +58,7 @@
       </div>
     </div>
 
-    <!-- Data view -->
+    <!-- Data view (unchanged) -->
     <div id="view-data" class="view hidden">
       <div class="header">
         <h1>Extracted Data</h1>

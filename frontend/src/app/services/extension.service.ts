@@ -13,6 +13,7 @@ export interface MappingCompletePayload {
   containerSelector: string | null;
   domain: string;
   pageTitle: string;
+  products: Record<string, string | number | null>[];
 }
 
 export type ExtensionEvent =

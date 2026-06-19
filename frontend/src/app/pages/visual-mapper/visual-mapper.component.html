@@ -1,163 +1,251 @@
-<div class="visual-mapper-container">
-  <!-- ═══ Header ═══ -->
-  <header class="mapper-header">
-    <h1>Web Scraper</h1>
-    <p class="subtitle">Enter a store URL, map the fields with the extension, then save the rule</p>
-  </header>
+<div class="vm">
 
-  <!-- ═══ IDLE: URL Input ═══ -->
+  <!-- ═══ IDLE ═══ -->
   @if (currentState === 'idle') {
-    <div class="idle-section">
-      <div class="url-input-group">
-        <label for="url-input" class="input-label">Store URL</label>
-        <div class="url-row">
+    <div class="vm-hero">
+      <div class="vm-hero-icon">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          <line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/>
+        </svg>
+      </div>
+      <h1 class="vm-hero-title">Map a new store</h1>
+      <p class="vm-hero-sub">Enter a URL, then click elements in the extension to assign fields</p>
+
+      <div class="vm-input-card">
+        <label class="vm-label" for="url-input">Store URL</label>
+        <div class="vm-url-row">
           <input
             id="url-input"
             type="url"
-            class="form-input url-input"
+            class="vm-input"
             [(ngModel)]="url"
-            placeholder="https://example.com/products"
+            placeholder="https://store.example.com/products"
             autofocus
           />
-          <button class="btn-primary" (click)="openExtensionMapper()" [disabled]="!extensionAvailable">
-            {{ extensionAvailable ? 'Open in Extension' : 'Extension not detected' }}
+          <button
+            class="btn-accent"
+            (click)="openExtensionMapper()"
+            [disabled]="!extensionAvailable"
+          >
+            @if (extensionAvailable) {
+              Open Mapper
+            } @else {
+              Not detected
+            }
           </button>
         </div>
         @if (urlValidationError) {
-          <p class="validation-error">{{ urlValidationError }}</p>
+          <p class="vm-validation-error">{{ urlValidationError }}</p>
         }
         @if (!extensionAvailable) {
-          <p class="extension-hint">
-            Install the Visual Scraper extension and reload the page to map fields directly on the live site.
+          <p class="vm-hint">
+            <a routerLink="/setup" class="vm-hint-link">Install the extension</a> to map fields visually.
           </p>
         }
       </div>
+
       @if (domains.length > 0) {
-        <div class="saved-rules">
-          <p class="section-label">Saved domain rules</p>
-          <ul class="domain-list">
+        <div class="vm-saved">
+          <p class="vm-saved-label">Saved domains</p>
+          <div class="vm-chips">
             @for (d of domains; track d.id) {
-              <li class="domain-item">{{ d.domain }}</li>
+              <span class="vm-chip">{{ d.domain }}</span>
             }
-          </ul>
+          </div>
         </div>
       }
     </div>
   }
 
-  <!-- ═══ EXTENSION-MAPPING: Waiting for extension ═══ -->
+  <!-- ═══ EXTENSION-MAPPING ═══ -->
   @if (currentState === 'extension-mapping') {
-    <div class="fetching-section">
-      <div class="spinner-container">
-        <div class="spinner-lg"></div>
-        <p class="fetching-text">Extension tab is open</p>
-        <p class="fetching-hint">Click elements on the page to assign fields, then click "Finish Mapping"</p>
-        <button class="btn-secondary" style="margin-top: 16px" (click)="cancelExtensionMapping()">Cancel</button>
+    <div class="vm-centered">
+      <div class="vm-status-card">
+        <div class="vm-pulse">
+          <div class="vm-pulse-ring"></div>
+          <div class="vm-pulse-dot"></div>
+        </div>
+        <p class="vm-status-title">Extension tab is open</p>
+        <p class="vm-status-sub">Click elements on the page to assign fields, then click "Finish Mapping"</p>
+        <button class="btn-ghost" (click)="cancelExtensionMapping()">Cancel</button>
       </div>
     </div>
   }
 
-  <!-- ═══ MAPPING: Review field mappings from extension ═══ -->
+  <!-- ═══ MAPPING ═══ -->
   @if (currentState === 'mapping') {
-    <div class="mapper-layout">
-      <aside class="mapper-sidebar">
-        <h2 class="sidebar-title">Field Mappings</h2>
-        @if (pageTitle) {
-          <p class="sidebar-page">{{ pageTitle }}</p>
-        }
+    <div class="vm-split">
+      <aside class="vm-sidebar">
+        <div class="vm-sidebar-top">
+          <h2 class="vm-sidebar-title">Field Mappings</h2>
+          @if (pageTitle) {
+            <p class="vm-page-label">{{ pageTitle }}</p>
+          }
+          <div class="vm-progress-bar-track">
+            <div class="vm-progress-bar-fill" [style.width.%]="totalFieldCount > 0 ? 100 : 0"></div>
+          </div>
+          <p class="vm-progress-text">{{ mappedFieldsCount }} field(s) mapped</p>
+        </div>
 
-        <div class="fields-list">
-          @for (field of [  { key: 'title', label: 'Title', required: true },
-                            { key: 'price', label: 'Price', required: true },
-                            { key: 'imageUrl', label: 'Image URL', required: false },
-                            { key: 'sku', label: 'SKU', required: false },
-                            { key: 'currency', label: 'Currency', required: false },
-                            { key: 'description', label: 'Description', required: false },
-                            { key: 'category', label: 'Category', required: false } ]; track field.key) {
-            @let mapping = getFieldMapping(field.key);
-            <div class="field-entry"
-                 [class.field-assigned]="!!mapping"
-                 [class.field-required]="field.required && !mapping">
-              <div class="field-header">
-                <span class="field-indicator" [class.indicator-assigned]="!!mapping">
-                  {{ mapping ? '✓' : field.required ? '*' : '' }}
-                </span>
-                <span class="field-label">{{ field.label }}</span>
-                @if (field.required) {
-                  <span class="field-required-badge">required</span>
-                }
+        <div class="vm-fields-list">
+          @for (mapping of fieldMappings; track mapping.canonicalField) {
+            <div class="vm-field vm-field--ok">
+              <div class="vm-field-row">
+                <span class="vm-field-dot dot--ok"></span>
+                <span class="vm-field-name">{{ mapping.canonicalField }}</span>
+                <button class="vm-remove-btn" (click)="removeAssignment(mapping.canonicalField)" title="Remove">×</button>
               </div>
-              @if (mapping) {
-                <div class="field-selector-chip">
-                  <code class="selector-text">{{ mapping.selector }}</code>
-                  <button class="chip-remove" (click)="removeAssignment(field.key)" title="Remove">&times;</button>
-                </div>
-              } @else {
-                <span class="field-pending">pending — map this in the extension</span>
-              }
+              <div class="vm-selector">
+                <code class="vm-selector-text">{{ mapping.selector }}</code>
+              </div>
             </div>
           }
         </div>
 
-        <!-- Container -->
-        <div class="container-section">
-          <h3 class="sidebar-subtitle">Container</h3>
+        <div class="vm-container-block">
+          <p class="vm-section-label">Container</p>
           @if (containerSelector) {
-            <div class="field-entry field-assigned">
-              <div class="field-header">
-                <span class="field-indicator indicator-assigned">✓</span>
-                <span class="field-label">Product Container</span>
+            <div class="vm-field vm-field--ok">
+              <div class="vm-field-row">
+                <span class="vm-field-dot dot--ok"></span>
+                <span class="vm-field-name">Product Container</span>
               </div>
-              <div class="field-selector-chip">
-                <code class="selector-text">{{ containerSelector }}</code>
+              <div class="vm-selector">
+                <code class="vm-selector-text">{{ containerSelector }}</code>
               </div>
             </div>
           } @else {
-            <p class="sidebar-hint">No container set — map it in the extension</p>
+            <p class="vm-pending">No container — map it in the extension</p>
           }
         </div>
 
-        <!-- Save -->
-        <button class="btn-primary btn-save"
-                [class.btn-disabled]="!isSaveEnabled"
-                [disabled]="!isSaveEnabled"
-                (click)="saveRule()">
-          Save Rule
-        </button>
-        @if (!isSaveEnabled) {
-          <p class="save-hint">Map title, price, and container to save the rule</p>
-        }
+        <div class="vm-sidebar-actions">
+          <button class="btn-accent btn-full"
+                  [disabled]="!isSaveEnabled || domainRuleSaved"
+                  (click)="saveRule()">
+            @if (domainRuleSaved) { ✓ Saved } @else { Save Domain Rule }
+          </button>
+
+          <button class="btn-accent btn-full"
+                  [disabled]="extractedProducts.length === 0 || productsIngested"
+                  (click)="saveProducts()">
+            @if (savingProducts) {
+              Saving…
+            } @else if (productsIngested) {
+              ✓ Products ingested
+            } @else {
+              Save Products ({{ extractedProducts.length }})
+            }
+          </button>
+
+          @if (!isSaveEnabled) {
+            <p class="vm-save-hint">Map at least one field and a container</p>
+          }
+          @if (ingestError) {
+            <p class="vm-validation-error">{{ ingestError }}</p>
+          }
+        </div>
       </aside>
 
-      <main class="mapper-preview">
-        <div class="preview-empty">
-          <p>✓ Mapping received from extension</p>
-          <p class="preview-sub">Review the fields on the left and save the rule</p>
-        </div>
+      <main class="vm-preview">
+        @if (extractedProducts.length > 0) {
+          <div class="vm-products-panel">
+            <div class="vm-panel-header">
+              <h3>{{ extractedProducts.length }} product(s) extracted</h3>
+            </div>
+            <div class="vm-product-cards">
+              @for (prod of extractedProducts; track $index) {
+                <div class="vm-product-card">
+                  @for (field of fieldMappings; track field.canonicalField) {
+                    <div class="vm-prod-field">
+                      <span class="vm-prod-label">{{ field.canonicalField }}</span>
+                      <span class="vm-prod-value">
+                        @if (field.type === 'attribute' && field.attribute === 'src') {
+                          <img [src]="prod[field.canonicalField]" alt="" class="vm-prod-img" />
+                        } @else if (isUrlValue(prod[field.canonicalField])) {
+                          <span title="{{ prod[field.canonicalField] }}">{{ prod[field.canonicalField] }}</span>
+                        } @else {
+                          {{ prod[field.canonicalField] }}
+                        }
+                      </span>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        } @else {
+          <div class="vm-preview-msg">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            <p>Mapping received from extension</p>
+
+            <div class="vm-summary-box">
+              <p><strong>{{ mappedFieldsCount }}</strong> field(s) mapped</p>
+              @if (containerSelector) {
+                <p>Container: <code>{{ containerSelector }}</code></p>
+              }
+              <p class="vm-preview-sub">
+                These fields will be applied to each product on the page.
+              </p>
+              <p class="vm-preview-sub">
+                💡 Scroll down in the extension tab to load more items before clicking Finish Mapping,
+                or close this and <span class="vm-hint-link vm-retry-link" (click)="tryAgain()">try again</span>.
+              </p>
+            </div>
+
+            @if (domainRuleSaved) {
+              <p class="vm-preview-saved-badge">✅ Domain rule saved</p>
+            }
+          </div>
+        }
       </main>
     </div>
   }
 
   <!-- ═══ SAVING ═══ -->
   @if (currentState === 'saving') {
-    <div class="fetching-section">
-      <div class="spinner-container">
-        <div class="spinner-lg"></div>
-        <p class="fetching-text">Saving domain rule…</p>
+    <div class="vm-centered">
+      <div class="vm-status-card">
+        <div class="vm-spinner"></div>
+        <p class="vm-status-title">Saving domain rule…</p>
       </div>
     </div>
   }
 
   <!-- ═══ DONE ═══ -->
   @if (currentState === 'done') {
-    <div class="done-section">
-      <div class="done-card">
-        <div class="done-icon">✓</div>
-        <h2>Rule saved</h2>
-        <p>The domain rule for <strong>{{ url }}</strong> has been saved.</p>
-        <div class="done-actions">
-          <button class="btn-primary" (click)="tryAgain()">Map another page</button>
-          <a routerLink="/products" class="btn-secondary btn-link-nav">View Products</a>
+    <div class="vm-centered">
+      <div class="vm-done-card">
+        <div class="vm-done-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </div>
+        <h2>Done</h2>
+
+        @if (domainRuleSaved) {
+          <p class="vm-done-desc">✅ Domain rule for <strong>{{ url }}</strong> saved.</p>
+        }
+
+        @if (productsIngested) {
+          <p class="vm-done-desc">✅ {{ extractedProducts.length }} product(s) ingested.</p>
+        } @else if (extractedProducts.length > 0 && !domainRuleSaved) {
+          <p class="vm-done-desc">{{ extractedProducts.length }} product(s) ready to save.</p>
+        }
+
+        @if (ingestError) {
+          <p class="vm-error-msg">{{ ingestError }}</p>
+        }
+        @if (errorMessage) {
+          <p class="vm-error-msg">{{ errorMessage }}</p>
+        }
+
+        <div class="vm-done-actions">
+          <button class="btn-accent" (click)="tryAgain()">Map another page</button>
+          <a routerLink="/products" class="btn-ghost">View Products</a>
         </div>
       </div>
     </div>
@@ -165,12 +253,18 @@
 
   <!-- ═══ ERROR ═══ -->
   @if (currentState === 'error') {
-    <div class="error-section">
-      <div class="error-card">
+    <div class="vm-centered">
+      <div class="vm-error-card">
+        <div class="vm-error-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </div>
         <h2>Something went wrong</h2>
-        <p class="error-message">{{ errorMessage }}</p>
-        <button class="btn-primary" (click)="tryAgain()">Try Again</button>
+        <p class="vm-error-msg">{{ errorMessage }}</p>
+        <button class="btn-accent" (click)="tryAgain()">Try Again</button>
       </div>
     </div>
   }
+
 </div>

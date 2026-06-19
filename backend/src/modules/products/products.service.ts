@@ -145,32 +145,40 @@ export class ProductsService {
     pageUrl: string | undefined,
     products: Record<string, unknown>[],
   ) {
-    // Find or create the DomainRule for this domain
     let domainRule = await this.prisma.domainRule.findUnique({ where: { domain } });
     if (!domainRule) {
       domainRule = await this.prisma.domainRule.create({
-        data: {
-          domain,
-          name: domain,
-          selectorTitle: '',
-          selectorPrice: '',
-        },
+        data: { domain, name: domain, selectorTitle: '', selectorPrice: '' },
       });
     }
 
     const results = [];
     for (const product of products) {
       try {
-        const title = String(product['title'] ?? 'Unknown Product');
-        const rawPrice = product['price'];
-        const price = typeof rawPrice === 'number'
-          ? rawPrice
-          : parseFloat(String(rawPrice ?? '').replace(/[^\d.]/g, '')) || 0;
-        const currency = String(product['currency'] ?? 'USD');
-        const imageUrl = product['imageUrl'] ? String(product['imageUrl']) : undefined;
-        const sku = product['sku'] ? String(product['sku']) : undefined;
-        const description = product['description'] ? String(product['description']) : undefined;
-        // Each product on a listing page gets a unique URL by title slug
+        // ── Dynamic field handling ──────────────────────────────────
+        // Sin heurística de nombres — rawData guarda TODO tal cual.
+        // La normalización se hace después, contra el schema final.
+        const keys = Object.keys(product);
+
+        // Title: first non-URL-ish string value
+        let title = 'Raw product';
+        for (const key of keys) {
+          const v = String(product[key] ?? '').trim();
+          if (v && v.length < 200 && !v.startsWith('http')) { title = v; break; }
+        }
+
+        let price = 0;
+        for (const val of Object.values(product)) {
+          if (typeof val === 'number' && val > 0) { price = val; break; }
+          if (typeof val === 'string') {
+            const trimmed = val.trim();
+            if (/^\d+(\.\d+)?$/.test(trimmed)) {
+              const n = parseFloat(trimmed);
+              if (!isNaN(n) && n > 0) { price = n; break; }
+            }
+          }
+        }
+
         const titleSlug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 80);
         const productUrl = `${pageUrl ?? domain}#${titleSlug}`;
 
@@ -179,20 +187,20 @@ export class ProductsService {
         });
 
         if (existing) {
-          const updated = await this.prisma.product.update({
+          await this.prisma.product.update({
             where: { id: existing.id },
-            data: { title, price, currency, imageUrl, sku, description, rawData: product as any, extractedAt: new Date() },
+            data: { title, price, currency: 'USD', rawData: product as any, extractedAt: new Date() },
           });
           await this.prisma.priceHistory.create({
-            data: { productId: existing.id, price, currency },
+            data: { productId: existing.id, price, currency: 'USD' },
           });
-          results.push(updated);
+          results.push(existing);
         } else {
           const created = await this.prisma.product.create({
-            data: { domainRuleId: domainRule.id, title, price, currency, imageUrl, sku, description, productUrl, rawData: product as any },
+            data: { domainRuleId: domainRule.id, title, price, currency: 'USD', productUrl, rawData: product as any },
           });
           await this.prisma.priceHistory.create({
-            data: { productId: created.id, price, currency },
+            data: { productId: created.id, price, currency: 'USD' },
           });
           results.push(created);
         }

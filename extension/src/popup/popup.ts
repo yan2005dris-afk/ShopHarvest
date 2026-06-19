@@ -1,4 +1,4 @@
-import type { DomainRule, ExtractedProduct, FieldMapping, CanonicalField } from '../types';
+import type { DomainRule, ExtractedProduct, FieldMapping, FieldDefinition } from '../types';
 
 // ── State ─────────────────────────────────────────────────────────────────────
 
@@ -6,7 +6,13 @@ let currentDomain = '';
 let currentTabId = 0;
 let currentTabUrl: string | undefined;
 let currentRule: DomainRule | null = null;
-let pendingMappings: Map<string, { selector: string; type: FieldMapping['type']; attribute?: string }> = new Map();
+
+/** User-defined field definitions (shown in home view, sent to content script). */
+let fieldDefs: FieldDefinition[] = [];
+
+/** Selectors assigned by the content script during mapping (fieldName → {selector, type, attribute}). */
+const pendingMappings = new Map<string, { selector: string; type: FieldMapping['type']; attribute?: string }>();
+
 let extractedProducts: ExtractedProduct[] = [];
 
 // ── DOM references ────────────────────────────────────────────────────────────
@@ -24,6 +30,9 @@ const el = {
   btnExtract: document.getElementById('btn-extract') as HTMLButtonElement,
   btnViewData: document.getElementById('btn-view-data') as HTMLButtonElement,
   homeError: document.getElementById('home-error')!,
+  btnAddField: document.getElementById('btn-add-field') as HTMLButtonElement,
+  fieldDefsList: document.getElementById('field-defs-list')!,
+  fieldsList: document.getElementById('fields-list')!,
   btnSaveRule: document.getElementById('btn-save-rule') as HTMLButtonElement,
   btnCancelMapping: document.getElementById('btn-cancel-mapping') as HTMLButtonElement,
   btnExportCsv: document.getElementById('btn-export-csv') as HTMLButtonElement,
@@ -32,6 +41,8 @@ const el = {
   productCount: document.getElementById('product-count')!,
   tableHead: document.getElementById('table-head')!,
   tableBody: document.getElementById('table-body')!,
+  // field-container exists in HTML for the container row in mapping view
+  fieldContainer: document.getElementById('field-container')!,
   toast: document.getElementById('toast')!,
 };
 
@@ -50,11 +61,19 @@ async function init(): Promise<void> {
   currentDomain = url.hostname;
   el.domainBadge.textContent = currentDomain;
 
+  // Load existing rule for this domain
   currentRule = await bgMessage('GET_RULE', currentDomain);
   if (currentRule) {
     el.ruleStatus.classList.remove('hidden');
+    // Pre-populate field definitions from the saved rule
+    fieldDefs = currentRule.fieldMappings.map(m => ({
+      name: m.canonicalField,
+      type: m.type,
+      attribute: m.attribute,
+    }));
   }
 
+  renderFieldDefs();
   showView('home');
   bindEvents();
 }
@@ -66,9 +85,94 @@ function showView(name: keyof typeof views): void {
   views[name].classList.remove('hidden');
 }
 
+// ── Field definitions rendering (home view) ───────────────────────────────────
+
+function renderFieldDefs(): void {
+  el.fieldDefsList.innerHTML = '';
+
+  if (fieldDefs.length === 0) {
+    // Empty state
+    const empty = document.createElement('div');
+    empty.textContent = 'No fields yet. Add fields like "title", "price", "description"...';
+    Object.assign(empty.style, {
+      color: '#666',
+      fontSize: '12px',
+      textAlign: 'center',
+      padding: '12px 8px',
+    });
+    el.fieldDefsList.appendChild(empty);
+    return;
+  }
+
+  fieldDefs.forEach((def, i) => {
+    const row = document.createElement('div');
+    row.className = 'field-def-row';
+
+    // Field name input
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.value = def.name;
+    nameInput.placeholder = 'Field name';
+    nameInput.addEventListener('input', () => {
+      fieldDefs[i] = { ...fieldDefs[i], name: nameInput.value.trim() || nameInput.value };
+    });
+
+    // Type selector
+    const typeSelect = document.createElement('select');
+    ['text', 'attribute', 'html'].forEach(t => {
+      const opt = document.createElement('option');
+      opt.value = t;
+      opt.textContent = t;
+      if (t === def.type) opt.selected = true;
+      typeSelect.appendChild(opt);
+    });
+    typeSelect.addEventListener('change', () => {
+      fieldDefs[i] = { ...fieldDefs[i], type: typeSelect.value as FieldMapping['type'] };
+      // Show/hide attribute input
+      const attrInput = row.querySelector('.attr-input') as HTMLInputElement | null;
+      if (attrInput) {
+        attrInput.style.display = typeSelect.value === 'attribute' ? '' : 'none';
+      }
+    });
+
+    // Attribute input (only visible when type=attribute)
+    const attrInput = document.createElement('input');
+    attrInput.type = 'text';
+    attrInput.placeholder = 'attr';
+    attrInput.className = 'attr-input';
+    attrInput.value = def.attribute ?? '';
+    attrInput.style.display = def.type === 'attribute' ? '' : 'none';
+    attrInput.addEventListener('input', () => {
+      fieldDefs[i] = { ...fieldDefs[i], attribute: attrInput.value || undefined };
+    });
+
+    // Remove button
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'btn-small-danger';
+    removeBtn.textContent = '✕';
+    removeBtn.addEventListener('click', () => {
+      fieldDefs.splice(i, 1);
+      renderFieldDefs();
+    });
+
+    row.appendChild(nameInput);
+    row.appendChild(typeSelect);
+    row.appendChild(attrInput);
+    row.appendChild(removeBtn);
+    el.fieldDefsList.appendChild(row);
+  });
+}
+
 // ── Events ────────────────────────────────────────────────────────────────────
 
 function bindEvents(): void {
+  el.btnAddField.addEventListener('click', () => {
+    fieldDefs.push({ name: '', type: 'text' });
+    renderFieldDefs();
+    // Scroll to the bottom to show the new field
+    el.fieldDefsList.scrollTop = el.fieldDefsList.scrollHeight;
+  });
+
   el.btnStartMapping.addEventListener('click', onStartMapping);
   el.btnExtract.addEventListener('click', onExtract);
   el.btnViewData.addEventListener('click', onViewData);
@@ -79,24 +183,32 @@ function bindEvents(): void {
   el.btnBack.addEventListener('click', () => showView('home'));
 
   chrome.runtime.onMessage.addListener((message) => {
-    if (message.type === 'FIELD_ASSIGNED') {
-      const { field, selector, type, attribute } = message.payload as {
-        field: string;
-        selector: string;
-        type: FieldMapping['type'];
-        attribute?: string;
-      };
-      onFieldAssigned(field, selector, type, attribute);
+    const msg = message as { type: string; payload: unknown };
+    if (msg.type === 'FIELD_ASSIGNED') {
+      const mapping = msg.payload as FieldMapping;
+      onFieldAssigned(mapping);
     }
   });
 }
 
 async function onStartMapping(): Promise<void> {
-  pendingMappings = new Map();
+  // Only send non-empty field definitions
+  const validDefs = fieldDefs.filter(d => d.name.trim().length > 0);
+  if (validDefs.length === 0) {
+    showError('Add at least one field before starting.');
+    return;
+  }
+  // Normalize names
+  fieldDefs = validDefs.map(d => ({ ...d, name: d.name.trim() }));
+
+  pendingMappings.clear();
   resetMappingView();
 
   try {
-    await contentMessage('START_MAPPING', undefined);
+    // Send field definitions along with START_MAPPING
+    await contentMessage('START_MAPPING', {
+      fields: fieldDefs,
+    });
     showView('mapping');
   } catch {
     showError('Cannot inject into this page. Try a regular website.');
@@ -114,11 +226,15 @@ async function onExtract(): Promise<void> {
     const result = await contentMessage<{ products: ExtractedProduct[] }>('EXTRACT', currentRule);
     extractedProducts = result.products ?? [];
 
-    await fetch('http://localhost:3000/products/ingest', {
+    const ingestRes = await fetch('http://localhost:3000/products/ingest', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ domain: currentDomain, pageUrl: currentTabUrl, products: extractedProducts }),
-    }).catch(() => {});
+    });
+    if (!ingestRes.ok) {
+      console.warn('Ingest returned', ingestRes.status);
+    }
+
     renderDataView(extractedProducts);
     showView('data');
   } catch (err) {
@@ -133,13 +249,29 @@ async function onViewData(): Promise<void> {
   showView('data');
 }
 
-function onFieldAssigned(field: string, selector: string, type: FieldMapping['type'], attribute?: string): void {
-  pendingMappings.set(field, { selector, type, attribute });
+function onFieldAssigned(mapping: FieldMapping): void {
+  pendingMappings.set(mapping.canonicalField, {
+    selector: mapping.selector,
+    type: mapping.type,
+    attribute: mapping.attribute,
+  });
 
-  if (field === 'container') {
-    updateFieldRow('container', selector);
+  if (mapping.canonicalField === 'container') {
+    const span = document.getElementById('field-container');
+    if (span) {
+      span.textContent = mapping.selector.length > 30
+        ? `…${mapping.selector.slice(-27)}`
+        : mapping.selector;
+      span.classList.add('set');
+    }
   } else {
-    updateFieldRow(field as CanonicalField, selector);
+    const span = document.getElementById(`field-${CSS.escape(mapping.canonicalField)}`);
+    if (span) {
+      span.textContent = mapping.selector.length > 30
+        ? `…${mapping.selector.slice(-27)}`
+        : mapping.selector;
+      span.classList.add('set');
+    }
   }
 
   checkSaveEnabled();
@@ -153,7 +285,7 @@ async function onSaveRule(): Promise<void> {
   pendingMappings.forEach((value, key) => {
     if (key === 'container') return;
     fieldMappings.push({
-      canonicalField: key as CanonicalField,
+      canonicalField: key,
       selector: value.selector,
       type: value.type,
       attribute: value.attribute,
@@ -209,29 +341,48 @@ async function onClearData(): Promise<void> {
 // ── Mapping view helpers ──────────────────────────────────────────────────────
 
 function resetMappingView(): void {
-  const fieldIds = ['container', 'title', 'price', 'imageUrl', 'sku', 'currency', 'description'];
-  fieldIds.forEach(f => {
-    const span = document.getElementById(`field-${f}`);
-    if (span) {
-      span.textContent = 'not set';
-      span.classList.remove('set');
+  // Reset container row (always exists in HTML)
+  el.fieldContainer.textContent = 'not set';
+  el.fieldContainer.classList.remove('set');
+
+  // Remove all dynamic field rows (everything after the container row)
+  const containerRow = el.fieldsList.querySelector('[data-field="container"]');
+  el.fieldsList.querySelectorAll('[data-field]:not([data-field="container"])').forEach(el => el.remove());
+
+  // Add dynamic field rows from fieldDefs
+  fieldDefs.forEach(def => {
+    const row = document.createElement('div');
+    row.className = 'field-row';
+    row.dataset.field = def.name;
+
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'field-name';
+    nameSpan.textContent = def.name;
+
+    const selectorSpan = document.createElement('span');
+    selectorSpan.className = 'field-selector';
+    selectorSpan.id = `field-${CSS.escape(def.name)}`;
+    selectorSpan.textContent = 'not set';
+
+    row.appendChild(nameSpan);
+    row.appendChild(selectorSpan);
+    // Insert before the container row so container stays last… actually container is first.
+    // The container row is the first child. We'll append after it.
+    if (containerRow?.nextSibling) {
+      el.fieldsList.insertBefore(row, containerRow.nextSibling);
+    } else {
+      el.fieldsList.appendChild(row);
     }
   });
+
   el.btnSaveRule.disabled = true;
 }
 
-function updateFieldRow(field: string, selector: string): void {
-  const span = document.getElementById(`field-${field}`);
-  if (!span) return;
-  span.textContent = selector.length > 30 ? `…${selector.slice(-27)}` : selector;
-  span.classList.add('set');
-}
-
 function checkSaveEnabled(): void {
-  const hasTitle = pendingMappings.has('title');
-  const hasPrice = pendingMappings.has('price');
+  // All fields must have selectors assigned
+  const allAssigned = fieldDefs.every(def => pendingMappings.has(def.name));
   const hasContainer = pendingMappings.has('container');
-  el.btnSaveRule.disabled = !(hasTitle && hasPrice && hasContainer);
+  el.btnSaveRule.disabled = !(allAssigned && hasContainer);
 }
 
 // ── Data view ─────────────────────────────────────────────────────────────────
