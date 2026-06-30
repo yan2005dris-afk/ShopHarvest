@@ -1,0 +1,35 @@
+{
+  "total_registros_raw": 117,
+  "total_registros_staging": 116,
+  "tasa_completitud": "99.1%",
+  "registros_depurados_duplicados": 0,
+  "registros_eliminados_nulos": 1,
+  "tasa_error_promedio": "0.9%",
+  "error_rate_by_source": {
+    "mercadolibre": "-11500.0%",
+    "aliexpress": "-107.1%",
+    "temu": "-286.7%",
+    "shein": "-286.7%"
+  },
+  "null_matrix": {
+    "precio_raw": {
+      "fuente": "MercadoLibre",
+      "nullCount": 61,
+      "pct": "52.1%",
+      "strategy": "mediana"
+    },
+    "titulo_oferta": {
+      "fuente": "AliExpress",
+      "nullCount": 1,
+      "pct": "0.9%",
+      "strategy": "eliminar"
+    },
+    "categoria": {
+      "fuente": "Temu",
+      "nullCount": 61,
+      "pct": "52.1%",
+      "strategy": "clasificar"
+    }
+  },
+  "generated_at": "2026-06-30T05:36:45.481Z"
+}
