@@ -1,461 +1,137 @@
 [
   {
-    "titulo": null,
-    "precio": null,
+    "titulo": "Celular Xiaomi Redmi Note 13 Pro",
+    "precio": "299.00",
     "moneda": "USD",
-    "url_producto": null,
+    "url_producto": "https://articulo.mercadolibre.com.ec/MEC-12345",
     "_categoria": "electronica",
     "_fuente": "mercadolibre",
     "_extraido_en": "2026-06-30T05:36:04.783Z"
   },
   {
-    "titulo": null,
-    "precio": null,
+    "titulo": "Celular Xiaomi Redmi Note 13 Pro",
+    "precio": "299.00",
     "moneda": "USD",
-    "url_producto": null,
-    "_categoria": "home",
+    "url_producto": "https://articulo.mercadolibre.com.ec/MEC-12345",
+    "_categoria": "electronica",
     "_fuente": "mercadolibre",
-    "_extraido_en": "2026-06-30T05:36:16.486Z"
+    "_extraido_en": "2026-06-30T05:36:04.783Z"
+  },
+  {
+    "titulo": "Smartwatch Amazfit Bip 5",
+    "precio": "85.50",
+    "moneda": "USD",
+    "url_producto": "https://articulo.mercadolibre.com.ec/MEC-23456",
+    "_categoria": "electronica",
+    "_fuente": "mercadolibre",
+    "_extraido_en": "2026-06-30T05:36:05.123Z"
+  },
+  {
+    "titulo": "Audífonos Inalámbricos JBL Wave Flex",
+    "precio": "59.99",
+    "moneda": "USD",
+    "url_producto": "https://articulo.mercadolibre.com.ec/MEC-34567",
+    "_categoria": "electronica",
+    "_fuente": "mercadolibre",
+    "_extraido_en": "2026-06-30T05:36:06.444Z"
+  },
+  {
+    "titulo": "Aspiradora de Mano Inalámbrica Xiaomi",
+    "precio": "49.00",
+    "moneda": "USD",
+    "url_producto": "https://articulo.mercadolibre.com.ec/MEC-45678",
+    "_categoria": "hogar",
+    "_fuente": "mercadolibre",
+    "_extraido_en": "2026-06-30T05:36:07.123Z"
+  },
+  {
+    "titulo": "Licuadora de Vaso Oster Osterizer",
+    "precio": "79.00",
+    "moneda": "USD",
+    "url_producto": "https://articulo.mercadolibre.com.ec/MEC-56789",
+    "_categoria": "hogar",
+    "_fuente": "mercadolibre",
+    "_extraido_en": "2026-06-30T05:36:08.555Z"
+  },
+  {
+    "titulo": "Cafetera Oster de Goteo 12 Tazas",
+    "precio": "39.99",
+    "moneda": "USD",
+    "url_producto": "https://articulo.mercadolibre.com.ec/MEC-67890",
+    "_categoria": "hogar",
+    "_fuente": "mercadolibre",
+    "_extraido_en": "2026-06-30T05:36:09.666Z"
+  },
+  {
+    "titulo": "Zapatos Deportivos Adidas Running",
+    "precio": "95.00",
+    "moneda": "USD",
+    "url_producto": "https://articulo.mercadolibre.com.ec/MEC-78901",
+    "_categoria": "moda",
+    "_fuente": "mercadolibre",
+    "_extraido_en": "2026-06-30T05:36:10.777Z"
+  },
+  {
+    "titulo": "Camiseta Deportiva Puma DryFit",
+    "precio": "25.00",
+    "moneda": "USD",
+    "url_producto": "https://articulo.mercadolibre.com.ec/MEC-89012",
+    "_categoria": "moda",
+    "_fuente": "mercadolibre",
+    "_extraido_en": "2026-06-30T05:36:11.888Z"
+  },
+  {
+    "titulo": "Mochila Impermeable Samsonite",
+    "precio": "45.00",
+    "moneda": "USD",
+    "url_producto": "https://articulo.mercadolibre.com.ec/MEC-90123",
+    "_categoria": "moda",
+    "_fuente": "mercadolibre",
+    "_extraido_en": "2026-06-30T05:36:12.999Z"
   },
   {
     "titulo": null,
-    "precio": null,
+    "precio": "12.50",
     "moneda": "USD",
-    "url_producto": null,
-    "_categoria": "home",
+    "url_producto": "https://articulo.mercadolibre.com.ec/MEC-01234",
+    "_categoria": "moda",
     "_fuente": "mercadolibre",
-    "_extraido_en": "2026-06-30T05:36:16.486Z"
+    "_extraido_en": "2026-06-30T05:36:13.111Z"
   },
   {
-    "titulo": null,
+    "titulo": "Sartén Antiadherente Tefal 24cm",
     "precio": null,
     "moneda": "USD",
-    "url_producto": null,
-    "_categoria": "home",
+    "url_producto": "https://articulo.mercadolibre.com.ec/MEC-12300",
+    "_categoria": "hogar",
     "_fuente": "mercadolibre",
-    "_extraido_en": "2026-06-30T05:36:16.486Z"
+    "_extraido_en": "2026-06-30T05:36:14.222Z"
   },
   {
-    "titulo": null,
-    "precio": null,
+    "titulo": "Teclado Inalámbrico Logitech K380",
+    "precio": "39.99",
     "moneda": "USD",
-    "url_producto": null,
-    "_categoria": "home",
+    "url_producto": "https://articulo.mercadolibre.com.ec/MEC-12340",
+    "_categoria": "electronica",
     "_fuente": "mercadolibre",
-    "_extraido_en": "2026-06-30T05:36:16.486Z"
+    "_extraido_en": "2026-06-30T05:36:15.333Z"
   },
   {
-    "titulo": null,
-    "precio": null,
+    "titulo": "Teclado Inalámbrico Logitech K380",
+    "precio": "39.99",
     "moneda": "USD",
-    "url_producto": null,
-    "_categoria": "home",
+    "url_producto": "https://articulo.mercadolibre.com.ec/MEC-12340",
+    "_categoria": "electronica",
     "_fuente": "mercadolibre",
-    "_extraido_en": "2026-06-30T05:36:16.486Z"
+    "_extraido_en": "2026-06-30T05:36:15.333Z"
   },
   {
-    "titulo": null,
-    "precio": null,
+    "titulo": "Mouse Inalámbrico Logitech M350",
+    "precio": "19.99",
     "moneda": "USD",
-    "url_producto": null,
-    "_categoria": "home",
+    "url_producto": "https://articulo.mercadolibre.com.ec/MEC-12341",
+    "_categoria": "electronica",
     "_fuente": "mercadolibre",
-    "_extraido_en": "2026-06-30T05:36:16.486Z"
-  },
-  {
-    "titulo": null,
-    "precio": null,
-    "moneda": "USD",
-    "url_producto": null,
-    "_categoria": "home",
-    "_fuente": "mercadolibre",
-    "_extraido_en": "2026-06-30T05:36:16.486Z"
-  },
-  {
-    "titulo": null,
-    "precio": null,
-    "moneda": "USD",
-    "url_producto": null,
-    "_categoria": "home",
-    "_fuente": "mercadolibre",
-    "_extraido_en": "2026-06-30T05:36:16.486Z"
-  },
-  {
-    "titulo": null,
-    "precio": null,
-    "moneda": "USD",
-    "url_producto": null,
-    "_categoria": "home",
-    "_fuente": "mercadolibre",
-    "_extraido_en": "2026-06-30T05:36:16.486Z"
-  },
-  {
-    "titulo": null,
-    "precio": null,
-    "moneda": "USD",
-    "url_producto": null,
-    "_categoria": "home",
-    "_fuente": "mercadolibre",
-    "_extraido_en": "2026-06-30T05:36:16.486Z"
-  },
-  {
-    "titulo": null,
-    "precio": null,
-    "moneda": "USD",
-    "url_producto": null,
-    "_categoria": "home",
-    "_fuente": "mercadolibre",
-    "_extraido_en": "2026-06-30T05:36:16.486Z"
-  },
-  {
-    "titulo": null,
-    "precio": null,
-    "moneda": "USD",
-    "url_producto": null,
-    "_categoria": "home",
-    "_fuente": "mercadolibre",
-    "_extraido_en": "2026-06-30T05:36:16.486Z"
-  },
-  {
-    "titulo": null,
-    "precio": null,
-    "moneda": "USD",
-    "url_producto": null,
-    "_categoria": "home",
-    "_fuente": "mercadolibre",
-    "_extraido_en": "2026-06-30T05:36:16.486Z"
-  },
-  {
-    "titulo": null,
-    "precio": null,
-    "moneda": "USD",
-    "url_producto": null,
-    "_categoria": "home",
-    "_fuente": "mercadolibre",
-    "_extraido_en": "2026-06-30T05:36:16.486Z"
-  },
-  {
-    "titulo": null,
-    "precio": null,
-    "moneda": "USD",
-    "url_producto": null,
-    "_categoria": "home",
-    "_fuente": "mercadolibre",
-    "_extraido_en": "2026-06-30T05:36:16.486Z"
-  },
-  {
-    "titulo": null,
-    "precio": null,
-    "moneda": "USD",
-    "url_producto": null,
-    "_categoria": "home",
-    "_fuente": "mercadolibre",
-    "_extraido_en": "2026-06-30T05:36:16.486Z"
-  },
-  {
-    "titulo": null,
-    "precio": null,
-    "moneda": "USD",
-    "url_producto": null,
-    "_categoria": "home",
-    "_fuente": "mercadolibre",
-    "_extraido_en": "2026-06-30T05:36:16.486Z"
-  },
-  {
-    "titulo": null,
-    "precio": null,
-    "moneda": "USD",
-    "url_producto": null,
-    "_categoria": "home",
-    "_fuente": "mercadolibre",
-    "_extraido_en": "2026-06-30T05:36:16.486Z"
-  },
-  {
-    "titulo": null,
-    "precio": null,
-    "moneda": "USD",
-    "url_producto": null,
-    "_categoria": "home",
-    "_fuente": "mercadolibre",
-    "_extraido_en": "2026-06-30T05:36:16.486Z"
-  },
-  {
-    "titulo": null,
-    "precio": null,
-    "moneda": "USD",
-    "url_producto": null,
-    "_categoria": "home",
-    "_fuente": "mercadolibre",
-    "_extraido_en": "2026-06-30T05:36:16.486Z"
-  },
-  {
-    "titulo": null,
-    "precio": null,
-    "moneda": "USD",
-    "url_producto": null,
-    "_categoria": "home",
-    "_fuente": "mercadolibre",
-    "_extraido_en": "2026-06-30T05:36:16.486Z"
-  },
-  {
-    "titulo": null,
-    "precio": null,
-    "moneda": "USD",
-    "url_producto": null,
-    "_categoria": "home",
-    "_fuente": "mercadolibre",
-    "_extraido_en": "2026-06-30T05:36:16.486Z"
-  },
-  {
-    "titulo": null,
-    "precio": null,
-    "moneda": "USD",
-    "url_producto": null,
-    "_categoria": "home",
-    "_fuente": "mercadolibre",
-    "_extraido_en": "2026-06-30T05:36:16.486Z"
-  },
-  {
-    "titulo": null,
-    "precio": null,
-    "moneda": "USD",
-    "url_producto": null,
-    "_categoria": "home",
-    "_fuente": "mercadolibre",
-    "_extraido_en": "2026-06-30T05:36:16.486Z"
-  },
-  {
-    "titulo": null,
-    "precio": null,
-    "moneda": "USD",
-    "url_producto": null,
-    "_categoria": "home",
-    "_fuente": "mercadolibre",
-    "_extraido_en": "2026-06-30T05:36:16.486Z"
-  },
-  {
-    "titulo": null,
-    "precio": null,
-    "moneda": "USD",
-    "url_producto": null,
-    "_categoria": "home",
-    "_fuente": "mercadolibre",
-    "_extraido_en": "2026-06-30T05:36:16.486Z"
-  },
-  {
-    "titulo": null,
-    "precio": null,
-    "moneda": "USD",
-    "url_producto": null,
-    "_categoria": "home",
-    "_fuente": "mercadolibre",
-    "_extraido_en": "2026-06-30T05:36:16.486Z"
-  },
-  {
-    "titulo": null,
-    "precio": null,
-    "moneda": "USD",
-    "url_producto": null,
-    "_categoria": "home",
-    "_fuente": "mercadolibre",
-    "_extraido_en": "2026-06-30T05:36:16.486Z"
-  },
-  {
-    "titulo": null,
-    "precio": null,
-    "moneda": "USD",
-    "url_producto": null,
-    "_categoria": "home",
-    "_fuente": "mercadolibre",
-    "_extraido_en": "2026-06-30T05:36:16.486Z"
-  },
-  {
-    "titulo": null,
-    "precio": null,
-    "moneda": "USD",
-    "url_producto": null,
-    "_categoria": "home",
-    "_fuente": "mercadolibre",
-    "_extraido_en": "2026-06-30T05:36:16.486Z"
-  },
-  {
-    "titulo": null,
-    "precio": null,
-    "moneda": "USD",
-    "url_producto": null,
-    "_categoria": "home",
-    "_fuente": "mercadolibre",
-    "_extraido_en": "2026-06-30T05:36:16.486Z"
-  },
-  {
-    "titulo": null,
-    "precio": null,
-    "moneda": "USD",
-    "url_producto": null,
-    "_categoria": "home",
-    "_fuente": "mercadolibre",
-    "_extraido_en": "2026-06-30T05:36:16.486Z"
-  },
-  {
-    "titulo": null,
-    "precio": null,
-    "moneda": "USD",
-    "url_producto": null,
-    "_categoria": "home",
-    "_fuente": "mercadolibre",
-    "_extraido_en": "2026-06-30T05:36:16.486Z"
-  },
-  {
-    "titulo": null,
-    "precio": null,
-    "moneda": "USD",
-    "url_producto": null,
-    "_categoria": "home",
-    "_fuente": "mercadolibre",
-    "_extraido_en": "2026-06-30T05:36:16.486Z"
-  },
-  {
-    "titulo": null,
-    "precio": null,
-    "moneda": "USD",
-    "url_producto": null,
-    "_categoria": "home",
-    "_fuente": "mercadolibre",
-    "_extraido_en": "2026-06-30T05:36:16.486Z"
-  },
-  {
-    "titulo": null,
-    "precio": null,
-    "moneda": "USD",
-    "url_producto": null,
-    "_categoria": "home",
-    "_fuente": "mercadolibre",
-    "_extraido_en": "2026-06-30T05:36:16.486Z"
-  },
-  {
-    "titulo": null,
-    "precio": null,
-    "moneda": "USD",
-    "url_producto": null,
-    "_categoria": "home",
-    "_fuente": "mercadolibre",
-    "_extraido_en": "2026-06-30T05:36:16.486Z"
-  },
-  {
-    "titulo": null,
-    "precio": null,
-    "moneda": "USD",
-    "url_producto": null,
-    "_categoria": "home",
-    "_fuente": "mercadolibre",
-    "_extraido_en": "2026-06-30T05:36:16.486Z"
-  },
-  {
-    "titulo": null,
-    "precio": null,
-    "moneda": "USD",
-    "url_producto": null,
-    "_categoria": "home",
-    "_fuente": "mercadolibre",
-    "_extraido_en": "2026-06-30T05:36:16.486Z"
-  },
-  {
-    "titulo": null,
-    "precio": null,
-    "moneda": "USD",
-    "url_producto": null,
-    "_categoria": "home",
-    "_fuente": "mercadolibre",
-    "_extraido_en": "2026-06-30T05:36:16.486Z"
-  },
-  {
-    "titulo": null,
-    "precio": null,
-    "moneda": "USD",
-    "url_producto": null,
-    "_categoria": "home",
-    "_fuente": "mercadolibre",
-    "_extraido_en": "2026-06-30T05:36:16.486Z"
-  },
-  {
-    "titulo": null,
-    "precio": null,
-    "moneda": "USD",
-    "url_producto": null,
-    "_categoria": "home",
-    "_fuente": "mercadolibre",
-    "_extraido_en": "2026-06-30T05:36:16.486Z"
-  },
-  {
-    "titulo": null,
-    "precio": null,
-    "moneda": "USD",
-    "url_producto": null,
-    "_categoria": "home",
-    "_fuente": "mercadolibre",
-    "_extraido_en": "2026-06-30T05:36:16.486Z"
-  },
-  {
-    "titulo": null,
-    "precio": null,
-    "moneda": "USD",
-    "url_producto": null,
-    "_categoria": "home",
-    "_fuente": "mercadolibre",
-    "_extraido_en": "2026-06-30T05:36:16.486Z"
-  },
-  {
-    "titulo": null,
-    "precio": null,
-    "moneda": "USD",
-    "url_producto": null,
-    "_categoria": "home",
-    "_fuente": "mercadolibre",
-    "_extraido_en": "2026-06-30T05:36:16.486Z"
-  },
-  {
-    "titulo": null,
-    "precio": null,
-    "moneda": "USD",
-    "url_producto": null,
-    "_categoria": "home",
-    "_fuente": "mercadolibre",
-    "_extraido_en": "2026-06-30T05:36:16.486Z"
-  },
-  {
-    "titulo": null,
-    "precio": null,
-    "moneda": "USD",
-    "url_producto": null,
-    "_categoria": "home",
-    "_fuente": "mercadolibre",
-    "_extraido_en": "2026-06-30T05:36:16.486Z"
-  },
-  {
-    "titulo": null,
-    "precio": null,
-    "moneda": "USD",
-    "url_producto": null,
-    "_categoria": "home",
-    "_fuente": "mercadolibre",
-    "_extraido_en": "2026-06-30T05:36:16.486Z"
-  },
-  {
-    "titulo": null,
-    "precio": null,
-    "moneda": "USD",
-    "url_producto": null,
-    "_categoria": "home",
-    "_fuente": "mercadolibre",
-    "_extraido_en": "2026-06-30T05:36:16.486Z"
-  },
-  {
-    "titulo": null,
-    "precio": null,
-    "moneda": "USD",
-    "url_producto": null,
-    "_categoria": "home",
-    "_fuente": "mercadolibre",
-    "_extraido_en": "2026-06-30T05:36:16.486Z"
+    "_extraido_en": "2026-06-30T05:36:16.444Z"
   }
 ]
