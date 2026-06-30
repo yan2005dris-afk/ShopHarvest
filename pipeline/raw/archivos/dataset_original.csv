@@ -1,0 +1,51 @@
+id_producto,titulo,precio,moneda,categoria,url_producto
+1,"Laptop Gamer ASUS TUF A15",950.00,USD,electronica,https://ejemplo.com/p1
+2,"Smart TV Samsung 55 UHD",520.00,USD,electronica,https://ejemplo.com/p2
+3,"Audífonos Sony WH-1000XM4",280.00,USD,electronica,https://ejemplo.com/p3
+4,"Silla Ergonómica de Oficina",180.00,USD,hogar,https://ejemplo.com/p4
+5,"Cafetera Espresso Oster PrimaLatte",220.00,USD,hogar,https://ejemplo.com/p5
+6,"Mochila Impermeable antirrobo",35.00,USD,moda,https://ejemplo.com/p6
+7,"Zapatillas Deportivas Nike Air Max",120.00,USD,moda,https://ejemplo.com/p7
+8,"Reloj Inteligente Xiaomi Redmi Watch",79.99,USD,electronica,https://ejemplo.com/p8
+9,"Teclado Mecánico Redragon Kumara",45.00,USD,electronica,https://ejemplo.com/p9
+10,"Mouse Gamer Logitech G203",25.00,USD,electronica,https://ejemplo.com/p10
+11,"Laptop Gamer ASUS TUF A15",950.00,USD,electronica,https://ejemplo.com/p1
+12,"Smart TV Samsung 55 UHD",520.00,USD,electronica,https://ejemplo.com/p2
+13,"Licuadora Ninja Professional",140.00,USD,hogar,https://ejemplo.com/p13
+14,"Microondas Panasonic 20L",110.00,USD,hogar,https://ejemplo.com/p14
+15,"Termo Hydro Flask 32oz",45.00,USD,hogar,https://ejemplo.com/p15
+16,"Camiseta Deportiva Adidas",29.99,USD,moda,https://ejemplo.com/p16
+17,"Jeans Levi's 511 Slim",59.99,USD,moda,https://ejemplo.com/p17
+18,"Chaqueta Cortavientos Columbia",89.99,USD,moda,https://ejemplo.com/p18
+19,"SSD Samsung 980 Pro 1TB",105.00,USD,electronica,https://ejemplo.com/p19
+20,"Memoria RAM Corsair Vengeance 16GB",65.00,USD,electronica,https://ejemplo.com/p20
+21,"Silla Ergonómica de Oficina",180.00,USD,hogar,https://ejemplo.com/p4
+22,"Audífonos Inalámbricos JBL Tune",49.99,USD,electronica,https://ejemplo.com/p22
+23,"Cámara Web Logitech C920",79.99,USD,electronica,https://ejemplo.com/p23
+24,"Monitor Curvo Samsung 24",159.99,USD,electronica,https://ejemplo.com/p24
+25,"Aspiradora Robot Eufy RoboVac",199.99,USD,hogar,https://ejemplo.com/p25
+26,"Batidora de Pedestal KitchenAid",349.99,USD,hogar,https://ejemplo.com/p26
+27,"Juego de Ollas T-fal 10 piezas",89.99,USD,hogar,https://ejemplo.com/p27
+28,"Lentes de Sol Ray-Ban Wayfarer",135.00,USD,moda,https://ejemplo.com/p28
+29,"Perfume Hugo Boss Bottled 100ml",85.00,USD,moda,https://ejemplo.com/p29
+30,"Cartera de Cuero Tommy Hilfiger",75.00,USD,moda,https://ejemplo.com/p30
+31,"Tablet Apple iPad 10.9",449.00,USD,electronica,https://ejemplo.com/p31
+32,"Consola Nintendo Switch OLED",320.00,USD,electronica,https://ejemplo.com/p32
+33,"Juego Zelda: Tears of the Kingdom",59.99,USD,electronica,https://ejemplo.com/p33
+34,"Tarjeta Gráfica RTX 4060 Ti",399.00,USD,electronica,https://ejemplo.com/p34
+35,"Procesador AMD Ryzen 7 5700X",189.00,USD,electronica,https://ejemplo.com/p35
+36,"Ventilador de Torre Honeywell",69.99,USD,hogar,https://ejemplo.com/p36
+37,"Humidificador Ultrasónico TaoTronics",39.99,USD,hogar,https://ejemplo.com/p37
+38,"Báscula Digital de Baño Fitbit",49.99,USD,hogar,https://ejemplo.com/p38
+39,"Zapatos Formales Clarks",95.00,USD,moda,https://ejemplo.com/p39
+40,"Billetera de Cuero Fossil",35.00,USD,moda,https://ejemplo.com/p40
+41,"Smart TV Samsung 55 UHD",520.00,USD,electronica,https://ejemplo.com/p2
+42,"Audífonos Sony WH-1000XM4",280.00,USD,electronica,https://ejemplo.com/p3
+43,"Teclado Mecánico Redragon Kumara",45.00,USD,electronica,https://ejemplo.com/p9
+44,"Cafetera Espresso Oster PrimaLatte",220.00,USD,hogar,https://ejemplo.com/p5
+45,"Mochila Impermeable antirrobo",35.00,USD,moda,https://ejemplo.com/p6
+46,,120.00,USD,moda,https://ejemplo.com/p7
+47,"Smart TV Samsung 55 UHD",,USD,electronica,https://ejemplo.com/p2
+48,"Monitor Curvo Samsung 24",159.99,USD,,https://ejemplo.com/p24
+49,"Aspiradora Robot Eufy RoboVac","USD 199.99",USD,hogar,https://ejemplo.com/p25
+50,"Batidora de Pedestal KitchenAid","€349.99",EUR,hogar,https://ejemplo.com/p26

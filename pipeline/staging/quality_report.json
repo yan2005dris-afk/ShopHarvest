@@ -1,0 +1,50 @@
+{
+  "total_registros_raw": 206,
+  "total_registros_staging": 192,
+  "tasa_completitud": "93.2%",
+  "registros_depurados_duplicados": 12,
+  "registros_eliminados_nulos": 2,
+  "tasa_error_promedio": "6.8%",
+  "error_rate_by_source": {
+    "mercadolibre": "20.0%",
+    "aliexpress": "0.0%",
+    "temu": "0.0%",
+    "shein": "0.0%",
+    "archivos": "20.0%",
+    "encuesta": "4.0%"
+  },
+  "null_matrix": {
+    "precio_raw": {
+      "fuente": "mercadolibre",
+      "nullCount": 62,
+      "pct": "36.5%",
+      "strategy": "mediana"
+    },
+    "titulo_oferta": {
+      "fuente": "aliexpress",
+      "nullCount": 2,
+      "pct": "1.2%",
+      "strategy": "eliminar"
+    },
+    "categoria": {
+      "fuente": "temu",
+      "nullCount": 73,
+      "pct": "42.9%",
+      "strategy": "clasificar"
+    },
+    "gasto_promedio_mensual": {
+      "fuente": "fuente_propia",
+      "nullCount": 0,
+      "pct": "0.0%",
+      "strategy": "inferir"
+    },
+    "edad": {
+      "fuente": "fuente_propia",
+      "nullCount": 0,
+      "pct": "0.0%",
+      "strategy": "eliminar"
+    }
+  },
+  "campos_normalizados_utf8": 1417,
+  "generated_at": "2026-06-30T07:44:30.345Z"
+}
