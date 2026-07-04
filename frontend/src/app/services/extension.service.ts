@@ -37,14 +37,27 @@ export class ExtensionService {
       if (e.source !== window) return;
       const data = e.data as Partial<HandshakeMessage>;
       if (data?.type === '__VS_READY__' && data.extensionId) {
-        const firstTime = this.extensionId === null;
+        // Always refresh the id (the extension may have been reloaded) and
+        // announce availability if we weren't already marked available.
         this.extensionId = data.extensionId;
-        if (firstTime) this.available$.next(true);
+        if (!this.available$.value) this.available$.next(true);
       }
     });
 
-    // Ping — triggers content script to respond if already loaded
-    window.postMessage({ type: '__VS_PING__' }, '*');
+    // The content script may load before OR after Angular, so a single ping can
+    // be missed. Retry with backoff until it answers (review §S6).
+    this.pingWithBackoff();
+  }
+
+  private pingWithBackoff(): void {
+    const delaysMs = [0, 250, 500, 1000, 2000];
+    for (const delay of delaysMs) {
+      setTimeout(() => {
+        if (this.extensionId === null) {
+          window.postMessage({ type: '__VS_PING__' }, '*');
+        }
+      }, delay);
+    }
   }
 
   isAvailable(): boolean {

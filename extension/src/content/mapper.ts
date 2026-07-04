@@ -562,11 +562,18 @@ function extractFieldsFrom(
       product[mapping.canonicalField] = el.innerHTML?.trim() ?? null;
     }
 
-    // Price parsing (only if field looks like a price)
-    if (typeof product[mapping.canonicalField] === 'string') {
-      const raw = product[mapping.canonicalField] as string;
-      const parsed = parseFloat(raw.replace(/[^0-9.]/g, '') ?? '');
-      if (!isNaN(parsed)) {
+    // Coerce to a number ONLY for price-like fields. Otherwise a title of
+    // "123" would become 123, and "4K TV" would collapse to 4 (review §S4).
+    if (
+      typeof product[mapping.canonicalField] === 'string' &&
+      /precio|price|amount|cost|costo/i.test(mapping.canonicalField)
+    ) {
+      const digits = (product[mapping.canonicalField] as string).replace(
+        /[^0-9.]/g,
+        '',
+      );
+      const parsed = parseFloat(digits);
+      if (digits !== '' && !isNaN(parsed)) {
         product[mapping.canonicalField] = parsed;
       }
     }
