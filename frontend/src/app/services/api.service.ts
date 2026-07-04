@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import type { HttpClient } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import type { Observable } from 'rxjs';
 
 // ─── Interfaces ─────────────────────────────────────────────
@@ -22,24 +22,6 @@ export interface DomainRule {
   fieldMappings?: FieldMapping[];
   containerSelector?: string;
   productLimit?: number;
-}
-
-export interface ScrapingJob {
-  id: string;
-  domainRuleId: string;
-  domainRule?: DomainRule;
-  url: string;
-  type: string;
-  status: 'queued' | 'processing' | 'completed' | 'failed';
-  retryCount: number;
-  maxRetries: number;
-  errorMessage?: string;
-  result?: any;
-  enqueuedAt: string;
-  startedAt?: string;
-  completedAt?: string;
-  createdAt: string;
-  updatedAt: string;
 }
 
 export interface Product {
@@ -89,39 +71,6 @@ export class ApiService {
 
   updateDomain(id: string, data: Partial<DomainRule>): Observable<DomainRule> {
     return this.http.patch<DomainRule>(`${this.baseUrl}/domains/${id}`, data);
-  }
-
-  // Scrape Listing
-  scrapeListing(
-    domainRuleId: string,
-    url: string,
-    limit?: number,
-  ): Observable<{ id: string; status: string }> {
-    return this.http.post<{ id: string; status: string }>(`${this.baseUrl}/scrape-listing`, {
-      domainRuleId,
-      url,
-      limit,
-    });
-  }
-
-  // Scraping Jobs
-  enqueueJob(domainRuleId: string, url: string): Observable<ScrapingJob> {
-    return this.http.post<ScrapingJob>(`${this.baseUrl}/scraping-jobs`, { domainRuleId, url });
-  }
-
-  getJobs(status?: string, domainRuleId?: string): Observable<ScrapingJob[]> {
-    const params: Record<string, string> = {};
-    if (status) params['status'] = status;
-    if (domainRuleId) params['domainRuleId'] = domainRuleId;
-    return this.http.get<ScrapingJob[]>(`${this.baseUrl}/scraping-jobs`, { params });
-  }
-
-  getJobStatus(jobId: string): Observable<ScrapingJob> {
-    return this.http.get<ScrapingJob>(`${this.baseUrl}/scraping-jobs/${jobId}`);
-  }
-
-  getJobResult(jobId: string): Observable<any> {
-    return this.http.get(`${this.baseUrl}/scraping-jobs/${jobId}/result`);
   }
 
   // Products

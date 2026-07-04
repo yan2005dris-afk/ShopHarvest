@@ -40,8 +40,6 @@ model DomainRule {
   updatedAt       DateTime @updatedAt
 
   products        Product[]
-  scrapingJobs    ScrapingJob[]
-  scrapingSchedules ScrapingSchedule[]
 }
 
 // Product — Datos normalizados extraídos
@@ -88,42 +86,7 @@ model PriceHistory {
   @@index([capturedAt])
 }
 
-// ScrapingJob — Lifecycle de cada trabajo de scraping
-model ScrapingJob {
-  id              String    @id @default(uuid()) @db.Uuid
-  domainRuleId    String    @db.Uuid
-  domainRule      DomainRule @relation(fields: [domainRuleId], references: [id])
-
-  url             String
-  type            String    @default("single") // "single" | "listing"
-  status          String    @default("queued")
-  retryCount      Int       @default(0)
-  maxRetries      Int       @default(3)
-  errorMessage    String?
-  result          Json?
-
-  enqueuedAt      DateTime  @default(now())
-  startedAt       DateTime?
-  completedAt     DateTime?
-
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-
-  @@index([domainRuleId])
-}
-
-// ScrapingSchedule — Programación cron para scraping automático
-model ScrapingSchedule {
-  id              String    @id @default(uuid()) @db.Uuid
-  domainRuleId    String    @db.Uuid
-  domainRule      DomainRule @relation(fields: [domainRuleId], references: [id])
-
-  cronExpression  String
-  enabled         Boolean   @default(true)
-  lastRunAt       DateTime?
-
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-
-  @@index([enabled])
-}
+// ScrapingJob and ScrapingSchedule models were removed in review batch 4. The
+// headless worker they fed no longer exists; automated re-scraping now runs in
+// the extension via chrome.alarms (batch 5). See migration
+// 20260704020000_drop_scraping_jobs_schedules.
