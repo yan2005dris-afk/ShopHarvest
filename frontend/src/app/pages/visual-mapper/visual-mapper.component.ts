@@ -68,6 +68,15 @@ export class VisualMapperComponent implements OnInit, OnDestroy {
   /** Error from products ingest (rule can succeed, products can fail) */
   ingestError = '';
 
+  // ── Auto-replay schedule (batch 5) ────────────────────────
+  /** Hostname of the rule just saved — target for scheduling. */
+  savedDomain: string | null = null;
+  scheduleIntervalHours = 24;
+  scheduleEnabled = false;
+  scheduleSaved = false;
+  scheduleError = '';
+  savingSchedule = false;
+
   constructor(
     private readonly apiService: ApiService,
     private readonly extensionService: ExtensionService,
@@ -239,6 +248,7 @@ export class VisualMapperComponent implements OnInit, OnDestroy {
     saveOp.subscribe({
       next: () => {
         this.domainRuleSaved = true;
+        this.savedDomain = hostname;
         this.currentState = 'done';
         this.cdr.markForCheck();
       },
@@ -279,6 +289,41 @@ export class VisualMapperComponent implements OnInit, OnDestroy {
       });
   }
 
+  // ─── Auto-replay schedule ─────────────────────────────────
+
+  /**
+   * Registers (or updates) a per-domain auto-scrape schedule in the extension.
+   * The extension fires a chrome.alarm on the chosen interval and re-runs the
+   * saved rule whenever a tab on this domain is open. Requires the extension.
+   */
+  saveSchedule(): void {
+    if (!this.savedDomain || !this.extensionAvailable) return;
+
+    this.savingSchedule = true;
+    this.scheduleError = '';
+    this.scheduleSaved = false;
+    this.cdr.markForCheck();
+
+    const intervalMinutes = Math.max(1, Math.round(this.scheduleIntervalHours * 60));
+
+    this.extensionService
+      .setSchedule(this.savedDomain, intervalMinutes, this.scheduleEnabled)
+      .then((res) => {
+        if (res.ok) {
+          this.scheduleSaved = true;
+        } else {
+          this.scheduleError = res.error ?? 'Failed to save schedule.';
+        }
+      })
+      .catch((err: Error) => {
+        this.scheduleError = err.message;
+      })
+      .finally(() => {
+        this.savingSchedule = false;
+        this.cdr.markForCheck();
+      });
+  }
+
   // ─── Utils ────────────────────────────────────────────────
 
   private extractHostname(url: string): string {
@@ -307,6 +352,11 @@ export class VisualMapperComponent implements OnInit, OnDestroy {
     this.productsIngested = false;
     this.savingProducts = false;
     this.ingestError = '';
+    this.savedDomain = null;
+    this.scheduleEnabled = false;
+    this.scheduleSaved = false;
+    this.scheduleError = '';
+    this.savingSchedule = false;
     this.cdr.markForCheck();
   }
 }

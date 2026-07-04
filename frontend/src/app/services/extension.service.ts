@@ -102,4 +102,50 @@ export class ExtensionService {
       };
     });
   }
+
+  // ── Auto-replay scheduling (batch 5) ──────────────────────────────────────
+  // The extension owns the chrome.alarms; Angular just tells it what to run.
+
+  setSchedule(
+    domain: string,
+    intervalMinutes: number,
+    enabled: boolean,
+  ): Promise<{ ok: boolean; error?: string }> {
+    return this.sendExternal({
+      type: 'SET_SCHEDULE',
+      payload: { domain, intervalMinutes, enabled },
+    });
+  }
+
+  getSchedules(): Promise<{ ok: boolean; schedules?: Record<string, ScheduleEntry> }> {
+    return this.sendExternal({ type: 'GET_SCHEDULES' });
+  }
+
+  private sendExternal<T>(message: unknown): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+      if (!this.extensionId) {
+        reject(new Error('Extension not available'));
+        return;
+      }
+      const cr = (window as unknown as { chrome?: typeof chrome })?.chrome;
+      if (!cr?.runtime?.sendMessage) {
+        reject(new Error('Chrome runtime not available'));
+        return;
+      }
+      cr.runtime.sendMessage(this.extensionId, message, (response: T) => {
+        const err = cr.runtime?.lastError?.message;
+        if (err) {
+          reject(new Error(err));
+          return;
+        }
+        resolve(response);
+      });
+    });
+  }
+}
+
+export interface ScheduleEntry {
+  intervalMinutes: number;
+  enabled: boolean;
+  lastRunAt: number | null;
 }

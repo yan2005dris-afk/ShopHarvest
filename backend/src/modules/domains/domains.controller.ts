@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { DomainsService } from './domains.service';
 import { CreateDomainDto, UpdateDomainDto } from './dto';
@@ -14,9 +15,11 @@ import { CreateDomainDto, UpdateDomainDto } from './dto';
 export class DomainsController {
   constructor(private readonly domainsService: DomainsService) {}
 
+  // `host` lets the extension look up the saved rule for the current page
+  // (used by the batch-5 auto-replay scheduler).
   @Get()
-  async findAll() {
-    return this.domainsService.findAll();
+  async findAll(@Query('host') host?: string) {
+    return this.domainsService.findAll(host);
   }
 
   @Get(':id')

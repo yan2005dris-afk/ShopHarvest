@@ -7,8 +7,9 @@ import { CreateDomainDto, UpdateDomainDto } from './dto';
 export class DomainsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll() {
+  async findAll(host?: string) {
     return this.prisma.domainRule.findMany({
+      where: host ? { domain: host } : undefined,
       include: { products: true },
     });
   }

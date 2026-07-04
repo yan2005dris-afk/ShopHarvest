@@ -4,6 +4,11 @@ import type {
   MappingSession,
   PortInbound,
 } from '../types';
+import { initScheduler } from './scheduler';
+
+// ── Auto-replay scheduler (batch 5) ───────────────────────────────────────────
+
+initScheduler();
 
 // ── Active mapping session (one at a time) ────────────────────────────────────
 

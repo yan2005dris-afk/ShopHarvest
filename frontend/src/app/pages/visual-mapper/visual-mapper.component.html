@@ -236,6 +236,55 @@
           <p class="vm-done-desc">{{ extractedProducts.length }} product(s) ready to save.</p>
         }
 
+        @if (domainRuleSaved && savedDomain) {
+          <div class="vm-schedule">
+            <h3 class="vm-schedule-title">Auto-scrape</h3>
+            @if (extensionAvailable) {
+              <p class="vm-schedule-hint">
+                Re-run this rule automatically while a tab on
+                <strong>{{ savedDomain }}</strong> is open.
+              </p>
+              <div class="vm-schedule-row">
+                <label>
+                  Every
+                  <input
+                    type="number"
+                    min="1"
+                    step="1"
+                    class="vm-schedule-input"
+                    [(ngModel)]="scheduleIntervalHours"
+                  />
+                  hour(s)
+                </label>
+                <label class="vm-schedule-toggle">
+                  <input type="checkbox" [(ngModel)]="scheduleEnabled" />
+                  Enabled
+                </label>
+              </div>
+              <button
+                class="btn-accent"
+                [disabled]="savingSchedule"
+                (click)="saveSchedule()"
+              >
+                @if (savingSchedule) {
+                  Saving…
+                } @else if (scheduleSaved) {
+                  ✓ Schedule saved
+                } @else {
+                  Save schedule
+                }
+              </button>
+              @if (scheduleError) {
+                <p class="vm-error-msg">{{ scheduleError }}</p>
+              }
+            } @else {
+              <p class="vm-schedule-hint">
+                Install the extension to enable automatic re-scraping.
+              </p>
+            }
+          </div>
+        }
+
         @if (ingestError) {
           <p class="vm-error-msg">{{ ingestError }}</p>
         }

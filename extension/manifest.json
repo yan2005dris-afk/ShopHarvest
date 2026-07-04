@@ -3,7 +3,7 @@
   "name": "Visual Scraper",
   "version": "1.0.0",
   "description": "Map and extract data from any e-commerce page",
-  "permissions": ["storage", "activeTab", "scripting"],
+  "permissions": ["storage", "activeTab", "scripting", "alarms", "tabs"],
   "host_permissions": ["http://localhost:3000/*"],
   "action": {
     "default_popup": "popup.html",

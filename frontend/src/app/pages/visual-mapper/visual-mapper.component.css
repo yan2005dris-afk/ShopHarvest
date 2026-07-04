@@ -713,3 +713,59 @@
   border-radius: var(--radius);
   background: var(--surface-2);
 }
+
+/* ── Auto-scrape schedule (batch 5) ─────────────────────────── */
+
+.vm-schedule {
+  margin: 20px 0;
+  padding: 16px;
+  text-align: left;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.vm-schedule-title {
+  margin: 0 0 6px;
+  font-size: 0.95rem;
+  color: var(--text-1);
+}
+
+.vm-schedule-hint {
+  margin: 0 0 12px;
+  font-size: 0.85rem;
+  color: var(--text-2);
+}
+
+.vm-schedule-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+  font-size: 0.85rem;
+  color: var(--text-1);
+}
+
+.vm-schedule-input {
+  width: 64px;
+  margin: 0 6px;
+  padding: 6px 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-1);
+  font-family: var(--font);
+}
+
+.vm-schedule-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+.vm-schedule-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
