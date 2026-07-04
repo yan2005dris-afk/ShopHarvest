@@ -48,6 +48,16 @@ async function getBackendUrl(): Promise<string> {
     : DEFAULT_BACKEND_URL;
 }
 
+/** JWT handed over by the Angular app after login (batch 6). */
+async function getAuthToken(): Promise<string | null> {
+  const { authToken } = await chrome.storage.local.get('authToken');
+  return typeof authToken === 'string' && authToken.length > 0 ? authToken : null;
+}
+
+function authHeaders(token: string | null): Record<string, string> {
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 // ── Alarms ──────────────────────────────────────────────────────────────────
 
 function alarmName(domain: string): string {
@@ -111,7 +121,10 @@ async function findTabForDomain(domain: string): Promise<chrome.tabs.Tab | null>
 
 async function fetchRule(domain: string): Promise<ExtDomainRule | null> {
   const base = await getBackendUrl();
-  const res = await fetch(`${base}/domains?host=${encodeURIComponent(domain)}`);
+  const token = await getAuthToken();
+  const res = await fetch(`${base}/domains?host=${encodeURIComponent(domain)}`, {
+    headers: authHeaders(token),
+  });
   if (!res.ok) return null;
   const rules = (await res.json()) as Array<{
     domain: string;
@@ -165,10 +178,11 @@ async function runReplay(domain: string): Promise<void> {
   }
 
   const base = await getBackendUrl();
+  const token = await getAuthToken();
   try {
     await fetch(`${base}/products/ingest`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
       body: JSON.stringify({
         domain,
         pageUrl: tab.url,
@@ -224,6 +238,14 @@ export function initScheduler(): void {
 
     if (type === 'GET_SCHEDULES') {
       void getSchedules().then((schedules) => sendResponse({ ok: true, schedules }));
+      return true;
+    }
+
+    if (type === 'SET_AUTH_TOKEN') {
+      const { token } = (payload ?? {}) as { token?: string };
+      void chrome.storage.local
+        .set({ authToken: token ?? '' })
+        .then(() => sendResponse({ ok: true }));
       return true;
     }
 

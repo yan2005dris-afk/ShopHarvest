@@ -1,0 +1,62 @@
+import { Component, inject } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
+import { AuthService } from '../../services/auth.service';
+
+type Mode = 'login' | 'register';
+
+@Component({
+  selector: 'app-login',
+  imports: [FormsModule],
+  templateUrl: './login.component.html',
+  styleUrl: './login.component.css',
+})
+export class LoginComponent {
+  private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
+
+  mode: Mode = 'login';
+  email = '';
+  password = '';
+  error = '';
+  submitting = false;
+
+  get title(): string {
+    return this.mode === 'login' ? 'Sign in' : 'Create account';
+  }
+
+  toggleMode(): void {
+    this.mode = this.mode === 'login' ? 'register' : 'login';
+    this.error = '';
+  }
+
+  submit(): void {
+    if (this.submitting) return;
+    this.error = '';
+
+    if (!this.email.trim() || !this.password) {
+      this.error = 'Email and password are required.';
+      return;
+    }
+
+    this.submitting = true;
+    const op =
+      this.mode === 'login'
+        ? this.auth.login(this.email.trim(), this.password)
+        : this.auth.register(this.email.trim(), this.password);
+
+    op.subscribe({
+      next: () => {
+        this.submitting = false;
+        void this.router.navigate(['/']);
+      },
+      error: (err) => {
+        this.submitting = false;
+        this.error =
+          err?.error?.message ||
+          err?.message ||
+          'Authentication failed. Please try again.';
+      },
+    });
+  }
+}

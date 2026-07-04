@@ -90,3 +90,13 @@ model PriceHistory {
 // headless worker they fed no longer exists; automated re-scraping now runs in
 // the extension via chrome.alarms (batch 5). See migration
 // 20260704020000_drop_scraping_jobs_schedules.
+
+// User — authentication (review batch 6, C2). JWT-based per-user auth gates the
+// API so arbitrary extensions can no longer POST/DELETE.
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}

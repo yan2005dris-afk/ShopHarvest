@@ -1,0 +1,55 @@
+import {
+  ConflictException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import * as bcrypt from 'bcryptjs';
+import { UsersService } from './users.service';
+
+export interface JwtPayload {
+  sub: string;
+  email: string;
+}
+
+export interface AuthResult {
+  accessToken: string;
+  user: { id: string; email: string };
+}
+
+@Injectable()
+export class AuthService {
+  private static readonly SALT_ROUNDS = 10;
+
+  constructor(
+    private readonly users: UsersService,
+    private readonly jwt: JwtService,
+  ) {}
+
+  async register(email: string, password: string): Promise<AuthResult> {
+    const existing = await this.users.findByEmail(email);
+    if (existing) {
+      throw new ConflictException('Email already registered');
+    }
+    const passwordHash = await bcrypt.hash(password, AuthService.SALT_ROUNDS);
+    const user = await this.users.create(email, passwordHash);
+    return this.issueToken(user.id, user.email);
+  }
+
+  async login(email: string, password: string): Promise<AuthResult> {
+    const user = await this.users.findByEmail(email);
+    // Compare against a real (or dummy) hash either way, so a missing user and
+    // a wrong password return the same error and take similar time.
+    const hash = user?.passwordHash ?? '$2a$10$invalidinvalidinvalidinvalidinvalidinvalidinv';
+    const ok = await bcrypt.compare(password, hash);
+    if (!user || !ok) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+    return this.issueToken(user.id, user.email);
+  }
+
+  private issueToken(sub: string, email: string): AuthResult {
+    const payload: JwtPayload = { sub, email };
+    return { accessToken: this.jwt.sign(payload), user: { id: sub, email } };
+  }
+}

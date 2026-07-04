@@ -121,6 +121,14 @@ export class ExtensionService {
     return this.sendExternal({ type: 'GET_SCHEDULES' });
   }
 
+  /**
+   * Hands the current JWT to the extension so its background scheduler can call
+   * the (now authenticated) backend. Rejects if the extension is unavailable.
+   */
+  setAuthToken(token: string): Promise<{ ok: boolean }> {
+    return this.sendExternal({ type: 'SET_AUTH_TOKEN', payload: { token } });
+  }
+
   private sendExternal<T>(message: unknown): Promise<T> {
     return new Promise<T>((resolve, reject) => {
       if (!this.extensionId) {
