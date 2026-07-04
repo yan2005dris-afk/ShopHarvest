@@ -44,3 +44,5 @@ coverage/
 /.agents
 /.claude
 /.junie
+# Local Pi runtime state
+.atl/

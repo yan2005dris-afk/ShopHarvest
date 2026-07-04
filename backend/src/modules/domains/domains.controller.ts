@@ -8,6 +8,7 @@ import {
   Delete,
 } from '@nestjs/common';
 import { DomainsService } from './domains.service';
+import { CreateDomainDto, UpdateDomainDto } from './dto';
 
 @Controller('domains')
 export class DomainsController {
@@ -24,48 +25,13 @@ export class DomainsController {
   }
 
   @Post()
-  async create(
-    @Body()
-    data: {
-      domain: string;
-      name: string;
-      selectorTitle: string;
-      selectorPrice: string;
-      selectorImage?: string;
-      selectorSku?: string;
-      selectorType?: string;
-      paginationType?: string;
-      paginationSelector?: string;
-      sampleUrl?: string;
-      fieldMappings?: Record<string, unknown>[];
-      containerSelector?: string;
-      productLimit?: number;
-    },
-  ) {
-    return this.domainsService.create(data);
+  async create(@Body() dto: CreateDomainDto) {
+    return this.domainsService.create(dto);
   }
 
   @Patch(':id')
-  async update(
-    @Param('id') id: string,
-    @Body()
-    data: Partial<{
-      domain: string;
-      name: string;
-      selectorTitle: string;
-      selectorPrice: string;
-      selectorImage: string;
-      selectorSku: string;
-      selectorType: string;
-      paginationType: string;
-      paginationSelector: string;
-      sampleUrl: string;
-      fieldMappings: Record<string, unknown>[];
-      containerSelector: string;
-      productLimit: number;
-    }>,
-  ) {
-    return this.domainsService.update(id, data);
+  async update(@Param('id') id: string, @Body() dto: UpdateDomainDto) {
+    return this.domainsService.update(id, dto);
   }
 
   @Delete(':id')

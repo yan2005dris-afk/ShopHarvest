@@ -9,7 +9,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ProductsService } from './products.service';
-import { UpsertProductDto, ProductQueryDto } from './dto';
+import { UpsertProductDto, ProductQueryDto, IngestProductsDto } from './dto';
 
 @Controller('products')
 export class ProductsController {
@@ -30,10 +30,8 @@ export class ProductsController {
   }
 
   @Post('ingest')
-  async ingestFromExtension(
-    @Body() body: { domain: string; pageUrl?: string; products: Record<string, unknown>[] },
-  ) {
-    return this.productsService.ingestFromExtension(body.domain, body.pageUrl, body.products);
+  async ingestFromExtension(@Body() dto: IngestProductsDto) {
+    return this.productsService.ingestFromExtension(dto);
   }
 
   @Post('upsert')
@@ -63,7 +61,7 @@ export class ProductsController {
     return this.productsService.getPriceHistory(id, from, to);
   }
 
-  @Get('domain/:domainRuleId')
+  @Get('by-domain/:domainRuleId')
   async findByDomain(@Param('domainRuleId') domainRuleId: string) {
     return this.productsService.findAllByDomain(domainRuleId);
   }

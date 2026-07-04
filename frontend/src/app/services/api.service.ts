@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import type { HttpClient } from '@angular/common/http';
+import type { Observable } from 'rxjs';
 
 // ─── Interfaces ─────────────────────────────────────────────
 
@@ -15,11 +15,6 @@ export interface DomainRule {
   id: string;
   domain: string;
   name: string;
-  selectorTitle: string;
-  selectorPrice: string;
-  selectorImage?: string;
-  selectorSku?: string;
-  selectorType: string;
   sampleUrl?: string;
   lastScrapedAt?: string;
   createdAt: string;
@@ -102,10 +97,11 @@ export class ApiService {
     url: string,
     limit?: number,
   ): Observable<{ id: string; status: string }> {
-    return this.http.post<{ id: string; status: string }>(
-      `${this.baseUrl}/scrape-listing`,
-      { domainRuleId, url, limit },
-    );
+    return this.http.post<{ id: string; status: string }>(`${this.baseUrl}/scrape-listing`, {
+      domainRuleId,
+      url,
+      limit,
+    });
   }
 
   // Scraping Jobs
@@ -154,6 +150,8 @@ export class ApiService {
     const params: Record<string, string> = {};
     if (from) params['from'] = from;
     if (to) params['to'] = to;
-    return this.http.get<PriceHistory[]>(`${this.baseUrl}/products/${productId}/history`, { params });
+    return this.http.get<PriceHistory[]>(`${this.baseUrl}/products/${productId}/history`, {
+      params,
+    });
   }
 }

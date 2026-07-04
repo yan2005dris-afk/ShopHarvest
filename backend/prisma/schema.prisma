@@ -1,6 +1,8 @@
-// ─── Entry Point ─────────────────────────────────────────────────────────
-// Este archivo se genera a partir de los archivos en prisma/schema/
-// Para regenerarlo: pnpm prisma:generate-schema
+// ─── Prisma Schema ───────────────────────────────────────────────────────
+// Single source of truth. Edit this file directly; do NOT split it across
+// multiple files (a previous attempt at a `schema/models/` directory was
+// removed in batch 2 — it was never wired into a generator and produced
+// drift between source and generated client types).
 
 // Generator & Datasource
 generator client {
@@ -19,18 +21,15 @@ model DomainRule {
   domain          String   @unique
   name            String
 
-  // Legacy single-field selectors (optional — fieldMappings supersedes)
-  selectorTitle   String?
-  selectorPrice   String?
-  selectorImage   String?
-  selectorSku     String?
-
-  // Visual mapper: field mappings (supersedes selector* when non-empty)
+  // Single source of truth for extraction rules. The visual mapper writes
+  // here; the ingest endpoint reads from here. Legacy `selectorTitle/Price/
+  // Image/Sku/Type` columns were dropped in batch 2.
   fieldMappings       Json?
   containerSelector   String?
   productLimit        Int?
 
-  selectorType    String   @default("css")
+  // Pagination metadata — kept because batch 5 (auto-replay with scroll)
+  // will use these.
   paginationType  String   @default("scroll")
   paginationSelector String?
 

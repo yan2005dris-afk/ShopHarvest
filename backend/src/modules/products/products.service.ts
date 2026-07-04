@@ -2,6 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import type { UpsertProductDto } from './dto/upsert-product.dto';
+import type { IngestProductsDto } from './dto/ingest-products.dto';
+import type { FieldMappingDto } from '../domains/dto/field-mapping.dto';
 
 @Injectable()
 export class ProductsService {
@@ -62,7 +64,7 @@ export class ProductsService {
             imageUrl: dto.imageUrl ?? existing.imageUrl,
             sku: dto.sku ?? existing.sku,
             description: dto.description ?? existing.description,
-            rawData: dto.rawData as Prisma.InputJsonValue ?? existing.rawData,
+            rawData: (dto.rawData as Prisma.InputJsonValue) ?? existing.rawData,
             extractedAt: new Date(),
           },
         });
@@ -76,7 +78,9 @@ export class ProductsService {
           },
         });
 
-        this.logger.log(`Updated product ${existing.id} with new price ${price}`);
+        this.logger.log(
+          `Updated product ${existing.id} with new price ${price}`,
+        );
         return updated;
       } else {
         // Create new product
@@ -140,47 +144,82 @@ export class ProductsService {
     return this.prisma.product.create({ data });
   }
 
-  async ingestFromExtension(
-    domain: string,
-    pageUrl: string | undefined,
-    products: Record<string, unknown>[],
-  ) {
-    let domainRule = await this.prisma.domainRule.findUnique({ where: { domain } });
+  async ingestFromExtension(dto: IngestProductsDto) {
+    let domainRule = await this.prisma.domainRule.findUnique({
+      where: { domain: dto.domain },
+    });
+
+    const incomingMappings =
+      dto.fieldMappings && dto.fieldMappings.length > 0
+        ? dto.fieldMappings
+        : null;
+
     if (!domainRule) {
+      // First time we see this domain: create a rule from the inbound
+      // mappings (preferred) or, as a degraded fallback, derive from
+      // payload keys.
+      const fieldMappings =
+        incomingMappings ?? this.deriveFieldMappingsFromPayload(dto.products);
+
       domainRule = await this.prisma.domainRule.create({
-        data: { domain, name: domain, selectorTitle: '', selectorPrice: '' },
+        data: {
+          domain: dto.domain,
+          name: dto.domain,
+          fieldMappings: fieldMappings as unknown as Prisma.InputJsonValue,
+        },
       });
+    } else {
+      // Rule already exists. Two scenarios that should update its
+      // `fieldMappings`:
+      //   1. The stored rule has no mappings yet (legacy install or
+      //      auto-create from a previous ingest without mappings).
+      //   2. The inbound mappings differ from the stored ones AND the
+      //      inbound mapping has a non-empty selector that wasn't in the
+      //      stored mapping. This is the "extension just mapped the
+      //      page" case.
+      // We do NOT overwrite UI-edited mappings (PATCH /domains/:id) on
+      // every ingest — that would clobber user customizations. If the
+      // extension genuinely changed the rule, PATCH it explicitly.
+      const storedMappings = (domainRule.fieldMappings ??
+        []) as unknown as FieldMappingDto[];
+      if (
+        storedMappings.length === 0 &&
+        incomingMappings &&
+        incomingMappings.length > 0
+      ) {
+        domainRule = await this.prisma.domainRule.update({
+          where: { id: domainRule.id },
+          data: {
+            fieldMappings: incomingMappings as unknown as Prisma.InputJsonValue,
+          },
+        });
+      }
+    }
+
+    const mappings =
+      (domainRule.fieldMappings as unknown as FieldMappingDto[]) ?? [];
+
+    // Hoist the "no title mapping" warning so a 500-product ingest does
+    // not log 500 lines.
+    const hasTitleMapping = mappings.some((m) =>
+      /^title$|^nombre$|^name$/i.test(m.canonicalField),
+    );
+    if (!hasTitleMapping) {
+      this.logger.warn(
+        `Ingest for "${dto.domain}" has no canonical title mapping (title/nombre/name); products will fall back to "Raw product"`,
+      );
     }
 
     const results = [];
-    for (const product of products) {
+
+    for (const product of dto.products) {
       try {
-        // ── Dynamic field handling ──────────────────────────────────
-        // Sin heurística de nombres — rawData guarda TODO tal cual.
-        // La normalización se hace después, contra el schema final.
-        const keys = Object.keys(product);
-
-        // Title: first non-URL-ish string value
-        let title = 'Raw product';
-        for (const key of keys) {
-          const v = String(product[key] ?? '').trim();
-          if (v && v.length < 200 && !v.startsWith('http')) { title = v; break; }
-        }
-
-        let price = 0;
-        for (const val of Object.values(product)) {
-          if (typeof val === 'number' && val > 0) { price = val; break; }
-          if (typeof val === 'string') {
-            const trimmed = val.trim();
-            if (/^\d+(\.\d+)?$/.test(trimmed)) {
-              const n = parseFloat(trimmed);
-              if (!isNaN(n) && n > 0) { price = n; break; }
-            }
-          }
-        }
-
-        const titleSlug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 80);
-        const productUrl = `${pageUrl ?? domain}#${titleSlug}`;
+        const mapped = this.mapProductByRule(product, mappings);
+        const titleSlug = mapped.title
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .slice(0, 80);
+        const productUrl = `${dto.pageUrl ?? dto.domain}#${titleSlug}`;
 
         const existing = await this.prisma.product.findFirst({
           where: { productUrl, domainRuleId: domainRule.id },
@@ -189,18 +228,45 @@ export class ProductsService {
         if (existing) {
           await this.prisma.product.update({
             where: { id: existing.id },
-            data: { title, price, currency: 'USD', rawData: product as any, extractedAt: new Date() },
+            data: {
+              title: mapped.title,
+              price: mapped.price,
+              currency: 'USD',
+              imageUrl: mapped.imageUrl ?? undefined,
+              sku: mapped.sku ?? undefined,
+              description: mapped.description ?? undefined,
+              rawData: product,
+              extractedAt: new Date(),
+            },
           });
           await this.prisma.priceHistory.create({
-            data: { productId: existing.id, price, currency: 'USD' },
+            data: {
+              productId: existing.id,
+              price: mapped.price,
+              currency: 'USD',
+            },
           });
           results.push(existing);
         } else {
           const created = await this.prisma.product.create({
-            data: { domainRuleId: domainRule.id, title, price, currency: 'USD', productUrl, rawData: product as any },
+            data: {
+              domainRuleId: domainRule.id,
+              title: mapped.title,
+              price: mapped.price,
+              currency: 'USD',
+              imageUrl: mapped.imageUrl ?? undefined,
+              productUrl,
+              sku: mapped.sku ?? undefined,
+              description: mapped.description ?? undefined,
+              rawData: product,
+            },
           });
           await this.prisma.priceHistory.create({
-            data: { productId: created.id, price, currency: 'USD' },
+            data: {
+              productId: created.id,
+              price: mapped.price,
+              currency: 'USD',
+            },
           });
           results.push(created);
         }
@@ -210,6 +276,91 @@ export class ProductsService {
     }
 
     return { ingested: results.length, domainRuleId: domainRule.id };
+  }
+
+  /**
+   * Map an inbound product to normalized fields using the rule's
+   * `fieldMappings`. The extension is the source of truth for which
+   * canonical field a key represents; this function only translates.
+   *
+   * No guessing, no scanning. If a mapping is missing for a given role,
+   * the corresponding field is `undefined` (except title/price which
+   * have safe fallbacks + a warning log).
+   */
+  private mapProductByRule(
+    product: Record<string, unknown>,
+    mappings: FieldMappingDto[],
+  ): {
+    title: string;
+    price: number;
+    imageUrl?: string;
+    sku?: string;
+    description?: string;
+  } {
+    const valueFor = (canonicalRegex: RegExp): unknown => {
+      const mapping = mappings.find((m) =>
+        canonicalRegex.test(m.canonicalField),
+      );
+      if (!mapping) return undefined;
+      return product[mapping.canonicalField];
+    };
+
+    // ── Title ──────────────────────────────────────────────────────────
+    // No guessing: only the canonical mapping wins. If none matches,
+    // use the placeholder; the warning has already been hoisted to
+    // the parent ingest call so we don't spam logs.
+    let title = 'Raw product';
+    const titleMapping = mappings.find((m) =>
+      /^title$|^nombre$|^name$/i.test(m.canonicalField),
+    );
+    if (titleMapping) {
+      const raw = product[titleMapping.canonicalField];
+      const trimmed = typeof raw === 'string' ? raw.trim() : '';
+      if (trimmed) title = trimmed;
+    }
+
+    // ── Price ─────────────────────────────────────────────────────
+    let price = 0;
+    const priceMapping = mappings.find((m) =>
+      /^price$|^precio$|^amount$/i.test(m.canonicalField),
+    );
+    if (priceMapping) {
+      const raw = product[priceMapping.canonicalField];
+      if (typeof raw === 'number' && raw >= 0) {
+        price = raw;
+      } else if (typeof raw === 'string') {
+        const parsed = parseFloat(raw.trim());
+        if (!isNaN(parsed) && parsed >= 0) price = parsed;
+      }
+    }
+
+    // ── Image / SKU / Description ─────────────────────────────────
+    const asString = (v: unknown): string | undefined =>
+      typeof v === 'string' && v.trim() ? v.trim() : undefined;
+
+    const imageUrl = asString(valueFor(/^image$|^img$|^foto$|^picture$/i));
+    const sku = asString(valueFor(/^sku$/i));
+    const description = asString(valueFor(/^desc/i));
+
+    return { title, price, imageUrl, sku, description };
+  }
+
+  /**
+   * Build a minimal FieldMapping[] from the keys of the first product.
+   * Used only as a fallback when the extension sends a payload without
+   * `fieldMappings` (deprecated path). Selectors are empty; the next
+   * mapping session in the extension UI should overwrite them.
+   */
+  private deriveFieldMappingsFromPayload(
+    products: Array<Record<string, unknown>>,
+  ): FieldMappingDto[] {
+    if (products.length === 0) return [];
+    const keys = Object.keys(products[0]);
+    return keys.map((key) => ({
+      canonicalField: key,
+      selector: '',
+      type: 'text' as const,
+    }));
   }
 
   async remove(id: string) {
