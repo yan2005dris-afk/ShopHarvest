@@ -1,11 +1,8 @@
 :root {
   --bg: #1a1a2e;
-  --surface: #16213e;
-  --accent: #0f3460;
   --highlight: #e94560;
   --text: #eaeaea;
   --text-muted: #888;
-  --success: #4caf50;
   --danger: #e94560;
 }
 
@@ -16,126 +13,27 @@
 }
 
 body {
-  width: 400px;
-  min-height: 200px;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   background: var(--bg);
   color: var(--text);
-  font-family: system-ui, -apple-system, sans-serif;
-  font-size: 14px;
 }
 
 #app {
-  padding: 16px;
+  width: 300px;
+  padding: 18px;
 }
 
-.view {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.view.hidden {
-  display: none;
-}
-
-.header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-h1 {
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--text);
-}
-
-.badge {
-  background: var(--accent);
-  color: var(--text);
-  font-size: 11px;
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-weight: 500;
-}
-
-.badge-active {
-  background: var(--success);
-  color: #fff;
-}
-
-.rule-status {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: var(--success);
-}
-
-.rule-status.hidden { display: none; }
-
-.status-dot {
-  width: 8px;
-  height: 8px;
-  background: var(--success);
-  border-radius: 50%;
+.header h1 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 10px;
 }
 
 .hint {
-  font-size: 12px;
-  color: var(--text-muted);
-}
-
-.fields-list {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  background: var(--surface);
-  border-radius: 6px;
-  padding: 8px;
-  max-height: 300px;
-  overflow-y: auto;
-}
-
-.field-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 6px 8px;
-  border-radius: 4px;
-  gap: 8px;
-}
-
-.field-row:hover {
-  background: rgba(255,255,255,0.04);
-}
-
-.field-name {
   font-size: 13px;
-  font-weight: 500;
-  white-space: nowrap;
-  color: var(--text);
-  min-width: 90px;
-}
-
-.field-name em {
-  color: var(--highlight);
-  font-style: normal;
-}
-
-.field-selector {
-  font-size: 11px;
+  line-height: 1.5;
   color: var(--text-muted);
-  font-family: monospace;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 200px;
-  text-align: right;
-}
-
-.field-selector.set {
-  color: var(--success);
+  margin-bottom: 18px;
 }
 
 .actions {
@@ -145,23 +43,13 @@ h1 {
 }
 
 .btn {
-  padding: 10px 16px;
-  border-radius: 6px;
+  appearance: none;
   border: none;
+  border-radius: 8px;
+  padding: 11px 14px;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
-  transition: opacity 0.15s;
-  width: 100%;
-}
-
-.btn:hover:not(:disabled) {
-  opacity: 0.85;
-}
-
-.btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
 }
 
 .btn-primary {
@@ -169,192 +57,16 @@ h1 {
   color: #fff;
 }
 
-.btn-secondary {
-  background: var(--accent);
-  color: var(--text);
-}
-
-/* ── Section (for field definitions) ─────────────────────────────────── */
-
-.section {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text);
-}
-
-.btn-small {
-  background: var(--accent);
-  color: var(--text);
-  border: none;
-  border-radius: 4px;
-  padding: 4px 10px;
-  font-size: 11px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: opacity 0.15s;
-}
-
-.btn-small:hover { opacity: 0.8; }
-.btn-small-danger {
-  background: transparent;
-  color: var(--danger);
-  border: 1px solid var(--danger);
-  border-radius: 4px;
-  padding: 3px 8px;
-  font-size: 11px;
-  cursor: pointer;
-}
-.btn-small-danger:hover { background: rgba(233,69,96,0.1); }
-
-/* ── Field definitions list (home view) ─────────────────────────────── */
-
-.field-defs-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  background: var(--surface);
-  border-radius: 6px;
-  padding: 8px;
-  max-height: 260px;
-  overflow-y: auto;
-}
-
-.field-def-row {
-  display: flex;
-  gap: 4px;
-  align-items: center;
-}
-
-.field-def-row input[type="text"] {
-  flex: 1;
-  min-width: 0;
-  background: var(--bg);
-  border: 1px solid #333;
-  border-radius: 4px;
-  padding: 5px 8px;
-  color: var(--text);
-  font-size: 12px;
-  outline: none;
-}
-
-.field-def-row input[type="text"]:focus {
-  border-color: var(--accent);
-}
-
-.field-def-row select {
-  background: var(--bg);
-  border: 1px solid #333;
-  border-radius: 4px;
-  padding: 5px 4px;
-  color: var(--text);
-  font-size: 11px;
-  outline: none;
-  cursor: pointer;
-  max-width: 70px;
-}
-
-.field-def-row .attr-input {
-  flex: 0.6;
-  min-width: 0;
-}
-
-/* ── Row when it came from a saved rule (read-only look) ───────────── */
-
-.field-def-row.saved input,
-.field-def-row.saved select {
-  border-color: var(--success);
-  opacity: 0.85;
-}
-
-/* ── Existing styles below ─────────────────────────────────────────── */
-
-.btn-ghost {
-  background: transparent;
-  color: var(--text-muted);
-  border: 1px solid #333;
-}
-
-.btn-danger {
-  background: transparent;
-  color: var(--danger);
-  border: 1px solid var(--danger);
-}
-
-.count {
-  font-size: 13px;
-  color: var(--text-muted);
-}
-
-.table-wrapper {
-  max-height: 280px;
-  overflow: auto;
-  border-radius: 6px;
-  border: 1px solid #333;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 11px;
-}
-
-th {
-  background: var(--accent);
-  color: var(--text);
-  padding: 6px 8px;
-  text-align: left;
-  white-space: nowrap;
-  position: sticky;
-  top: 0;
-}
-
-td {
-  padding: 5px 8px;
-  border-bottom: 1px solid #1e2a3a;
-  color: var(--text-muted);
-  max-width: 100px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-tr:hover td {
-  background: rgba(255,255,255,0.03);
+.btn-primary:hover {
+  filter: brightness(1.08);
 }
 
 .error {
-  color: var(--danger);
+  margin-top: 12px;
   font-size: 12px;
-  padding: 8px;
-  background: rgba(233,69,96,0.1);
-  border-radius: 4px;
+  color: var(--danger);
 }
 
-.error.hidden { display: none; }
-
-.toast {
-  position: fixed;
-  bottom: 16px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--success);
-  color: #fff;
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-size: 13px;
-  font-weight: 600;
-  z-index: 9999;
-  transition: opacity 0.3s;
+.hidden {
+  display: none;
 }
-
-.toast.hidden { display: none; }
-.toast.error-toast { background: var(--danger); }
