@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
-import { IngestProductsDto } from './ingest-products.dto';
+import { IngestProductsDto } from '@web-scraping/contracts/products';
 
 /**
  * Validation contract for `POST /products/ingest`. The runtime ValidationPipe

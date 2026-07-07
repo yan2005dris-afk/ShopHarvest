@@ -8,8 +8,15 @@ import {
   Query,
   NotFoundException,
 } from '@nestjs/common';
+import { plainToInstance } from 'class-transformer';
 import { ProductsService } from './products.service';
-import { UpsertProductDto, ProductQueryDto, IngestProductsDto } from './dto';
+import {
+  UpsertProductDto,
+  ProductQueryDto,
+  IngestProductsDto,
+  ProductResponseDto,
+  PriceHistoryResponseDto,
+} from '@web-scraping/contracts/products';
 
 @Controller('products')
 export class ProductsController {
@@ -45,7 +52,10 @@ export class ProductsController {
     if (!product) {
       throw new NotFoundException(`Product with id ${id} not found`);
     }
-    return product;
+    // Spec 2 REQ-DT-1: pipe Prisma row through plainToInstance so the
+    // @Type(() => Number) decorator on ProductResponseDto.price coerces
+    // the JSON-string Decimal back to a real JS number on the wire.
+    return plainToInstance(ProductResponseDto, product);
   }
 
   @Get(':id/history')
@@ -58,7 +68,11 @@ export class ProductsController {
     if (!product) {
       throw new NotFoundException(`Product with id ${id} not found`);
     }
-    return this.productsService.getPriceHistory(id, from, to);
+    // Same Decimal→number fix as findOne, applied per entry.
+    const history = await this.productsService.getPriceHistory(id, from, to);
+    return history.map((entry) =>
+      plainToInstance(PriceHistoryResponseDto, entry),
+    );
   }
 
   @Get('by-domain/:domainRuleId')
