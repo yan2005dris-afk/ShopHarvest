@@ -52,9 +52,12 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
 
       // Unwrap the body. RFC 7807 envelopes carry `title` + `detail`;
       // legacy NestJS envelopes carry `message` as a string or array.
-      // The body shape is loose because we accept both contracts, so
-      // the interface intentionally widens `error` away from the
-      // duplicate `errors` field used for per-property validation data.
+      // `errors[]` carries the per-field validation entries the
+      // class-validator HttpExceptionFilter emits on 422 responses.
+      interface FieldError {
+        property?: string;
+        messages?: string[];
+      }
       interface ErrorBody {
         type?: string;
         title?: string;
@@ -62,7 +65,7 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
         detail?: string;
         message?: string | string[];
         error?: string;
-        errors?: unknown;
+        errors?: FieldError[];
       }
       const body = (err.error ?? null) as ErrorBody | null;
 
@@ -81,7 +84,16 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
         console.error('[http-error]', consolePayload);
       }
 
+      // Build the user-facing toast message. When the backend returns a
+      // 422 with per-field validation errors, surface the FIRST field's
+      // message — generic "Request validation failed" tells the user
+      // nothing actionable.
+      const firstField = body?.errors?.[0];
+      const fieldMsg = firstField?.messages?.[0];
       const userMessage =
+        (fieldMsg && body?.detail
+          ? `${body.detail}: ${fieldMsg}`
+          : null) ||
         (typeof body?.detail === 'string' && body.detail) ||
         (Array.isArray(body?.message) ? body.message.join('; ') : body?.message) ||
         err.statusText ||

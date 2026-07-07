@@ -124,6 +124,46 @@ describe('errorInterceptor', () => {
     });
   });
 
+  it('surfaces the first per-field validation error on 422 with errors[]', () => {
+    // The class-validator HttpExceptionFilter emits a body of the shape
+    // { detail: 'Request validation failed', errors: [{ property, messages[] }, ...] }
+    // on a 422. The toast should mention the specific field error rather
+    // than the generic detail so the user can act on it.
+    const err = new HttpErrorResponse({
+      status: 422,
+      statusText: 'Unprocessable Entity',
+      error: {
+        type: 'about:blank',
+        title: 'Unprocessable Entity',
+        status: 422,
+        detail: 'Request validation failed',
+        errors: [
+          { property: 'email', messages: ['must be an email'] },
+          { property: 'password', messages: ['too short'] },
+        ],
+      },
+    });
+
+    return new Promise<void>((resolve, reject) => {
+      invokeInterceptor(() => throwError(() => err))
+        .pipe(take(1))
+        .subscribe({
+          next: () => reject(new Error('expected error')),
+          error: () => {
+            try {
+              expect(toastShow).toHaveBeenCalledWith(
+                'Request validation failed: must be an email',
+                'error',
+              );
+              resolve();
+            } catch (e) {
+              reject(e as Error);
+            }
+          },
+        });
+    });
+  });
+
   it('does NOT show a toast or console.error on 401 (auth owns 401)', () => {
     const err = new HttpErrorResponse({ status: 401, statusText: 'Unauthorized' });
 
@@ -159,6 +199,36 @@ describe('errorInterceptor', () => {
               expect(consoleErrorSpy).toHaveBeenCalledWith(
                 '[http-error] non-HTTP failure',
                 expect.objectContaining({ url: '/api/products', method: 'GET' }),
+              );
+              resolve();
+            } catch (e) {
+              reject(e as Error);
+            }
+          },
+        });
+    });
+  });
+
+  it('strips the query string from the logged URL (PII in query params)', () => {
+    const err = new HttpErrorResponse({
+      status: 500,
+      statusText: 'Server Error',
+      error: { detail: 'boom' },
+    });
+
+    return new Promise<void>((resolve, reject) => {
+      invokeInterceptor(
+        () => throwError(() => err),
+        makeRequest('/api/products?token=secret&userId=42'),
+      )
+        .pipe(take(1))
+        .subscribe({
+          next: () => reject(new Error('expected error')),
+          error: () => {
+            try {
+              expect(consoleErrorSpy).toHaveBeenCalledWith(
+                '[http-error]',
+                expect.objectContaining({ url: '/api/products' }),
               );
               resolve();
             } catch (e) {
