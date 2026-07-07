@@ -10,7 +10,8 @@ import { ApiProperty } from '@nestjs/swagger';
  */
 export class ValidationErrorDto {
   @ApiProperty({
-    description: 'Field name that failed validation (dot-path for nested).',
+    description:
+      'Field name (first identifier segment of the class-validator message).',
     example: 'email',
   })
   property!: string;

@@ -261,10 +261,20 @@ export class HttpExceptionFilter implements ExceptionFilter {
   }
 
   /**
-   * Pulls the first dotted path segment out of a class-validator message
-   * (e.g. `'email must be an email'` → `'email'`). Used to populate
-   * `ValidationErrorDto.property` without coupling to class-validator's
-   * internal `ValidationError` shape.
+   * Pulls the first identifier segment out of a class-validator message
+   * (e.g. `'email must be an email'` → `'email'`).
+   *
+   * LIMITATION: class-validator does not include the offending field name
+   * in the constraint message by default — most rules emit the message
+   * verbatim and rely on the caller to cross-reference with their
+   * `ValidationError.property`. We reconstruct a plausible field name
+   * from the first word of the message so the frontend can highlight it,
+   * but this is best-effort: for non-property rules whose message starts
+   * with an adjective or verb (e.g. `'must be a valid email'`),
+   * `property` will be the empty string.
+   *
+   * Used to populate `ValidationErrorDto.property` without coupling to
+   * class-validator's internal `ValidationError` shape.
    */
   private firstPathSegment(message: string): string {
     const match = /^([\w-]+)/.exec(message);
