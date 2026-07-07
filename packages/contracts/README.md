@@ -29,3 +29,19 @@ pnpm --filter @web-scraping/contracts build
 ```
 
 Emits `dist/` with `.js` + `.d.ts` + source maps.
+
+## Lint
+
+Type-check only (default):
+
+```bash
+pnpm --filter @web-scraping/contracts lint
+```
+
+Import isolation check (verifies `@web-scraping/contracts` does not import
+from `backend/` or `frontend/`, per Spec 1 REQ-SC-4). Run from the monorepo
+root:
+
+```bash
+npx eslint --config backend/eslint.config.mjs packages/contracts/src/
+```
