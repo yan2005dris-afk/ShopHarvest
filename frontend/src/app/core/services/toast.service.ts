@@ -99,4 +99,32 @@ export class ToastService {
     }
     this._toasts.set([]);
   }
+
+  // --- Severity-specific shorthands ----------------------------------
+  //
+  // These exist so callers don't have to remember the level-string
+  // spelling (`'success'` vs `'Success'`) and don't accidentally pass
+  // the wrong severity by mixing up the positional argument. The
+  // implementations are intentionally one-liners so the test surface
+  // for severity-specific logic stays trivial.
+
+  /** Convenience shorthand for `show(message, 'success', durationMs?)`. */
+  success(message: string, durationMs?: number): number {
+    return this.show(message, 'success', durationMs);
+  }
+
+  /** Convenience shorthand for `show(message, 'error', durationMs?)`. */
+  error(message: string, durationMs?: number): number {
+    return this.show(message, 'error', durationMs);
+  }
+
+  /** Convenience shorthand for `show(message, 'warning', durationMs?)`. */
+  warning(message: string, durationMs?: number): number {
+    return this.show(message, 'warning', durationMs);
+  }
+
+  /** Convenience shorthand for `show(message, 'info', durationMs?)`. */
+  info(message: string, durationMs?: number): number {
+    return this.show(message, 'info', durationMs);
+  }
 }
