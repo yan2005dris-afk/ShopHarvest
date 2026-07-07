@@ -9,8 +9,12 @@ import {
   Min,
   ValidateNested,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { FieldMappingDto } from './field-mapping.dto';
+
+/** Lowercase the incoming domain so "Temu.COM" and "temu.com" collapse. */
+const lowercaseDomain = ({ value }: { value: unknown }): unknown =>
+  typeof value === 'string' ? value.toLowerCase() : value;
 
 /**
  * Wire shape for `PATCH /domains/:id`. All fields are optional. We hand-roll
@@ -20,6 +24,7 @@ import { FieldMappingDto } from './field-mapping.dto';
 export class UpdateDomainDto {
   @IsOptional()
   @IsString()
+  @Transform(lowercaseDomain)
   @MaxLength(253)
   @Matches(/^[a-z0-9.\-:]+$/i, {
     message:
