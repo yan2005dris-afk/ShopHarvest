@@ -8,6 +8,7 @@ import {
   Query,
   NotFoundException,
 } from '@nestjs/common';
+import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { plainToInstance } from 'class-transformer';
 import { ProductsService } from './products.service';
 import {
@@ -18,10 +19,14 @@ import {
   PriceHistoryResponseDto,
 } from '@web-scraping/contracts/products';
 
+@ApiTags('Products')
 @Controller('products')
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
+  @ApiOperation({ summary: 'List extracted products' })
+  @ApiQuery({ name: 'domainRuleId', required: false, type: String })
+  @ApiQuery({ name: 'includeHistory', required: false, type: Boolean })
   @Get()
   async findAll(@Query() query: ProductQueryDto) {
     const includeHistory = query.includeHistory ?? true;
@@ -45,16 +50,19 @@ export class ProductsController {
     );
   }
 
+  @ApiOperation({ summary: 'Ingest a batch of products extracted by the browser extension' })
   @Post('ingest')
   async ingestFromExtension(@Body() dto: IngestProductsDto) {
     return this.productsService.ingestFromExtension(dto);
   }
 
+  @ApiOperation({ summary: 'Upsert a product by (domainRuleId, productUrl)' })
   @Post('upsert')
   async upsert(@Body() body: UpsertProductDto) {
     return this.productsService.upsert(body);
   }
 
+  @ApiOperation({ summary: 'Get a single product by id' })
   @Get(':id')
   async findOne(@Param('id') id: string) {
     const product = await this.productsService.findOne(id);
@@ -77,6 +85,7 @@ export class ProductsController {
     });
   }
 
+  @ApiOperation({ summary: 'Get the price history for a product' })
   @Get(':id/history')
   async getPriceHistory(
     @Param('id') id: string,
@@ -100,6 +109,7 @@ export class ProductsController {
     );
   }
 
+  @ApiOperation({ summary: 'List products scoped to a single domain rule' })
   @Get('by-domain/:domainRuleId')
   async findByDomain(@Param('domainRuleId') domainRuleId: string) {
     const rows = await this.productsService.findAllByDomain(domainRuleId);
@@ -113,11 +123,13 @@ export class ProductsController {
     );
   }
 
+  @ApiOperation({ summary: 'Create a product (legacy admin path)' })
   @Post()
   async create(@Body() body: Record<string, unknown>) {
     return this.productsService.create(body as any);
   }
 
+  @ApiOperation({ summary: 'Delete a product' })
   @Delete(':id')
   async remove(@Param('id') id: string) {
     return this.productsService.remove(id);
