@@ -28,7 +28,9 @@ A pure type-only package consumed by both the NestJS backend and the Angular fro
 pnpm --filter @web-scraping/contracts build
 ```
 
-Emits `dist/` with `.js` + `.d.ts` + source maps.
+Emits both `dist/` (ESM, with `.js` + `.d.ts` + source maps) and `dist-cjs/`
+(CJS, with `.js` + `.d.ts`). The NestJS CJS backend consumes the CJS path; the
+Angular frontend (ESM) consumes the ESM path.
 
 ## Lint
 

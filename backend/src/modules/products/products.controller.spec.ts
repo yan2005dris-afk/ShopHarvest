@@ -139,26 +139,32 @@ describe('ProductsController routes (Batch 2 / C1)', () => {
  */
 describe('ProductsController response shaping (4R HIGH #2)', () => {
   let controllerInstance: ProductsController;
+  let productsServiceMock: {
+    findAllByDomain: jest.Mock;
+    findAll: jest.Mock;
+    findOne: jest.Mock;
+    getPriceHistory: jest.Mock;
+    ingestFromExtension: jest.Mock;
+    upsert: jest.Mock;
+    create: jest.Mock;
+    remove: jest.Mock;
+  };
   const { Decimal } = Prisma;
 
   beforeEach(async () => {
+    productsServiceMock = {
+      findAllByDomain: jest.fn().mockResolvedValue([]),
+      findAll: jest.fn(),
+      findOne: jest.fn(),
+      getPriceHistory: jest.fn(),
+      ingestFromExtension: jest.fn(),
+      upsert: jest.fn(),
+      create: jest.fn(),
+      remove: jest.fn(),
+    };
     const moduleRef: TestingModule = await Test.createTestingModule({
       controllers: [ProductsController],
-      providers: [
-        {
-          provide: ProductsService,
-          useValue: {
-            findAllByDomain: jest.fn().mockResolvedValue([]),
-            findAll: jest.fn(),
-            findOne: jest.fn(),
-            getPriceHistory: jest.fn(),
-            ingestFromExtension: jest.fn(),
-            upsert: jest.fn(),
-            create: jest.fn(),
-            remove: jest.fn(),
-          },
-        },
-      ],
+      providers: [{ provide: ProductsService, useValue: productsServiceMock }],
     }).compile();
 
     controllerInstance = moduleRef.get(ProductsController);
@@ -168,8 +174,7 @@ describe('ProductsController response shaping (4R HIGH #2)', () => {
     // Stub findOne to return a row shaped exactly like a real Prisma
     // response: live Decimal price + populated priceHistory[] + a
     // joined domainRule relation. This is the BLOCKER scenario.
-    const findOneSpy = controllerInstance['productsService'].findOne as jest.Mock;
-    findOneSpy.mockResolvedValue({
+    productsServiceMock.findOne.mockResolvedValue({
       id: 'p-int-1',
       domainRuleId: 'r-1',
       title: 'Integration',
@@ -204,8 +209,12 @@ describe('ProductsController response shaping (4R HIGH #2)', () => {
     expect(dto.price).toBe(19.99);
 
     // Whitelist must have stripped nested relations (4R CRITICAL #1).
-    expect((dto as unknown as Record<string, unknown>).priceHistory).toBeUndefined();
-    expect((dto as unknown as Record<string, unknown>).domainRule).toBeUndefined();
+    expect(
+      (dto as unknown as Record<string, unknown>).priceHistory,
+    ).toBeUndefined();
+    expect(
+      (dto as unknown as Record<string, unknown>).domainRule,
+    ).toBeUndefined();
 
     // Whitelisted identity fields survived.
     expect(dto.id).toBe('p-int-1');
@@ -215,8 +224,7 @@ describe('ProductsController response shaping (4R HIGH #2)', () => {
   });
 
   it('findAll maps every Prisma row through plainToInstance (list endpoint wrap)', async () => {
-    const findAllSpy = controllerInstance['productsService'].findAll as jest.Mock;
-    findAllSpy.mockResolvedValue([
+    productsServiceMock.findAll.mockResolvedValue([
       {
         id: 'p-list-1',
         domainRuleId: 'r-1',
@@ -243,7 +251,7 @@ describe('ProductsController response shaping (4R HIGH #2)', () => {
       },
     ]);
 
-    const dtos = await controllerInstance.findAll({} as never);
+    const dtos = await controllerInstance.findAll({});
 
     expect(dtos).toHaveLength(2);
     expect(typeof dtos[0].price).toBe('number');
@@ -253,11 +261,7 @@ describe('ProductsController response shaping (4R HIGH #2)', () => {
   });
 
   it('getPriceHistory maps every entry through plainToInstance (4R CRITICAL #3)', async () => {
-    const findOneSpy = controllerInstance['productsService'].findOne as jest.Mock;
-    const getPriceHistorySpy = controllerInstance['productsService']
-      .getPriceHistory as jest.Mock;
-
-    findOneSpy.mockResolvedValue({
+    productsServiceMock.findOne.mockResolvedValue({
       id: 'p-hist-int-1',
       domainRuleId: 'r-1',
       title: 'With history',
@@ -269,7 +273,7 @@ describe('ProductsController response shaping (4R HIGH #2)', () => {
       updatedAt: new Date('2026-01-01T00:00:00.000Z'),
     });
 
-    getPriceHistorySpy.mockResolvedValue([
+    productsServiceMock.getPriceHistory.mockResolvedValue([
       {
         id: 'h-int-1',
         productId: 'p-hist-int-1',
@@ -290,7 +294,9 @@ describe('ProductsController response shaping (4R HIGH #2)', () => {
     expect(history).toHaveLength(1);
     expect(typeof history[0].price).toBe('number');
     expect(history[0].price).toBe(29.5);
-    expect((history[0] as unknown as Record<string, unknown>).product).toBeUndefined();
+    expect(
+      (history[0] as unknown as Record<string, unknown>).product,
+    ).toBeUndefined();
     expect(history[0].productId).toBe('p-hist-int-1');
   });
 });

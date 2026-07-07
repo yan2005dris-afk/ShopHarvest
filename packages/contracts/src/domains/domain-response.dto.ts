@@ -22,8 +22,11 @@ export type DomainPaginationType = 'scroll' | 'page-number';
  * `paginationSelector` so the batch-5 auto-replay scheduler can read its
  * scroll configuration off the saved rule without a second roundtrip.
  *
- * Includes the full `fieldMappings[]` payload so the visual mapper can
- * rehydrate from a single GET.
+ * `fieldMappings[]` is optional and is included whenever the persisted
+ * rule has mappings configured (the common case), so the visual mapper
+ * can rehydrate from a single GET. It may be omitted for legacy rules
+ * created before Slice 2 or for rules auto-derived from extension payloads
+ * without an explicit mapping session.
  *
  * Note: @ApiProperty decorators are intentionally omitted — Swagger /
  * OpenAPI metadata is deferred to Slice 3. @Expose + @Type control
