@@ -1,9 +1,10 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, DestroyRef, OnInit, OnDestroy, inject } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { ExtensionService } from './services/extension.service';
 import { ThemeService } from './services/theme.service';
 import { ToastHostComponent } from './core/components/toast-host.component';
+import { ToastService } from './core/services/toast.service';
 
 @Component({
   selector: 'app-root',
@@ -19,7 +20,12 @@ export class App implements OnInit, OnDestroy {
   constructor(
     private readonly extensionService: ExtensionService,
     readonly themeService: ThemeService,
-  ) {}
+  ) {
+    // Tear down the toast service when the root component dies. The
+    // service is `providedIn: 'root'`, so this hook catches hot-reload
+    // and test-harness teardown where the injector is recreated.
+    inject(DestroyRef).onDestroy(() => inject(ToastService).dispose());
+  }
 
   ngOnInit(): void {
     this.subs.push(

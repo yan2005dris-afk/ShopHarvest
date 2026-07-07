@@ -100,6 +100,19 @@ export class ToastService {
     this._toasts.set([]);
   }
 
+  /**
+   * Tear down the service — cancel every pending timer and empty the
+   * signal. Called once by the root component on destroy via
+   * `DestroyRef.onDestroy(() => toastService.dispose())`. The service
+   * is `providedIn: 'root'`, so the teardown runs when Angular itself
+   * disposes the root injector (essentially never during a normal
+   * page lifetime, but it guarantees no orphan timers survive a
+   * hot-reload in dev or a unit-test harness tear-down).
+   */
+  dispose(): void {
+    this.clear();
+  }
+
   // --- Severity-specific shorthands ----------------------------------
   //
   // These exist so callers don't have to remember the level-string
