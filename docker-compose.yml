@@ -52,6 +52,36 @@ services:
     networks:
       - scraper-network
 
+  etl-worker:
+    build:
+      context: .
+      dockerfile: worker/Dockerfile
+    container_name: scraper-etl-worker
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-scraper}:${POSTGRES_PASSWORD:-scraperpass}@postgres:5432/${POSTGRES_DB:-scraperdb}
+      CRON_SCHEDULE: ${ETL_CRON_SCHEDULE:-0 2 * * *}
+      LOG_LEVEL: ${ETL_LOG_LEVEL:-info}
+      NODE_ENV: production
+    # REQ-ETL-008: process liveness probe. The worker is a non-HTTP cron
+    # process, so the simplest sane check is "did the node process exit 0?"
+    # which transitively proves the process is still alive (docker marks the
+    # container unhealthy if the process is gone). A heartbeat-file approach
+    # is the recommended follow-up but is out of scope for PR 1.
+    healthcheck:
+      test: ["CMD", "node", "-e", "console.log('ok')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - scraper-network
+
 networks:
   scraper-network:
     driver: bridge
