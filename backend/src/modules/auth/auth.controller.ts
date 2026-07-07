@@ -15,6 +15,17 @@ import { Public } from './public.decorator';
 export class AuthController {
   constructor(private readonly auth: AuthService) {}
 
+  /**
+   * Single-source plainToInstance wrapper for auth responses. Auth rows are
+   * Prisma-shaped (`User` model) and the wire DTO uses `@Expose()` to strip
+   * the password hash + internal fields. Centralizing avoids repeating
+   * `excludeExtraneousValues: true`, which is easy to forget on a new
+   * endpoint and would leak the bcrypt hash onto the network.
+   */
+  private toDto<T extends object, V>(cls: new () => T, row: V): T {
+    return plainToInstance(cls, row, { excludeExtraneousValues: true });
+  }
+
   @Public()
   @ApiOperation({ summary: 'Register a new user' })
   @ApiResponse({ status: 201, type: AuthResponseDto })
@@ -31,9 +42,7 @@ export class AuthController {
   @Post('register')
   async register(@Body() dto: RegisterDto): Promise<AuthResponseDto> {
     const result = await this.auth.register(dto.email, dto.password);
-    return plainToInstance(AuthResponseDto, result, {
-      excludeExtraneousValues: true,
-    });
+    return this.toDto(AuthResponseDto, result);
   }
 
   @Public()
@@ -53,8 +62,6 @@ export class AuthController {
   @Post('login')
   async login(@Body() dto: LoginDto): Promise<AuthResponseDto> {
     const result = await this.auth.login(dto.email, dto.password);
-    return plainToInstance(AuthResponseDto, result, {
-      excludeExtraneousValues: true,
-    });
+    return this.toDto(AuthResponseDto, result);
   }
 }
