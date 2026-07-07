@@ -16,6 +16,26 @@ import {
 } from '@web-scraping/contracts/errors';
 
 /**
+ * RFC 7807 §4.2 says we SHOULD use `about:blank` as the problem `type`
+ * when no documentation URL is registered for the status code. Centralized
+ * so the literal only appears once on the wire side of the filter.
+ */
+export const RFC7807_TYPE_ABOUT_BLANK = 'about:blank' as const;
+
+/**
+ * Canonical detail phrases emitted by this filter. Centralizing keeps the
+ * spec and the test suite aligned with a single source of truth — the
+ * tests import these constants so a typo in a phrase fails both at once.
+ */
+export const RFC7807_MESSAGES = {
+  VALIDATION_FAILED: 'Request validation failed',
+  NOT_FOUND: 'Resource not found',
+  UNIQUE_CONSTRAINT: 'Unique constraint violation',
+  DATABASE_ERROR: 'Database error',
+  UNEXPECTED: 'Unexpected error',
+} as const;
+
+/**
  * HTTP-reason-phrase lookup. NestJS ships these constants on `HttpStatus`
  * (e.g. `HttpStatus[404] === 'NOT_FOUND'`), but RFC 7807 wants the
  * human-readable form (`Not Found`). We map the few statuses the API
@@ -102,10 +122,10 @@ export class HttpExceptionFilter implements ExceptionFilter {
           messages: [m],
         }));
         return plainToInstance(ErrorResponseDto, {
-          type: 'about:blank',
+          type: RFC7807_TYPE_ABOUT_BLANK,
           title,
           status,
-          detail: 'Request validation failed',
+          detail: RFC7807_MESSAGES.VALIDATION_FAILED,
           instance,
           errors,
         });
@@ -122,7 +142,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
             : exception.message;
 
       return plainToInstance(ErrorResponseDto, {
-        type: 'about:blank',
+        type: RFC7807_TYPE_ABOUT_BLANK,
         title,
         status,
         detail,
@@ -141,9 +161,9 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const detail =
       !isProd && exception instanceof Error
         ? exception.message
-        : 'Unexpected error';
+        : RFC7807_MESSAGES.UNEXPECTED;
     return plainToInstance(ErrorResponseDto, {
-      type: 'about:blank',
+      type: RFC7807_TYPE_ABOUT_BLANK,
       title: reasonFor(HttpStatus.INTERNAL_SERVER_ERROR),
       status: HttpStatus.INTERNAL_SERVER_ERROR,
       detail,
@@ -164,10 +184,10 @@ export class HttpExceptionFilter implements ExceptionFilter {
           : [];
       const detail =
         fields.length > 0
-          ? `Unique constraint violation on ${fields.join(', ')}`
-          : 'Unique constraint violation';
+          ? `${RFC7807_MESSAGES.UNIQUE_CONSTRAINT} on ${fields.join(', ')}`
+          : RFC7807_MESSAGES.UNIQUE_CONSTRAINT;
       return plainToInstance(ErrorResponseDto, {
-        type: 'about:blank',
+        type: RFC7807_TYPE_ABOUT_BLANK,
         title: reasonFor(HttpStatus.CONFLICT),
         status: HttpStatus.CONFLICT,
         detail,
@@ -182,18 +202,18 @@ export class HttpExceptionFilter implements ExceptionFilter {
     }
     if (err.code === 'P2025') {
       return plainToInstance(ErrorResponseDto, {
-        type: 'about:blank',
+        type: RFC7807_TYPE_ABOUT_BLANK,
         title: reasonFor(HttpStatus.NOT_FOUND),
         status: HttpStatus.NOT_FOUND,
-        detail: 'Resource not found',
+        detail: RFC7807_MESSAGES.NOT_FOUND,
         instance,
       });
     }
     return plainToInstance(ErrorResponseDto, {
-      type: 'about:blank',
+      type: RFC7807_TYPE_ABOUT_BLANK,
       title: reasonFor(HttpStatus.INTERNAL_SERVER_ERROR),
       status: HttpStatus.INTERNAL_SERVER_ERROR,
-      detail: 'Database error',
+      detail: RFC7807_MESSAGES.DATABASE_ERROR,
       instance,
     });
   }

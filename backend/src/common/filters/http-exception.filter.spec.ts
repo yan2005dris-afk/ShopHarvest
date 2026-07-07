@@ -5,7 +5,11 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { HttpExceptionFilter } from './http-exception.filter';
+import {
+  HttpExceptionFilter,
+  RFC7807_MESSAGES,
+  RFC7807_TYPE_ABOUT_BLANK,
+} from './http-exception.filter';
 
 /**
  * Spec 4 (REQ-ER-1, REQ-ER-2, REQ-ER-3, REQ-ER-4, REQ-ER-5) — every
@@ -34,7 +38,7 @@ describe('HttpExceptionFilter', () => {
         instance,
       );
       expect(body).toMatchObject({
-        type: 'about:blank',
+        type: RFC7807_TYPE_ABOUT_BLANK,
         title: 'Not Found',
         status: 404,
         detail: 'Product missing',
@@ -86,7 +90,7 @@ describe('HttpExceptionFilter', () => {
       const body = filter.toBody(ve, instance);
       expect(body.status).toBe(400);
       expect(body.title).toBe('Bad Request');
-      expect(body.detail).toBe('Request validation failed');
+      expect(body.detail).toBe(RFC7807_MESSAGES.VALIDATION_FAILED);
       expect(body.errors).toBeDefined();
       expect(body.errors!.length).toBe(2);
       expect(body.errors![0]).toMatchObject({
@@ -113,7 +117,7 @@ describe('HttpExceptionFilter', () => {
       // intentionally inherits the validation contract.
       const ex = new BadRequestException(['bad', 'worse']);
       const body = filter.toBody(ex, instance);
-      expect(body.detail).toBe('Request validation failed');
+      expect(body.detail).toBe(RFC7807_MESSAGES.VALIDATION_FAILED);
       expect(body.errors).toBeDefined();
       expect(body.errors!.length).toBe(2);
     });
@@ -141,7 +145,7 @@ describe('HttpExceptionFilter', () => {
       const body = filter.toBody(p2025, instance);
       expect(body.status).toBe(404);
       expect(body.title).toBe('Not Found');
-      expect(body.detail).toBe('Resource not found');
+      expect(body.detail).toBe(RFC7807_MESSAGES.NOT_FOUND);
     });
 
     it('P2002 with no meta.target → 409 with generic detail and no errors[]', () => {
@@ -166,7 +170,7 @@ describe('HttpExceptionFilter', () => {
       const body = filter.toBody(other, instance);
       expect(body.status).toBe(500);
       expect(body.title).toBe('Internal Server Error');
-      expect(body.detail).toBe('Database error');
+      expect(body.detail).toBe(RFC7807_MESSAGES.DATABASE_ERROR);
     });
   });
 
@@ -191,8 +195,8 @@ describe('HttpExceptionFilter', () => {
       try {
         const body = filter.toBody(new Error('SECRET STACK TRACE'), instance);
         expect(body.status).toBe(500);
-        expect(body.detail).toBe('Unexpected error');
-        expect(body.detail).not.toContain('SECRET');
+expect(body.detail).toBe(RFC7807_MESSAGES.UNEXPECTED);
+      expect(body.detail).not.toContain('SECRET');
       } finally {
         if (previous !== undefined) process.env.NODE_ENV = previous;
         else delete process.env.NODE_ENV;
@@ -205,7 +209,7 @@ describe('HttpExceptionFilter', () => {
       try {
         const body = filter.toBody({ weird: 'object' }, instance);
         expect(body.status).toBe(500);
-        expect(body.detail).toBe('Unexpected error');
+        expect(body.detail).toBe(RFC7807_MESSAGES.UNEXPECTED);
       } finally {
         if (previous !== undefined) process.env.NODE_ENV = previous;
         else delete process.env.NODE_ENV;
@@ -224,7 +228,7 @@ describe('HttpExceptionFilter', () => {
       ];
       for (const sample of samples) {
         const body = filter.toBody(sample, instance);
-        expect(body.type).toBe('about:blank');
+        expect(body.type).toBe(RFC7807_TYPE_ABOUT_BLANK);
         expect(typeof body.title).toBe('string');
         expect(body.title.length).toBeGreaterThan(0);
         expect(typeof body.status).toBe('number');
