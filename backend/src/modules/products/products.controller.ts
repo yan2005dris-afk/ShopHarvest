@@ -8,7 +8,13 @@ import {
   Query,
   NotFoundException,
 } from '@nestjs/common';
-import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiExcludeEndpoint,
+  ApiOperation,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { plainToInstance } from 'class-transformer';
 import { ErrorResponseDto } from '@web-scraping/contracts/errors';
 import { ProductsService } from './products.service';
@@ -183,7 +189,14 @@ export class ProductsController {
     return rows.map((row) => this.toDto(ProductResponseDto, row));
   }
 
-  @ApiOperation({ summary: 'Create a product (legacy admin path)' })
+  // TODO: remove this legacy admin path entirely. It accepts an untyped body
+  // (cast through `any`), bypasses the ValidationPipe contract, and duplicates
+  // `POST /products/upsert`. Hidden from the Swagger UI via @ApiExcludeEndpoint
+  // until the upsert endpoint is confirmed stable enough to delete this.
+  @ApiExcludeEndpoint()
+  @ApiOperation({
+    summary: 'Create a product (legacy admin path, do not use)',
+  })
   @Post()
   async create(@Body() body: Record<string, unknown>) {
     return this.productsService.create(body as any);
