@@ -12,7 +12,6 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { DomainsService } from './domains.service';
 import {
   CreateDomainDto,
-  DomainResponseDto,
   UpdateDomainDto,
 } from '@web-scraping/contracts/domains';
 
@@ -23,7 +22,9 @@ export class DomainsController {
 
   // `host` lets the extension look up the saved rule for the current page
   // (used by the batch-5 auto-replay scheduler).
-  @ApiOperation({ summary: 'List all domain rules (optionally filtered by host)' })
+  @ApiOperation({
+    summary: 'List all domain rules (optionally filtered by host)',
+  })
   @Get()
   async findAll(@Query('host') host?: string) {
     return this.domainsService.findAll(host);

@@ -1,6 +1,10 @@
 import 'reflect-metadata';
 import { plainToInstance } from 'class-transformer';
-import { AuthResponseDto, AuthUserDto, RegisterDto } from '@web-scraping/contracts/auth';
+import {
+  AuthResponseDto,
+  AuthUserDto,
+  RegisterDto,
+} from '@web-scraping/contracts/auth';
 import { AuthController } from '../auth.controller';
 
 /**

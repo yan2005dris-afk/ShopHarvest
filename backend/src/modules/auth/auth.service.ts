@@ -61,7 +61,9 @@ export class AuthService {
     const user = await this.users.findByEmail(normalizedEmail);
     // Compare against a real (or dummy) hash either way, so a missing user and
     // a wrong password return the same error and take similar time.
-    const hash = user?.passwordHash ?? '$2a$10$invalidinvalidinvalidinvalidinvalidinvalidinv';
+    const hash =
+      user?.passwordHash ??
+      '$2a$10$invalidinvalidinvalidinvalidinvalidinvalidinv';
     const ok = await bcrypt.compare(password, hash);
     if (!user || !ok) {
       throw new UnauthorizedException('Invalid credentials');

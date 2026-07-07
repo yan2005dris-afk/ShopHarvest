@@ -50,7 +50,9 @@ export class ProductsController {
     );
   }
 
-  @ApiOperation({ summary: 'Ingest a batch of products extracted by the browser extension' })
+  @ApiOperation({
+    summary: 'Ingest a batch of products extracted by the browser extension',
+  })
   @Post('ingest')
   async ingestFromExtension(@Body() dto: IngestProductsDto) {
     return this.productsService.ingestFromExtension(dto);

@@ -201,8 +201,12 @@ describe('ProductResponseDto live-Decimal in-process path (4R HIGH #1)', () => {
     const dto = plainToInstance(ProductResponseDto, rowWithHistory, {
       excludeExtraneousValues: true,
     });
-    expect((dto as unknown as Record<string, unknown>).priceHistory).toBeUndefined();
-    expect((dto as unknown as Record<string, unknown>).domainRule).toBeUndefined();
+    expect(
+      (dto as unknown as Record<string, unknown>).priceHistory,
+    ).toBeUndefined();
+    expect(
+      (dto as unknown as Record<string, unknown>).domainRule,
+    ).toBeUndefined();
     expect(typeof dto.price).toBe('number');
     expect(dto.price).toBe(19.99);
   });

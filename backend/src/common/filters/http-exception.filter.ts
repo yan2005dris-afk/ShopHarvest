@@ -6,14 +6,14 @@ import {
   HttpException,
   HttpStatus,
   Logger,
-  NotFoundException,
-  UnauthorizedException,
-  ConflictException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import type { Request, Response } from 'express';
 import { plainToInstance } from 'class-transformer';
-import { ErrorResponseDto, ValidationErrorDto } from '@web-scraping/contracts/errors';
+import {
+  ErrorResponseDto,
+  ValidationErrorDto,
+} from '@web-scraping/contracts/errors';
 
 /**
  * HTTP-reason-phrase lookup. NestJS ships these constants on `HttpStatus`
@@ -31,8 +31,7 @@ const HTTP_REASON: Record<number, string> = {
   [HttpStatus.INTERNAL_SERVER_ERROR]: 'Internal Server Error',
 };
 
-const reasonFor = (status: number): string =>
-  HTTP_REASON[status] ?? 'Error';
+const reasonFor = (status: number): string => HTTP_REASON[status] ?? 'Error';
 
 /**
  * Shape of the `message` field of a NestJS `BadRequestException` thrown by
@@ -118,8 +117,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
           : typeof response === 'object' &&
               response !== null &&
               'message' in response &&
-              typeof (response as { message: unknown }).message === 'string'
-            ? ((response as { message: string }).message)
+              typeof response.message === 'string'
+            ? (response as { message: string }).message
             : exception.message;
 
       return plainToInstance(ErrorResponseDto, {

@@ -29,7 +29,10 @@ describe('HttpExceptionFilter', () => {
 
   describe('HttpException mapping', () => {
     it('NotFoundException → 404 with title "Not Found"', () => {
-      const body = filter.toBody(new NotFoundException('Product missing'), instance);
+      const body = filter.toBody(
+        new NotFoundException('Product missing'),
+        instance,
+      );
       expect(body).toMatchObject({
         type: 'about:blank',
         title: 'Not Found',
@@ -41,21 +44,30 @@ describe('HttpExceptionFilter', () => {
     });
 
     it('ConflictException → 409 with title "Conflict"', () => {
-      const body = filter.toBody(new ConflictException('Email already registered'), instance);
+      const body = filter.toBody(
+        new ConflictException('Email already registered'),
+        instance,
+      );
       expect(body.status).toBe(409);
       expect(body.title).toBe('Conflict');
       expect(body.detail).toBe('Email already registered');
     });
 
     it('UnauthorizedException → 401 with title "Unauthorized"', () => {
-      const body = filter.toBody(new UnauthorizedException('Invalid credentials'), instance);
+      const body = filter.toBody(
+        new UnauthorizedException('Invalid credentials'),
+        instance,
+      );
       expect(body.status).toBe(401);
       expect(body.title).toBe('Unauthorized');
       expect(body.detail).toBe('Invalid credentials');
     });
 
     it('BadRequestException (plain string) → 400 with detail from message', () => {
-      const body = filter.toBody(new BadRequestException('malformed body'), instance);
+      const body = filter.toBody(
+        new BadRequestException('malformed body'),
+        instance,
+      );
       expect(body.status).toBe(400);
       expect(body.title).toBe('Bad Request');
       expect(body.detail).toBe('malformed body');
@@ -64,7 +76,10 @@ describe('HttpExceptionFilter', () => {
     it('BadRequestException (class-validator message array) → 400 with errors[]', () => {
       // This is the shape NestJS ValidationPipe throws: { message: string[], error, statusCode }.
       const ve = new BadRequestException({
-        message: ['email must be an email', 'password must be at least 8 chars'],
+        message: [
+          'email must be an email',
+          'password must be at least 8 chars',
+        ],
         error: 'Bad Request',
         statusCode: 400,
       });
@@ -130,11 +145,14 @@ describe('HttpExceptionFilter', () => {
     });
 
     it('P2002 with no meta.target → 409 with generic detail and no errors[]', () => {
-      const p2002 = new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
-        code: 'P2002',
-        clientVersion: 'test',
-        meta: {},
-      });
+      const p2002 = new Prisma.PrismaClientKnownRequestError(
+        'Unique constraint failed',
+        {
+          code: 'P2002',
+          clientVersion: 'test',
+          meta: {},
+        },
+      );
       const body = filter.toBody(p2002, instance);
       expect(body.status).toBe(409);
       expect(body.detail).toBe('Unique constraint violation');
