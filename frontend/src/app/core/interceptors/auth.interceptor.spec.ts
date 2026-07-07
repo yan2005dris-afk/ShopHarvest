@@ -9,7 +9,7 @@ import {
 import { Observable, of } from 'rxjs';
 import { Router } from '@angular/router';
 import { authInterceptor } from './auth.interceptor';
-import { AuthService } from '../services/auth.service';
+import { AuthService } from '../../services/auth.service';
 
 /**
  * Contract: the interceptor must only attach Authorization: Bearer to
