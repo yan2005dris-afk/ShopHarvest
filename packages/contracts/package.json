@@ -1,0 +1,65 @@
+{
+  "name": "@web-scraping/contracts",
+  "version": "0.1.0",
+  "description": "Shared DTOs and types for the WebScrapingDinamico monorepo.",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist-cjs/index.js",
+      "default": "./dist/index.js"
+    },
+    "./auth": {
+      "types": "./dist/auth/index.d.ts",
+      "import": "./dist/auth/index.js",
+      "require": "./dist-cjs/auth/index.js",
+      "default": "./dist/auth/index.js"
+    },
+    "./domains": {
+      "types": "./dist/domains/index.d.ts",
+      "import": "./dist/domains/index.js",
+      "require": "./dist-cjs/domains/index.js",
+      "default": "./dist/domains/index.js"
+    },
+    "./products": {
+      "types": "./dist/products/index.d.ts",
+      "import": "./dist/products/index.js",
+      "require": "./dist-cjs/products/index.js",
+      "default": "./dist/products/index.js"
+    },
+    "./errors": {
+      "types": "./dist/errors/index.d.ts",
+      "import": "./dist/errors/index.js",
+      "require": "./dist-cjs/errors/index.js",
+      "default": "./dist/errors/index.js"
+    }
+  },
+  "files": ["dist", "dist-cjs", "README.md"],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && tsc -p tsconfig.build.cjs.json",
+    "lint": "tsc --noEmit",
+    "clean": "rm -rf dist dist-cjs",
+    "test": "jest",
+    "prepare": "tsc -p tsconfig.build.json && tsc -p tsconfig.build.cjs.json"
+  },
+  "peerDependencies": {
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.15.0"
+  },
+  "dependencies": {
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.15.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "jest": "^30.0.0",
+    "reflect-metadata": "^0.2.2",
+    "ts-jest": "^29.2.5",
+    "typescript": "^5.7.3"
+  }
+}
