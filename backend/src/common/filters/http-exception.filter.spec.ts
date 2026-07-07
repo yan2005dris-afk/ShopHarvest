@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  HttpException,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -109,6 +110,16 @@ describe('HttpExceptionFilter', () => {
       expect(body.detail).toBe('just a string');
     });
 
+    it('HttpException(503) → title "Service Unavailable" via toTitleCase fallback', () => {
+      // Regression: prior to the toTitleCase fallback, an unmapped status
+      // (e.g. 503) returned the raw enum value `SERVICE_UNAVAILABLE`,
+      // violating RFC 7807 §3.1 which expects the human-readable form.
+      const ex = new HttpException('upstream is down', 503);
+      const body = filter.toBody(ex, instance);
+      expect(body.status).toBe(503);
+      expect(body.title).toBe('Service Unavailable');
+    });
+
     it('BadRequestException with array message always indicates ValidationPipe origin', () => {
       // The only way a BadRequestException payload carries a string[] is
       // through the global ValidationPipe. We assert that scenario
@@ -199,9 +210,9 @@ describe('HttpExceptionFilter', () => {
       process.env.NODE_ENV = 'production';
       try {
         const body = filter.toBody(new Error('SECRET STACK TRACE'), instance);
-        expect(body.status).toBe(500);
-expect(body.detail).toBe(RFC7807_MESSAGES.UNEXPECTED);
-      expect(body.detail).not.toContain('SECRET');
+expect(body.status).toBe(500);
+        expect(body.detail).toBe(RFC7807_MESSAGES.UNEXPECTED);
+        expect(body.detail).not.toContain('SECRET');
       } finally {
         if (previous !== undefined) process.env.NODE_ENV = previous;
         else delete process.env.NODE_ENV;

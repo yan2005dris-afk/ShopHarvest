@@ -36,10 +36,12 @@ export const RFC7807_MESSAGES = {
 } as const;
 
 /**
- * HTTP-reason-phrase lookup. NestJS ships these constants on `HttpStatus`
- * (e.g. `HttpStatus[404] === 'NOT_FOUND'`), but RFC 7807 wants the
- * human-readable form (`Not Found`). We map the few statuses the API
- * actually emits back to the canonical Title-Case phrase.
+ * HTTP-reason-phrase lookup. RFC 7807 wants the human-readable Title-Case
+ * form (`Not Found`, `Conflict`), but NestJS's `HttpStatus` enum returns
+ * `SCREAMING_SNAKE_CASE` (`NOT_FOUND`, `CONFLICT`). We map the statuses
+ * the API actually emits to the canonical phrase, and fall back to a
+ * Title-Case conversion of `HttpStatus[status]` for any other status an
+ * upstream library or RFC extension might raise.
  */
 const HTTP_REASON: Record<number, string> = {
   [HttpStatus.BAD_REQUEST]: 'Bad Request',
@@ -51,7 +53,21 @@ const HTTP_REASON: Record<number, string> = {
   [HttpStatus.INTERNAL_SERVER_ERROR]: 'Internal Server Error',
 };
 
-const reasonFor = (status: number): string => HTTP_REASON[status] ?? 'Error';
+/**
+ * Converts a NestJS `HttpStatus[code]` SCREAMING_SNAKE_CASE phrase to the
+ * canonical Title-Case phrase RFC 7807 expects on the wire (`NOT_FOUND`
+ * → `Not Found`). Used as the universal fallback so any unmapped status
+ * still produces a sensible `title`.
+ */
+const toTitleCase = (snake: string): string =>
+  snake
+    .toLowerCase()
+    .split('_')
+    .map((word) => (word.length > 0 ? word[0].toUpperCase() + word.slice(1) : word))
+    .join(' ');
+
+const reasonFor = (status: number): string =>
+  HTTP_REASON[status] ?? (toTitleCase(HttpStatus[status] ?? '') || 'Error');
 
 /**
  * Shape of the `message` field of a NestJS `BadRequestException` thrown by
