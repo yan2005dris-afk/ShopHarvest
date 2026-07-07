@@ -31,6 +31,12 @@ class HostShellComponent {
   pushError(message: string): void {
     this.toast.show(message, 'error', 60_000);
   }
+  pushSuccess(message: string): void {
+    this.toast.show(message, 'success', 60_000);
+  }
+  pushInfo(message: string): void {
+    this.toast.show(message, 'info', 60_000);
+  }
 }
 
 describe('ToastHostComponent', () => {
@@ -105,5 +111,60 @@ describe('ToastHostComponent', () => {
     sibling.click();
     // If the click had been swallowed, the host's @HostListener would
     // not have triggered; absence of throw is sufficient.
+  });
+
+  it('Esc key dismisses every visible toast', () => {
+    const fixture = TestBed.createComponent(HostShellComponent);
+    fixture.componentInstance.pushError('one');
+    fixture.componentInstance.pushError('two');
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelectorAll('.toast').length).toBe(2);
+
+    // Dispatch a real KeyboardEvent on the document — that's what the
+    // @HostListener('document:keydown.escape') binds to.
+    document.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
+    );
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelectorAll('.toast').length).toBe(0);
+  });
+
+  it('aria-live="assertive" for error severity, "polite" for success', () => {
+    const fixture = TestBed.createComponent(HostShellComponent);
+    fixture.componentInstance.pushError('urgent');
+    fixture.componentInstance.pushSuccess('all good');
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    const toasts: HTMLElement[] = Array.from(
+      root.querySelectorAll('.toast'),
+    );
+    const errorToast = toasts.find((el) =>
+      el.textContent?.includes('urgent'),
+    );
+    const successToast = toasts.find((el) =>
+      el.textContent?.includes('all good'),
+    );
+
+    expect(errorToast).toBeDefined();
+    expect(successToast).toBeDefined();
+    expect(errorToast!.getAttribute('aria-live')).toBe('assertive');
+    expect(successToast!.getAttribute('aria-live')).toBe('polite');
+  });
+
+  it('renders severity-specific CSS classes on each toast', () => {
+    const fixture = TestBed.createComponent(HostShellComponent);
+    fixture.componentInstance.pushError('e');
+    fixture.componentInstance.pushSuccess('s');
+    fixture.componentInstance.pushInfo('i');
+    fixture.detectChanges();
+
+    const toasts = fixture.nativeElement.querySelectorAll('.toast');
+    expect(toasts.length).toBe(3);
+    expect(toasts[0].classList.contains('toast--error')).toBe(true);
+    expect(toasts[1].classList.contains('toast--success')).toBe(true);
+    expect(toasts[2].classList.contains('toast--info')).toBe(true);
   });
 });
