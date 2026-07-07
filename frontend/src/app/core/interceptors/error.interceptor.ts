@@ -71,7 +71,10 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
         error: body?.title ?? body?.error ?? err.statusText,
         message: body?.detail ?? body?.message ?? err.message,
         details: body?.errors,
-        url: req.url,
+        // Strip the query string from the logged URL — request payloads
+        // can include tokens, refresh tokens, or PII in query params that
+        // would otherwise land in log aggregators verbatim.
+        url: req.url.split('?')[0],
         method: req.method,
       };
       if (devMode) {
