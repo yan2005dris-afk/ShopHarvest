@@ -10,7 +10,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { FieldMappingDto } from '../../domains/dto/field-mapping.dto';
+import { FieldMappingDto } from '../domains/field-mapping.dto.js';
 
 /**
  * Wire shape for `POST /products/ingest`.
@@ -22,6 +22,9 @@ import { FieldMappingDto } from '../../domains/dto/field-mapping.dto';
  * Backward compat: if `fieldMappings` is missing, the backend derives one
  * from the first product's keys and logs a warning. This path will be
  * removed in a future release.
+ *
+ * Note: @ApiProperty decorators are intentionally omitted — Swagger /
+ * OpenAPI metadata is deferred to Slice 3.
  */
 export class IngestProductsDto {
   @IsString()

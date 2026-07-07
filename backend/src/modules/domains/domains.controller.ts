@@ -9,7 +9,10 @@ import {
   Query,
 } from '@nestjs/common';
 import { DomainsService } from './domains.service';
-import { CreateDomainDto, UpdateDomainDto } from './dto';
+import {
+  CreateDomainDto,
+  UpdateDomainDto,
+} from '@web-scraping/contracts/domains';
 
 @Controller('domains')
 export class DomainsController {

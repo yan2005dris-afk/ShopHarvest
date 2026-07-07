@@ -3,9 +3,11 @@ import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { DomainsController } from './domains.controller';
 import { DomainsService } from './domains.service';
-import { CreateDomainDto } from './dto/create-domain.dto';
-import { UpdateDomainDto } from './dto/update-domain.dto';
-import { FieldMappingDto } from './dto/field-mapping.dto';
+import {
+  CreateDomainDto,
+  UpdateDomainDto,
+  FieldMappingDto,
+} from '@web-scraping/contracts/domains';
 
 /**
  * Verifies the wire-level behavior of POST /domains:

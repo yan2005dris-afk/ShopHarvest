@@ -1,9 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import type { UpsertProductDto } from './dto/upsert-product.dto';
-import type { IngestProductsDto } from './dto/ingest-products.dto';
-import type { FieldMappingDto } from '../domains/dto/field-mapping.dto';
+import type {
+  UpsertProductDto,
+  IngestProductsDto,
+} from '@web-scraping/contracts/products';
+import type { FieldMappingDto } from '@web-scraping/contracts/domains';
 
 @Injectable()
 export class ProductsService {

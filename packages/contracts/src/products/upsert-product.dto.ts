@@ -8,6 +8,14 @@ import {
   IsObject,
 } from 'class-validator';
 
+/**
+ * Wire shape for `POST /products/upsert`. Identifies a product by
+ * (domainRuleId, productUrl) and overwrites its normalized fields plus
+ * appending a new PriceHistory entry.
+ *
+ * Note: @ApiProperty decorators are intentionally omitted — Swagger /
+ * OpenAPI metadata is deferred to Slice 3.
+ */
 export class UpsertProductDto {
   @IsUUID()
   domainRuleId!: string;

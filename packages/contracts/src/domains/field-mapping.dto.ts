@@ -15,6 +15,10 @@ import {
  * Mirrors `extension/src/types.ts:FieldMapping`. Keep canonicalField,
  * selector, type, and attribute in sync with the extension when either side
  * changes.
+ *
+ * Note: @ApiProperty decorators are intentionally omitted — Swagger /
+ * OpenAPI metadata is deferred to Slice 3. class-validator decorators are
+ * the source of truth for runtime validation.
  */
 export class FieldMappingDto {
   @IsString()

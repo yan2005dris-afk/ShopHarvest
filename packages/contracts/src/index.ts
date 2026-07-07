@@ -8,3 +8,5 @@
  *   import { ErrorResponseDto } from '@web-scraping/contracts/errors';
  */
 export * from './auth/index.js';
+export * from './domains/index.js';
+export * from './products/index.js';
