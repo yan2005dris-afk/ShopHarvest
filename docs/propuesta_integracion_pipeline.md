@@ -21,8 +21,7 @@ graph TD
 
     subgraph "Capa de Servidor (NestJS Backend)"
         APIController["EtlController (/api/etl)"]
-        CronScheduler["NestJS Schedule (Cron Job)"]
-        ETLService["EtlService (Ingesta + Calidad)"]
+        ETLService["EtlService (Ingesta + Calidad + @Cron)"]
         PlaywrightScraper["Playwright Crawler Service"]
         PrismaService["Prisma ORM Service"]
     end
@@ -35,7 +34,7 @@ graph TD
     %% Flujos de Control y Datos
     AdminDashboard -->|HTTP POST /api/etl/run| APIController
     APIController -->|Iniciar ETL Asíncrono| ETLService
-    CronScheduler -->|Trigger programado diario| ETLService
+    ETLService -->|@Cron scheduled daily| ETLService
     
     ETLService -->|Ejecutar Crawlers| PlaywrightScraper
     ETLService -->|Estandarizar y Limpiar| ETLService
