@@ -46,9 +46,9 @@ describe('AuthService', () => {
         passwordHash: 'x',
       });
 
-      await expect(
-        service.register('a@b.com', 'password123'),
-      ).rejects.toBeInstanceOf(ConflictException);
+      await expect(service.register('a@b.com', 'password123')).rejects.toBeInstanceOf(
+        ConflictException,
+      );
       expect(users.create).not.toHaveBeenCalled();
     });
 
@@ -63,9 +63,9 @@ describe('AuthService', () => {
       );
       users.create.mockRejectedValue(p2002);
 
-      await expect(
-        service.register('a@b.com', 'password123'),
-      ).rejects.toBeInstanceOf(ConflictException);
+      await expect(service.register('a@b.com', 'password123')).rejects.toBeInstanceOf(
+        ConflictException,
+      );
     });
 
     it('rethrows non-P2002 create errors unchanged', async () => {
@@ -73,9 +73,7 @@ describe('AuthService', () => {
       const other = new Error('disk on fire');
       users.create.mockRejectedValue(other);
 
-      await expect(service.register('a@b.com', 'password123')).rejects.toBe(
-        other,
-      );
+      await expect(service.register('a@b.com', 'password123')).rejects.toBe(other);
     });
 
     it('normalizes email (trim + lowercase) before lookup and creation', async () => {
@@ -95,11 +93,7 @@ describe('AuthService', () => {
   describe('login', () => {
     it('returns a token for valid credentials', async () => {
       const passwordHash = await bcrypt.hash('password123', 10);
-      users.findByEmail.mockResolvedValue({
-        id: 'u1',
-        email: 'a@b.com',
-        passwordHash,
-      });
+      users.findByEmail.mockResolvedValue({ id: 'u1', email: 'a@b.com', passwordHash });
 
       const res = await service.login('a@b.com', 'password123');
 
@@ -109,11 +103,7 @@ describe('AuthService', () => {
 
     it('rejects a wrong password', async () => {
       const passwordHash = await bcrypt.hash('password123', 10);
-      users.findByEmail.mockResolvedValue({
-        id: 'u1',
-        email: 'a@b.com',
-        passwordHash,
-      });
+      users.findByEmail.mockResolvedValue({ id: 'u1', email: 'a@b.com', passwordHash });
 
       await expect(service.login('a@b.com', 'wrong')).rejects.toBeInstanceOf(
         UnauthorizedException,
@@ -123,18 +113,14 @@ describe('AuthService', () => {
     it('rejects an unknown user with the same error (no user enumeration)', async () => {
       users.findByEmail.mockResolvedValue(null);
 
-      await expect(
-        service.login('nope@b.com', 'whatever'),
-      ).rejects.toBeInstanceOf(UnauthorizedException);
+      await expect(service.login('nope@b.com', 'whatever')).rejects.toBeInstanceOf(
+        UnauthorizedException,
+      );
     });
 
     it('normalizes email (trim + lowercase) before lookup on login', async () => {
       const passwordHash = await bcrypt.hash('password123', 10);
-      users.findByEmail.mockResolvedValue({
-        id: 'u1',
-        email: 'a@b.com',
-        passwordHash,
-      });
+      users.findByEmail.mockResolvedValue({ id: 'u1', email: 'a@b.com', passwordHash });
 
       const res = await service.login('A@b.com', 'password123');
 
