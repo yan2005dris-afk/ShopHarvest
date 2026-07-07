@@ -3,6 +3,7 @@
 ### Current State
 
 #### Worker (Scraping) — Almost Functional
+
 - **consumer.ts**: Fully functional RabbitMQ consumer. Connects to `scraping-jobs` queue, prefetch=1, auto-reconnect, graceful shutdown. Parses JSON messages into `ScrapingJob` type. Validates required fields (url, selectors.title, selectors.price). Calls `scrapeUrl()`.
 - **scraper.ts**: Fully functional Crawlee `PlaywrightCrawler`. Extracts data using CSS or XPath selectors. Price parser handles European (1.234,56) and US ($1,234.56) formats. Currency detector recognizes USD, EUR, ARS, BRL, GBP, CLP, MXN, COP, PEN.
 - **types.ts**: Defines `ScrapingJob`, `ScrapedData`, `DomainRule` interfaces.
@@ -10,8 +11,9 @@
 - **MESSAGE FORMAT MISMATCH**: Worker expects `{ jobId, url, domainRuleId, selectors: { title, price, image?, sku? }, selectorType }` but backend sends `{ domainRuleId, url, timestamp }` — they don't align.
 
 #### Backend (NestJS) — Scaffolding with Gaps
+
 - **DomainRules** (`/domains`): Full CRUD implemented — GET, POST, GET/:id, PATCH/:id, DELETE/:id.
-- **Products** (`/products`): GET all, GET/:id, GET/domain/:domainRuleId, POST (typed as `Record<string,unknown>` with `as any` cast), DELETE/:id.
+- **Products** (`/products`): GET all, GET/:id, GET/by-domain/:domainRuleId (renamed from `GET/domain/:domainRuleId` in batch 2 — the old path was shadowed by `/:id` and unreachable), POST (typed as `Record<string,unknown>` with `as any` cast), DELETE/:id.
 - **ScrapingJobs** (`/scraping-jobs`): POST (enqueue) sends `{ domainRuleId, url, timestamp }` to RabbitMQ but doesn't include selectors. GET /status returns queue info.
 - **RabbitMQ Module**: Just a ConfigModule wrapper — no shared service. Each module creates its own AMQP connection.
 - **PriceHistory**: Schema exists, migration exists, but NO controller or service.
@@ -20,6 +22,7 @@
 - **Prisma**: Schema has 3 models with proper relations and indexes. Migration applied. Adapter uses `@prisma/adapter-pg`.
 
 #### Frontend (Angular) — Static Scaffolding
+
 - **App shell**: RouterOutlet only, still shows default Angular welcome template.
 - **Routes**: `/url-input` and `/visual-mapper` registered.
 - **api.service.ts**: Has `HttpClient` + `baseUrl = '/api'` but **ZERO methods**.
@@ -41,7 +44,7 @@ USER → Frontend URL Input
 ### Affected Areas
 
 | File | Why Affected |
-|------|-------------|
+| ------ | ------------- |
 | `worker/src/consumer.ts` | Must enrich message with selectors from DB, or backend must send them. Must persist results after scrape. |
 | `worker/src/scraper.ts` | Minor: possibly add pagination support, better error handling. Core logic is done. |
 | `worker/src/types.ts` | May need adjustments to match backend ScrapingJob model. |
@@ -63,6 +66,7 @@ USER → Frontend URL Input
 ### Approaches
 
 #### Approach 1: Worker writes directly to DB (simplest, breaks DDD)
+
 Worker has Prisma client, scrapes, then writes Product + PriceHistory directly to PostgreSQL. Backend just reads results.
 
 - **Pros**: Simplest data flow. No additional API calls. Works offline. Fastest to implement.
@@ -70,6 +74,7 @@ Worker has Prisma client, scrapes, then writes Product + PriceHistory directly t
 - **Effort**: Low (worker already has `@prisma/client`)
 
 #### Approach 2: Worker calls backend API to save results (cleaner)
+
 Worker scrapes, then POSTs results back to backend `/api/products` (or a dedicated `/api/scraping-jobs/:id/result` endpoint). Backend validates and persists.
 
 - **Pros**: Single source of truth for business logic. Backend validates + creates PriceHistory automatically. Clean separation. Worker stays a scraper only.
@@ -77,6 +82,7 @@ Worker scrapes, then POSTs results back to backend `/api/products` (or a dedicat
 - **Effort**: Medium (add API endpoint + HTTP client in worker)
 
 #### Approach 3: Full event-driven with result queue (most decoupled)
+
 Worker scrapes, then publishes result to a `scraping-results` queue. Backend consumes results and persists them. Fully async, no direct coupling.
 
 - **Pros**: Maximum decoupling. Backend can be down during scrape. Retry/replay via queue. Follows existing event-driven pattern.
@@ -124,6 +130,7 @@ Phase 3: Frontend UI
 ### Key Sequence for enqueueJob Fix
 
 Current: `POST /scraping-jobs { domainRuleId, url? }`
+
 1. Backend looks up DomainRule by ID
 2. Generates a UUID for the job
 3. Creates ScrapingJob record in DB (status=queued)
@@ -140,6 +147,7 @@ Current: `POST /scraping-jobs { domainRuleId, url? }`
 - **No Prisma generation for worker**: Worker has `@prisma/client` in deps but may need `prisma generate` to use it (if we go with Approach 1).
 
 ### Ready for Proposal
+
 **Yes** — the analysis is complete. The gaps are clear, the approaches are compared, and the recommendation is ready. The orchestrator should tell the user:
 
 > "The exploration is done. The worker scraper is 90% complete (just needs result persistence), the backend has all the CRUD scaffolding but needs the message format fixed and a result endpoint added, and the frontend is entirely static scaffolding. Ready to proceed to Proposal."

@@ -17,7 +17,7 @@ const PAGES = [
   'https://books.toscrape.com/catalogue/category/books/nonfiction_13/index.html',
 ];
 
-async function scrapeBooks() {
+export async function scrapeBooks(): Promise<Record<string, unknown>[]> {
   const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({ userAgent: USER_AGENT });
   const results: Record<string, unknown>[] = [];
@@ -65,9 +65,5 @@ async function scrapeBooks() {
 
   await browser.close();
   saveToRaw('aliexpress', results);
+  return results;
 }
-
-scrapeBooks().catch(err => {
-  logError('aliexpress', 'FatalError', err.message, 'Proceso terminado');
-  process.exit(1);
-});

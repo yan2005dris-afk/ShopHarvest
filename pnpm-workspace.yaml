@@ -2,6 +2,7 @@ packages:
   - 'backend'
   - 'frontend'
   - 'extension'
+  - 'worker'
 
 allowBuilds:
   '@nestjs/core': true
