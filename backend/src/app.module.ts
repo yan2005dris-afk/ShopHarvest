@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { PrismaModule } from './common/prisma/prisma.module';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { AuthModule } from './modules/auth/auth.module';
 import { JwtAuthGuard } from './modules/auth/jwt-auth.guard';
 import { DomainsModule } from './modules/domains/domains.module';
@@ -16,6 +17,10 @@ import { ProductsModule } from './modules/products/products.module';
 // Batch 6 (C2): JwtAuthGuard is registered globally, so every route requires a
 // valid JWT unless marked @Public(). This closes the open API that let any
 // extension POST/DELETE.
+//
+// Slice 3: HttpExceptionFilter is registered via APP_FILTER so every
+// uncaught failure becomes an RFC 7807 problem-details envelope without
+// per-controller decoration.
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -27,6 +32,9 @@ import { ProductsModule } from './modules/products/products.module';
     DomainsModule,
     ProductsModule,
   ],
-  providers: [{ provide: APP_GUARD, useClass: JwtAuthGuard }],
+  providers: [
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_FILTER, useClass: HttpExceptionFilter },
+  ],
 })
 export class AppModule {}
