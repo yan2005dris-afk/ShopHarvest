@@ -9,11 +9,13 @@
     "build:edge": "BROWSER=edge node_modules/.bin/vite build",
     "build:safari": "BROWSER=safari node_modules/.bin/vite build",
     "package": "npx tsx scripts/package.ts",
-    "dev": "node_modules/.bin/vite build --watch"
+    "dev": "node_modules/.bin/vite build --watch",
+    "test": "vitest run"
   },
   "devDependencies": {
     "vite": "^5.0.0",
     "typescript": "^5.3.0",
-    "@types/chrome": "^0.0.260"
+    "@types/chrome": "^0.0.260",
+    "vitest": "^2.1.0"
   }
 }
