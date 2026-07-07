@@ -179,19 +179,15 @@ async function runReplay(domain: string): Promise<void> {
 
   const base = await getBackendUrl();
   const token = await getAuthToken();
-  try {
-    await fetch(`${base}/products/ingest`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
-      body: JSON.stringify({
-        domain,
-        pageUrl: tab.url,
-        fieldMappings: rule.fieldMappings,
-        products,
-      }),
-    });
-  } catch (err) {
-    console.warn(`[scheduler] ingest failed for ${domain}:`, err);
+  const ok = await postIngest(base, token, {
+    domain,
+    pageUrl: tab.url,
+    fieldMappings: rule.fieldMappings,
+    products,
+  });
+  if (!ok) {
+    // postIngest already logged the warning. Do NOT stamp lastRunAt —
+    // a 401/400/500 means the run did not actually complete.
     return;
   }
 
@@ -199,6 +195,43 @@ async function runReplay(domain: string): Promise<void> {
   schedules[domain] = entry;
   await setSchedules(schedules);
   console.info(`[scheduler] replayed ${products.length} products for ${domain}`);
+}
+
+/**
+ * POST the extracted products to the backend ingest endpoint. Returns true on
+ * a 2xx response, false otherwise (network error OR non-OK HTTP status). A
+ * non-OK response must NOT count as a successful replay — otherwise a 401 or
+ * 500 silently poisons the schedule and the next tick is never triggered.
+ *
+ * Exported for unit testing — does not depend on `chrome.*` globals.
+ */
+export async function postIngest(
+  baseUrl: string,
+  token: string | null,
+  body: {
+    domain: string;
+    pageUrl?: string;
+    fieldMappings: unknown[];
+    products: RawProduct[];
+  },
+): Promise<boolean> {
+  try {
+    const res = await fetch(`${baseUrl}/products/ingest`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      console.warn(
+        `[scheduler] ingest returned ${res.status} for ${body.domain}; not marking replay as success`,
+      );
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.warn(`[scheduler] ingest fetch failed for ${body.domain}:`, err);
+    return false;
+  }
 }
 
 // ── Wiring ────────────────────────────────────────────────────────────────────

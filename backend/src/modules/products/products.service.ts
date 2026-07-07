@@ -169,17 +169,12 @@ export class ProductsService {
         },
       });
     } else {
-      // Rule already exists. Two scenarios that should update its
-      // `fieldMappings`:
-      //   1. The stored rule has no mappings yet (legacy install or
-      //      auto-create from a previous ingest without mappings).
-      //   2. The inbound mappings differ from the stored ones AND the
-      //      inbound mapping has a non-empty selector that wasn't in the
-      //      stored mapping. This is the "extension just mapped the
-      //      page" case.
-      // We do NOT overwrite UI-edited mappings (PATCH /domains/:id) on
-      // every ingest — that would clobber user customizations. If the
-      // extension genuinely changed the rule, PATCH it explicitly.
+      // Rule already exists. Backfill its `fieldMappings` only when the
+      // stored rule has none yet (legacy install or auto-create from a
+      // previous ingest without mappings). We do NOT overwrite UI-edited
+      // mappings (PATCH /domains/:id) on every ingest — that would
+      // clobber user customizations. If the extension genuinely changed
+      // the rule, PATCH it explicitly.
       const storedMappings = (domainRule.fieldMappings ??
         []) as unknown as FieldMappingDto[];
       if (
@@ -212,14 +207,20 @@ export class ProductsService {
 
     const results = [];
 
-    for (const product of dto.products) {
+    for (let index = 0; index < dto.products.length; index++) {
+      const product = dto.products[index];
       try {
         const mapped = this.mapProductByRule(product, mappings);
         const titleSlug = mapped.title
           .toLowerCase()
           .replace(/[^a-z0-9]+/g, '-')
           .slice(0, 80);
-        const productUrl = `${dto.pageUrl ?? dto.domain}#${titleSlug}`;
+        // Disambiguate duplicates: productUrl is the dedup key against
+        // (productUrl, domainRuleId), so two items with identical titles
+        // would otherwise collide and the second silently overwrites the
+        // first. Append the batch index as a stable suffix. If sku is
+        // present it stays the same across runs so re-ingest still upserts.
+        const productUrl = `${dto.pageUrl ?? dto.domain}#${titleSlug}-${index}`;
 
         const existing = await this.prisma.product.findFirst({
           where: { productUrl, domainRuleId: domainRule.id },

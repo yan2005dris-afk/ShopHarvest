@@ -16,4 +16,4 @@ allowBuilds:
   'msgpackr-extract': true
   'unrs-resolver': true
   better-sqlite3: true
-  bcrypt: set this to true or false
+  bcrypt: true

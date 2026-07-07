@@ -21,8 +21,7 @@ graph TD
 
     subgraph "Capa de Servidor (NestJS Backend)"
         APIController["EtlController (/api/etl)"]
-        CronScheduler["NestJS Schedule (Cron Job)"]
-        ETLService["EtlService (Ingesta + Calidad)"]
+        ETLService["EtlService (Ingesta + Calidad + @Cron)"]
         PlaywrightScraper["Playwright Crawler Service"]
         PrismaService["Prisma ORM Service"]
     end
@@ -35,7 +34,7 @@ graph TD
     %% Flujos de Control y Datos
     AdminDashboard -->|HTTP POST /api/etl/run| APIController
     APIController -->|Iniciar ETL Asíncrono| ETLService
-    CronScheduler -->|Trigger programado diario| ETLService
+    ETLService -->|@Cron scheduled daily| ETLService
     
     ETLService -->|Ejecutar Crawlers| PlaywrightScraper
     ETLService -->|Estandarizar y Limpiar| ETLService
@@ -54,7 +53,7 @@ graph TD
 Para embeber el pipeline dentro del backend NestJS actual, se creará un módulo especializado llamado `EtlModule`.
 
 ### A. Estructura de Módulos a incorporar:
-```
+```text
 backend/src/modules/etl/
 ├── etl.module.ts
 ├── etl.controller.ts
@@ -70,7 +69,7 @@ backend/src/modules/etl/
 ### B. Ejecución Automatizada (Cron Jobs)
 En `etl.service.ts`, se utilizará el decorador `@Cron` de NestJS para programar la extracción automática de datos sin necesidad de intervención manual:
 
-```typescript
+```ts
 import { Injectable } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 

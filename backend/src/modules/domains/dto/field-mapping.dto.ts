@@ -2,9 +2,9 @@ import {
   IsString,
   IsNotEmpty,
   IsIn,
-  IsOptional,
   Matches,
   MaxLength,
+  ValidateIf,
 } from 'class-validator';
 
 /**
@@ -32,8 +32,14 @@ export class FieldMappingDto {
   @IsIn(['text', 'attribute', 'html'])
   type!: 'text' | 'attribute' | 'html';
 
-  @IsOptional()
+  /**
+   * Required when type === 'attribute', ignored otherwise. Without this
+   * guard, `{ canonicalField: 'image', selector: 'img', type: 'attribute' }`
+   * validates but breaks downstream attribute extraction.
+   */
+  @ValidateIf((o: { type?: string }) => o.type === 'attribute')
   @IsString()
+  @IsNotEmpty()
   @Matches(/\S/, { message: 'attribute cannot be whitespace-only' })
   @MaxLength(60)
   attribute?: string;
