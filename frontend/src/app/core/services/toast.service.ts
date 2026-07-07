@@ -38,6 +38,18 @@ const DEFAULT_DURATION_MS = 5_000;
  */
 @Injectable({ providedIn: 'root' })
 export class ToastService {
+  /**
+   * Maximum number of toasts allowed on the stack at once. When a new
+   * toast would push us over the cap, the oldest visible toast is
+   * dismissed first (FIFO eviction).
+   *
+   * Why a cap: an unbounded stack can mask failures (a flood of 4xx
+   * errors in a tight loop would pile up toasts and push the toast
+   * region off-screen). Five is enough to convey "a few related
+   * errors happened" while keeping the UI usable.
+   */
+  private static readonly MAX_TOASTS = 5;
+
   private readonly _toasts = signal<Toast[]>([]);
   readonly toasts = this._toasts.asReadonly();
   private nextId = 1;
@@ -55,6 +67,13 @@ export class ToastService {
     level: ToastLevel = 'error',
     durationMs: number = DEFAULT_DURATION_MS,
   ): number {
+    // FIFO eviction: if the stack is already at the cap, dismiss the
+    // oldest entry before pushing the new one. This keeps the visible
+    // surface bounded under error storms.
+    if (this._toasts().length >= ToastService.MAX_TOASTS) {
+      this.dismiss(this._toasts()[0].id);
+    }
+
     const id = this.nextId++;
     const timeoutId =
       durationMs > 0
