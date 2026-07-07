@@ -40,14 +40,18 @@ describe('ToastHostComponent', () => {
     });
   });
 
-  it('renders toasts from the signal as role=alert', () => {
+  it('renders toasts from the signal as role=alert for error severity', () => {
     const fixture = TestBed.createComponent(HostShellComponent);
     fixture.componentInstance.pushError('first failure');
     fixture.detectChanges();
 
+    // The container is a `role="region"`; each toast gets `role="alert"`
+    // (or `role="status"` for non-urgent severities). For an error push,
+    // we expect exactly one `role="alert"` element.
     const alerts = fixture.nativeElement.querySelectorAll('[role="alert"]');
-    // 1 host container + N toast elements.
-    expect(alerts.length).toBeGreaterThanOrEqual(2);
+    expect(alerts.length).toBeGreaterThanOrEqual(1);
+    const region = fixture.nativeElement.querySelector('[role="region"]');
+    expect(region).toBeTruthy();
     expect(fixture.nativeElement.textContent).toContain('first failure');
   });
 

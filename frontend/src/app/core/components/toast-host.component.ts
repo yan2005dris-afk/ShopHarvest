@@ -4,7 +4,7 @@ import {
   HostListener,
   inject,
 } from '@angular/core';
-import { ToastService } from '../services/toast.service';
+import { ToastService, ToastLevel } from '../services/toast.service';
 
 /**
  * Standalone in-page toast stack.
@@ -33,14 +33,14 @@ import { ToastService } from '../services/toast.service';
   template: `
     <div
       class="toast-stack"
-      role="alert"
-      aria-live="assertive"
+      role="region"
       aria-label="Notifications"
     >
       @for (toast of toasts(); track toast.id) {
         <div
           class="toast toast--{{ toast.level }}"
-          role="alert"
+          [attr.role]="roleFor(toast.level)"
+          [attr.aria-live]="ariaLiveFor(toast.level)"
           [attr.data-toast-id]="toast.id"
         >
           <span class="toast__message">{{ toast.message }}</span>
@@ -64,6 +64,24 @@ export class ToastHostComponent {
 
   onDismiss(id: number): void {
     this.toastService.dismiss(id);
+  }
+
+  /**
+   * ARIA role per severity:
+   *   - `error` / `warning` → `alert` (urgent, interrupts the user)
+   *   - `success` / `info`  → `status` (non-urgent advisory message)
+   */
+  roleFor(level: ToastLevel): 'alert' | 'status' {
+    return level === 'error' || level === 'warning' ? 'alert' : 'status';
+  }
+
+  /**
+   * ARIA live region politeness per severity:
+   *   - `error` / `warning` → `assertive` (announces immediately)
+   *   - `success` / `info`  → `polite` (waits for idle screen reader)
+   */
+  ariaLiveFor(level: ToastLevel): 'assertive' | 'polite' {
+    return level === 'error' || level === 'warning' ? 'assertive' : 'polite';
   }
 
   /** Esc dismisses the entire visible stack in a single press. */
