@@ -6,6 +6,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { JwtAuthGuard } from './modules/auth/jwt-auth.guard';
 import { DomainsModule } from './modules/domains/domains.module';
 import { ProductsModule } from './modules/products/products.module';
+import { EtlModule } from './modules/etl/etl.module';
 
 // ScrapingJobsModule and SchedulesModule were removed in review batch 4. They
 // modelled a headless-worker pipeline that no longer exists (the worker was
@@ -26,6 +27,7 @@ import { ProductsModule } from './modules/products/products.module';
     AuthModule,
     DomainsModule,
     ProductsModule,
+    EtlModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: JwtAuthGuard }],
 })
