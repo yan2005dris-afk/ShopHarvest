@@ -7,6 +7,7 @@ import {
   IsNumber,
   IsPositive,
   IsObject,
+  Length,
 } from 'class-validator';
 
 /**
@@ -36,6 +37,7 @@ export class UpsertProductDto {
   @ApiProperty({ required: false, example: 'USD', minLength: 3, maxLength: 3 })
   @IsOptional()
   @IsString()
+  @Length(3, 3)
   currency?: string;
 
   @ApiProperty({ required: false, format: 'url' })
