@@ -5,7 +5,19 @@ import { catchError, throwError } from 'rxjs';
 import { AuthService } from '../services/auth.service';
 
 /**
- * Attaches the JWT as a Bearer token to outgoing requests and, on a 401,
+ * Returns true when the request URL should receive the Bearer token. We
+ * scope the JWT to /api/* so that external URLs (CDNs, third-party APIs,
+ * analytics endpoints) never carry the credential — that would leak it
+ * via intermediate proxies and into request logs the user never saw.
+ */
+function isScopedApiRequest(url: string): boolean {
+  // Same-origin relative paths only: "/api/..." matches; absolute URLs
+  // (https://cdn...) and other same-origin paths do not.
+  return url.startsWith('/api/');
+}
+
+/**
+ * Attaches the JWT as a Bearer token to /api/ requests and, on a 401,
  * clears the session and bounces the user to the login page.
  */
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
@@ -13,9 +25,10 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const router = inject(Router);
 
   const token = auth.token;
-  const authReq = token
-    ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
-    : req;
+  const authReq =
+    token && isScopedApiRequest(req.url)
+      ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
+      : req;
 
   return next(authReq).pipe(
     catchError((err: HttpErrorResponse) => {
