@@ -1,5 +1,5 @@
 import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
-import { inject } from '@angular/core';
+import { inject, isDevMode } from '@angular/core';
 import { catchError, throwError } from 'rxjs';
 import { ToastService } from '../services/toast.service';
 
@@ -27,13 +27,21 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(req).pipe(
     catchError((err: unknown) => {
+      // Console logging is gated to dev builds only — in production the
+      // toast gives the user feedback, and a raw console.error would
+      // leak PII (request URLs, response bodies) to RUM tooling like
+      // Sentry/Datadog that automatically captures console output.
+      const devMode = isDevMode();
+
       if (!(err instanceof HttpErrorResponse)) {
         // Non-HTTP error (e.g. client-side deserialization failure).
-        console.error('[http-error] non-HTTP failure', {
-          url: req.url,
-          method: req.method,
-          error: err,
-        });
+        if (devMode) {
+          console.error('[http-error] non-HTTP failure', {
+            url: req.url,
+            method: req.method,
+            error: err,
+          });
+        }
         return throwError(() => err);
       }
 
@@ -66,7 +74,9 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
         url: req.url,
         method: req.method,
       };
-      console.error('[http-error]', consolePayload);
+      if (devMode) {
+        console.error('[http-error]', consolePayload);
+      }
 
       const userMessage =
         (typeof body?.detail === 'string' && body.detail) ||
