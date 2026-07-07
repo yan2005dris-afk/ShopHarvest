@@ -40,6 +40,14 @@ describe('ToastHostComponent', () => {
     });
   });
 
+  afterEach(() => {
+    // Reset the testing module so each test starts from a clean slate —
+    // a leaked provider config from one test can otherwise bleed into
+    // the next (the toast-host spec exercises a real ToastService that
+    // schedules timers, so a stale signal would persist across cases).
+    TestBed.resetTestingModule();
+  });
+
   it('renders toasts from the signal as role=alert for error severity', () => {
     const fixture = TestBed.createComponent(HostShellComponent);
     fixture.componentInstance.pushError('first failure');
