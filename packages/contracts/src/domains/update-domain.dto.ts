@@ -1,3 +1,4 @@
+import { ApiProperty } from '@nestjs/swagger';
 import {
   IsArray,
   IsInt,
@@ -20,11 +21,9 @@ const lowercaseDomain = ({ value }: { value: unknown }): unknown =>
  * Wire shape for `PATCH /domains/:id`. All fields are optional. We hand-roll
  * this instead of using `PartialType` because `@nestjs/mapped-types` is not
  * installed in this workspace.
- *
- * Note: @ApiProperty decorators are intentionally omitted — Swagger /
- * OpenAPI metadata is deferred to Slice 3.
  */
 export class UpdateDomainDto {
+  @ApiProperty({ required: false, maxLength: 253, example: 'temu.com' })
   @IsOptional()
   @IsString()
   @Transform(lowercaseDomain)
@@ -35,27 +34,36 @@ export class UpdateDomainDto {
   })
   domain?: string;
 
+  @ApiProperty({ required: false, maxLength: 120, example: 'Temu' })
   @IsOptional()
   @IsString()
   @MaxLength(120)
   name?: string;
 
+  @ApiProperty({ required: false, type: [FieldMappingDto] })
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => FieldMappingDto)
   fieldMappings?: FieldMappingDto[];
 
+  @ApiProperty({ required: false, maxLength: 2000, example: '.product-card' })
   @IsOptional()
   @IsString()
   @MaxLength(2000)
   containerSelector?: string;
 
+  @ApiProperty({ required: false, minimum: 1, example: 50 })
   @IsOptional()
   @IsInt()
   @Min(1)
   productLimit?: number;
 
+  @ApiProperty({
+    required: false,
+    format: 'url',
+    example: 'https://www.temu.com/category-1.html',
+  })
   @IsOptional()
   @IsUrl({ require_protocol: true, require_valid_protocol: true })
   sampleUrl?: string;

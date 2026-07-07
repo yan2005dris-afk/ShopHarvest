@@ -1,3 +1,4 @@
+import { ApiProperty } from '@nestjs/swagger';
 import {
   ArrayNotEmpty,
   IsArray,
@@ -25,12 +26,13 @@ const lowercaseDomain = ({ value }: { value: unknown }): unknown =>
  * scraped fields map to canonical roles (title, price, etc.). Legacy
  * `selectorTitle/Price/Image/Sku` are intentionally NOT accepted — they
  * were redundant and inconsistent with the visual mapper.
- *
- * Note: @ApiProperty decorators are intentionally omitted — Swagger /
- * OpenAPI metadata is deferred to Slice 3. class-validator decorators are
- * the source of truth for runtime validation.
  */
 export class CreateDomainDto {
+  @ApiProperty({
+    maxLength: 253,
+    example: 'temu.com',
+    description: 'Hostname (lowercased on save).',
+  })
   @IsString()
   @IsNotEmpty()
   @Transform(lowercaseDomain)
@@ -41,27 +43,40 @@ export class CreateDomainDto {
   })
   domain!: string;
 
+  @ApiProperty({ maxLength: 120, example: 'Temu' })
   @IsString()
   @IsNotEmpty()
   @MaxLength(120)
   name!: string;
 
+  @ApiProperty({ type: [FieldMappingDto] })
   @IsArray()
   @ArrayNotEmpty({ message: 'fieldMappings must contain at least one mapping' })
   @ValidateNested({ each: true })
   @Type(() => FieldMappingDto)
   fieldMappings!: FieldMappingDto[];
 
+  @ApiProperty({
+    required: false,
+    maxLength: 2000,
+    example: '.product-card',
+  })
   @IsOptional()
   @IsString()
   @MaxLength(2000)
   containerSelector?: string;
 
+  @ApiProperty({ required: false, minimum: 1, example: 50 })
   @IsOptional()
   @IsInt()
   @Min(1)
   productLimit?: number;
 
+  @ApiProperty({
+    required: false,
+    format: 'url',
+    example: 'https://www.temu.com/category-1.html',
+  })
   @IsOptional()
   @IsUrl({ require_protocol: true, require_valid_protocol: true })
   sampleUrl?: string;

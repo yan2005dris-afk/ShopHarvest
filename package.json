@@ -11,6 +11,7 @@
     "build:contracts": "pnpm --filter @web-scraping/contracts build",
     "build:frontend": "pnpm --filter ./frontend build",
     "build:worker": "pnpm --filter worker build",
+    "test:contracts": "pnpm --filter @web-scraping/contracts test",
     "prisma:generate": "pnpm --filter backend prisma generate",
     "prisma:push": "pnpm --filter backend prisma db push",
     "prisma:migrate": "pnpm --filter backend prisma migrate dev",

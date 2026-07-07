@@ -15,11 +15,20 @@
  * `"type": "module"`, which makes Node treat any `.js` file as ESM. The
  * `module.exports = ...` shape here is CommonJS, so we must use the `.cjs`
  * extension.
+ *
+ * `moduleNameMapper` is required because the source DTOs use ESM
+ * `.js`-suffixed imports (`import { X } from './y.js'`) for compatibility
+ * with the published `dist/` artifact, but ts-jest runs against the
+ * `.ts` source files. Without this map, ts-jest can't resolve the `.js`
+ * suffix to the corresponding `.ts` file.
  */
 module.exports = {
   testEnvironment: 'node',
   testMatch: ['<rootDir>/src/**/*.spec.ts'],
   rootDir: '.',
+  moduleNameMapper: {
+    '^(\\.{1,2}/.*)\\.js$': '$1',
+  },
   // Emit decorator metadata is required for class-validator to introspect
   // the runtime type of each property. Keep this in sync with
   // tsconfig.json.

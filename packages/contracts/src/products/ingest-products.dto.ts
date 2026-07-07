@@ -1,3 +1,4 @@
+import { ApiProperty } from '@nestjs/swagger';
 import {
   ArrayNotEmpty,
   IsArray,
@@ -22,11 +23,9 @@ import { FieldMappingDto } from '../domains/field-mapping.dto.js';
  * Backward compat: if `fieldMappings` is missing, the backend derives one
  * from the first product's keys and logs a warning. This path will be
  * removed in a future release.
- *
- * Note: @ApiProperty decorators are intentionally omitted — Swagger /
- * OpenAPI metadata is deferred to Slice 3.
  */
 export class IngestProductsDto {
+  @ApiProperty({ maxLength: 253, example: 'temu.com' })
   @IsString()
   @IsNotEmpty()
   @MaxLength(253)
@@ -36,10 +35,12 @@ export class IngestProductsDto {
   })
   domain!: string;
 
+  @ApiProperty({ required: false, format: 'url' })
   @IsOptional()
   @IsUrl({ require_protocol: true, require_valid_protocol: true })
   pageUrl?: string;
 
+  @ApiProperty({ required: false, type: [FieldMappingDto] })
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => FieldMappingDto)
@@ -51,6 +52,13 @@ export class IngestProductsDto {
    * `canonicalField -> value`. The backend uses `fieldMappings` to assign
    * each key to its semantic role (title, price, image, etc.).
    */
+  @ApiProperty({
+    type: 'array',
+    items: { type: 'object', additionalProperties: true },
+    description:
+      'Raw extracted payloads keyed by canonical field. Each entry maps ' +
+      'to a single Product after fieldMappings is applied.',
+  })
   @IsArray()
   @ArrayNotEmpty({
     message: 'products must contain at least one extracted item',

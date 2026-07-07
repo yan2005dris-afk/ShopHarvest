@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import {
+  CreateDomainDto,
+  UpdateDomainDto,
+} from '@web-scraping/contracts/domains';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { CreateDomainDto, UpdateDomainDto } from './dto';
 
 @Injectable()
 export class DomainsService {
