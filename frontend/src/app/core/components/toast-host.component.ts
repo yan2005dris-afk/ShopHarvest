@@ -10,14 +10,18 @@ import { ToastService } from '../services/toast.service';
  * Standalone in-page toast stack.
  *
  * a11y contract (WCAG 2.2 + WAI-ARIA APG "Alert" pattern):
- *   - `role="alert"` on the stack container so screen readers announce
- *     newly added toasts without moving focus.
- *   - `aria-live="assertive"` so the announcement interrupts the user
- *     even mid-speech — appropriate for error / warning severity.
- *   - Each toast has `role="alert"` + `aria-label` and a visible close
- *     button (keyboard-activatable).
- *   - `Esc` key dismisses the top-most toast (the entire stack can be
- *     cleared with multiple presses; see `clear()`).
+ *   - `role="region"` on the stack container so screen readers
+ *     announce newly added toasts without moving focus (an outer
+ *     `role="alert"` would also flag every nested item as alert —
+ *     nested alerts are undefined ARIA and screen readers handle them
+ *     inconsistently).
+ *   - `aria-live="polite"` on the container, then per-toast
+ *     `aria-live="assertive"` for `error`/`warning` and `"polite"` for
+ *     `success`/`info` — matches the urgency of each severity.
+ *   - Each toast has `role="alert"` (or `role="status"` for non-urgent
+ *     severities) + `aria-label` and a visible close button
+ *     (keyboard-activatable).
+ *   - `Esc` clears all visible toasts in one press.
  *   - Focus is NOT moved into the toast. The page underneath remains
  *     fully interactive — this is the non-blocking UI invariant from
  *     Spec 5 REQ-FE-5.
@@ -62,7 +66,7 @@ export class ToastHostComponent {
     this.toastService.dismiss(id);
   }
 
-  /** Esc dismisses all visible toasts. */
+  /** Esc dismisses the entire visible stack in a single press. */
   @HostListener('document:keydown.escape')
   onEscape(): void {
     if (this.toasts().length > 0) {
