@@ -1,6 +1,10 @@
 /**
  * Auth barrel — re-exports every auth DTO.
  *
- * Filled in as the auth DTOs land (slice 1).
+ * Import patterns:
+ *   import { LoginDto, RegisterDto, AuthResponseDto } from '@web-scraping/contracts/auth';
+ *   import type { AuthResponseDto } from '@web-scraping/contracts/auth';
  */
-export {};
+export { RegisterDto } from './register.dto.js';
+export { LoginDto } from './login.dto.js';
+export { AuthResponseDto, AuthUserDto } from './auth-response.dto.js';
