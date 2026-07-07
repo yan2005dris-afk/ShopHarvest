@@ -3,10 +3,11 @@ import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { ExtensionService } from './services/extension.service';
 import { ThemeService } from './services/theme.service';
+import { ToastHostComponent } from './core/components/toast-host.component';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, ToastHostComponent],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
