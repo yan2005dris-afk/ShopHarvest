@@ -4,6 +4,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { Prisma } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import { UsersService } from './users.service';
 
@@ -32,8 +33,22 @@ export class AuthService {
       throw new ConflictException('Email already registered');
     }
     const passwordHash = await bcrypt.hash(password, AuthService.SALT_ROUNDS);
-    const user = await this.users.create(email, passwordHash);
-    return this.issueToken(user.id, user.email);
+    try {
+      const user = await this.users.create(email, passwordHash);
+      return this.issueToken(user.id, user.email);
+    } catch (err) {
+      // The pre-check is a TOCTOU race window. If a concurrent request
+      // inserted the same email between our findUnique and our create, the
+      // unique constraint on `User.email` raises Prisma P2002. Surface that
+      // as the same 409 the happy-path already throws.
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === 'P2002'
+      ) {
+        throw new ConflictException('Email already registered');
+      }
+      throw err;
+    }
   }
 
   async login(email: string, password: string): Promise<AuthResult> {
