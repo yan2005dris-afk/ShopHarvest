@@ -33,7 +33,16 @@ export class ProductsController {
       products = await this.productsService.findAll(includeHistory);
     }
 
-    return products;
+    // 4R CRITICAL #2 fix: wrap list endpoints with plainToInstance so the
+    // @Type(() => Number) decorator on ProductResponseDto.price coerces
+    // the Prisma `Decimal.toJSON()` string back to a real JS number on
+    // the wire — AND `excludeExtraneousValues: true` strips nested
+    // `domainRule` + `priceHistory[]` relations from the response.
+    return products.map((row) =>
+      plainToInstance(ProductResponseDto, row, {
+        excludeExtraneousValues: true,
+      }),
+    );
   }
 
   @Post('ingest')
@@ -55,7 +64,17 @@ export class ProductsController {
     // Spec 2 REQ-DT-1: pipe Prisma row through plainToInstance so the
     // @Type(() => Number) decorator on ProductResponseDto.price coerces
     // the JSON-string Decimal back to a real JS number on the wire.
-    return plainToInstance(ProductResponseDto, product);
+    //
+    // 4R BLOCKER fix: `excludeExtraneousValues: true` activates the
+    // @Expose() whitelist so Prisma's nested `domainRule` relation and
+    // `priceHistory[]` array are STRIPPED before serialization — without
+    // it, class-transformer recurses into nested relations and crashes
+    // with `[DecimalError] Invalid argument: undefined` on every request
+    // where priceHistory is non-empty (always, after the first history
+    // capture). See pre-PR 4R review R1 BLOCKER.
+    return plainToInstance(ProductResponseDto, product, {
+      excludeExtraneousValues: true,
+    });
   }
 
   @Get(':id/history')
@@ -69,15 +88,29 @@ export class ProductsController {
       throw new NotFoundException(`Product with id ${id} not found`);
     }
     // Same Decimal→number fix as findOne, applied per entry.
+    //
+    // 4R CRITICAL #3 fix: `excludeExtraneousValues: true` activates the
+    // @Expose() whitelist — without it, `productId` (FK to Product) and
+    // the joined `product` relation leak into the wire response.
     const history = await this.productsService.getPriceHistory(id, from, to);
     return history.map((entry) =>
-      plainToInstance(PriceHistoryResponseDto, entry),
+      plainToInstance(PriceHistoryResponseDto, entry, {
+        excludeExtraneousValues: true,
+      }),
     );
   }
 
   @Get('by-domain/:domainRuleId')
   async findByDomain(@Param('domainRuleId') domainRuleId: string) {
-    return this.productsService.findAllByDomain(domainRuleId);
+    const rows = await this.productsService.findAllByDomain(domainRuleId);
+    // 4R CRITICAL #2 fix: same wrap as findAll above. Without this the
+    // list endpoint ships `price: "19.99"` (string) instead of `price: 19.99`
+    // (number), AND leaks nested `domainRule` + `priceHistory[]` relations.
+    return rows.map((row) =>
+      plainToInstance(ProductResponseDto, row, {
+        excludeExtraneousValues: true,
+      }),
+    );
   }
 
   @Post()

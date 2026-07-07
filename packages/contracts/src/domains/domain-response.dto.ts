@@ -2,6 +2,20 @@ import { Expose, Type } from 'class-transformer';
 import { FieldMappingDto } from './field-mapping.dto.js';
 
 /**
+ * Pagination strategy discriminator for a `DomainRule`.
+ *
+ *  - `'scroll'`      — sentinel-driven infinite scroll (default per
+ *                       Prisma schema `paginationType @default("scroll")`).
+ *  - `'page-number'` — traditional `?page=N` query string. Set by the
+ *                       visual mapper when the user picks the "paged" tab.
+ *
+ * Exported as a named type alias so the frontend can type the same
+ * value and any future `UpdateDomainDto.paginationType` field can reuse
+ * it instead of duplicating the inline literal union.
+ */
+export type DomainPaginationType = 'scroll' | 'page-number';
+
+/**
  * Wire shape for `GET /domains/:id` and `GET /domains`.
  *
  * Mirrors the Prisma `DomainRule` model: includes `paginationType` and
@@ -43,9 +57,11 @@ export class DomainResponseDto {
    *                  schema `paginationType @default("scroll")`).
    * 'page-number' — traditional `?page=N` query string. Set by the
    *                  visual mapper when the user picks the "paged" tab.
+   *
+   * See `DomainPaginationType` for the named alias.
    */
   @Expose()
-  paginationType!: 'scroll' | 'page-number';
+  paginationType!: DomainPaginationType;
 
   @Expose()
   paginationSelector?: string;

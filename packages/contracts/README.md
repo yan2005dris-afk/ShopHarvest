@@ -10,7 +10,7 @@ A pure type-only package consumed by both the NestJS backend and the Angular fro
 
 - This package MUST NOT import from `backend/`, `frontend/`, or any other monorepo package.
 - Decorators (`@IsString`, `@ApiProperty`, `@Expose`, `@Type`) belong here, not on consumer-side wrappers.
-- ESM only. Consumers resolve sub-paths (`@web-scraping/contracts/auth`, `@web-scraping/contracts/domains`, etc.).
+- ESM-first with CJS interop (dual-build via `tsconfig.build.cjs.json`). The build emits both `dist/` (ESM) and `dist-cjs/` (CJS); the NestJS CJS backend consumes the CJS path. Consumers resolve sub-paths (`@web-scraping/contracts/auth`, `@web-scraping/contracts/domains`, etc.).
 
 ## Public surface
 
