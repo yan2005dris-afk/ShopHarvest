@@ -1,54 +1,23 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import type { Observable } from 'rxjs';
+import type {
+  PriceHistoryResponseDto,
+  ProductResponseDto,
+} from '@web-scraping/contracts/products';
+import type {
+  DomainResponseDto,
+  FieldMappingDto,
+  UpdateDomainDto,
+} from '@web-scraping/contracts/domains';
 
-// ─── Interfaces ─────────────────────────────────────────────
+// ─── Aliases — keep the existing call-site names so consumers don't
+// have to change. The wire shape is owned by `@web-scraping/contracts`.
 
-export interface FieldMapping {
-  canonicalField: string;
-  selector: string;
-  type: 'text' | 'attribute' | 'html';
-  attribute?: string;
-}
-
-export interface DomainRule {
-  id: string;
-  domain: string;
-  name: string;
-  sampleUrl?: string;
-  lastScrapedAt?: string;
-  createdAt: string;
-  updatedAt: string;
-  fieldMappings?: FieldMapping[];
-  containerSelector?: string;
-  productLimit?: number;
-}
-
-export interface Product {
-  id: string;
-  domainRuleId: string;
-  domainRule?: DomainRule;
-  title: string;
-  price: number;
-  currency: string;
-  imageUrl?: string;
-  productUrl: string;
-  sku?: string;
-  description?: string;
-  extractedAt: string;
-  createdAt: string;
-  updatedAt: string;
-  priceHistory?: PriceHistory[];
-}
-
-export interface PriceHistory {
-  id: string;
-  productId: string;
-  price: number;
-  currency: string;
-  capturedAt: string;
-  createdAt: string;
-}
+export type DomainRule = DomainResponseDto;
+export type FieldMapping = FieldMappingDto;
+export type Product = ProductResponseDto;
+export type PriceHistory = PriceHistoryResponseDto;
 
 // ─── ApiService ─────────────────────────────────────────────
 
@@ -69,7 +38,7 @@ export class ApiService {
     return this.http.post<DomainRule>(`${this.baseUrl}/domains`, data);
   }
 
-  updateDomain(id: string, data: Partial<DomainRule>): Observable<DomainRule> {
+  updateDomain(id: string, data: UpdateDomainDto): Observable<DomainRule> {
     return this.http.patch<DomainRule>(`${this.baseUrl}/domains/${id}`, data);
   }
 

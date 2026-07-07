@@ -1,12 +1,9 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, tap } from 'rxjs';
+import type { Observable } from 'rxjs';
+import { tap } from 'rxjs';
+import type { AuthResponseDto, AuthUserDto } from '@web-scraping/contracts/auth';
 import { ExtensionService } from './extension.service';
-
-interface AuthResponse {
-  accessToken: string;
-  user: { id: string; email: string };
-}
 
 const TOKEN_KEY = 'vs_token';
 
@@ -16,7 +13,7 @@ export class AuthService {
   private readonly extension = inject(ExtensionService);
   private readonly baseUrl = '/api/auth';
 
-  readonly user = signal<{ id: string; email: string } | null>(null);
+  readonly user = signal<AuthUserDto | null>(null);
 
   get token(): string | null {
     return localStorage.getItem(TOKEN_KEY);
@@ -26,15 +23,15 @@ export class AuthService {
     return !!this.token;
   }
 
-  register(email: string, password: string): Observable<AuthResponse> {
+  register(email: string, password: string): Observable<AuthResponseDto> {
     return this.http
-      .post<AuthResponse>(`${this.baseUrl}/register`, { email, password })
+      .post<AuthResponseDto>(`${this.baseUrl}/register`, { email, password })
       .pipe(tap((res) => this.handleAuth(res)));
   }
 
-  login(email: string, password: string): Observable<AuthResponse> {
+  login(email: string, password: string): Observable<AuthResponseDto> {
     return this.http
-      .post<AuthResponse>(`${this.baseUrl}/login`, { email, password })
+      .post<AuthResponseDto>(`${this.baseUrl}/login`, { email, password })
       .pipe(tap((res) => this.handleAuth(res)));
   }
 
@@ -43,7 +40,7 @@ export class AuthService {
     this.user.set(null);
   }
 
-  private handleAuth(res: AuthResponse): void {
+  private handleAuth(res: AuthResponseDto): void {
     localStorage.setItem(TOKEN_KEY, res.accessToken);
     this.user.set(res.user);
     // Hand the token to the extension so its background scheduler can call the
