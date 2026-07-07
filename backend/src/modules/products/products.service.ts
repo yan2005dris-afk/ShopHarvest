@@ -212,14 +212,20 @@ export class ProductsService {
 
     const results = [];
 
-    for (const product of dto.products) {
+    for (let index = 0; index < dto.products.length; index++) {
+      const product = dto.products[index];
       try {
         const mapped = this.mapProductByRule(product, mappings);
         const titleSlug = mapped.title
           .toLowerCase()
           .replace(/[^a-z0-9]+/g, '-')
           .slice(0, 80);
-        const productUrl = `${dto.pageUrl ?? dto.domain}#${titleSlug}`;
+        // Disambiguate duplicates: productUrl is the dedup key against
+        // (productUrl, domainRuleId), so two items with identical titles
+        // would otherwise collide and the second silently overwrites the
+        // first. Append the batch index as a stable suffix. If sku is
+        // present it stays the same across runs so re-ingest still upserts.
+        const productUrl = `${dto.pageUrl ?? dto.domain}#${titleSlug}-${index}`;
 
         const existing = await this.prisma.product.findFirst({
           where: { productUrl, domainRuleId: domainRule.id },

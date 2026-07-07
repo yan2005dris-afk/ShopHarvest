@@ -562,4 +562,38 @@ describe('ProductsService.ingestFromExtension', () => {
     expect(created!.price).toBe(0);
     expect(warnSpy).toHaveBeenCalled();
   });
+
+  it('creates two distinct products when two items share the same title (productUrl must disambiguate)', async () => {
+    prisma.__state.domainRules.set('shop.com', {
+      id: 'rule_12',
+      domain: 'shop.com',
+      name: 'Shop',
+      fieldMappings: [
+        { canonicalField: 'title', selector: '.t', type: 'text' },
+        { canonicalField: 'price', selector: '.p', type: 'text' },
+      ],
+      containerSelector: null,
+      productLimit: null,
+      sampleUrl: null,
+    });
+
+    await service.ingestFromExtension({
+      domain: 'shop.com',
+      pageUrl: 'https://shop.com/list',
+      fieldMappings: [
+        { canonicalField: 'title', selector: '.t', type: 'text' },
+        { canonicalField: 'price', selector: '.p', type: 'text' },
+      ],
+      products: [
+        { title: 'Same', price: '10' },
+        { title: 'Same', price: '20' },
+      ],
+    });
+
+    expect(prisma.__state.products.size).toBe(2);
+    const urls = Array.from(prisma.__state.products.values()).map(
+      (p) => p.productUrl,
+    );
+    expect(new Set(urls).size).toBe(2);
+  });
 });
