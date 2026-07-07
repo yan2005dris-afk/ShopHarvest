@@ -3,6 +3,7 @@ packages:
   - 'frontend'
   - 'extension'
   - 'worker'
+  - 'packages/contracts'
 
 allowBuilds:
   '@nestjs/core': true
@@ -17,3 +18,5 @@ allowBuilds:
   'unrs-resolver': true
   better-sqlite3: true
   bcrypt: true
+  'class-transformer': true
+  'class-validator': true
