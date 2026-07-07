@@ -1,6 +1,7 @@
 import { Body, Controller, HttpCode, Post } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { plainToInstance } from 'class-transformer';
+import { ErrorResponseDto } from '@web-scraping/contracts/errors';
 import {
   AuthResponseDto,
   LoginDto,
@@ -17,7 +18,16 @@ export class AuthController {
   @Public()
   @ApiOperation({ summary: 'Register a new user' })
   @ApiResponse({ status: 201, type: AuthResponseDto })
-  @ApiResponse({ status: 409, description: 'Email already registered' })
+  @ApiResponse({
+    status: 400,
+    type: ErrorResponseDto,
+    description: 'Validation failed',
+  })
+  @ApiResponse({
+    status: 409,
+    type: ErrorResponseDto,
+    description: 'Email already registered',
+  })
   @Post('register')
   async register(@Body() dto: RegisterDto): Promise<AuthResponseDto> {
     const result = await this.auth.register(dto.email, dto.password);
@@ -29,7 +39,16 @@ export class AuthController {
   @Public()
   @ApiOperation({ summary: 'Authenticate an existing user' })
   @ApiResponse({ status: 200, type: AuthResponseDto })
-  @ApiResponse({ status: 401, description: 'Invalid credentials' })
+  @ApiResponse({
+    status: 400,
+    type: ErrorResponseDto,
+    description: 'Validation failed',
+  })
+  @ApiResponse({
+    status: 401,
+    type: ErrorResponseDto,
+    description: 'Invalid credentials',
+  })
   @HttpCode(200)
   @Post('login')
   async login(@Body() dto: LoginDto): Promise<AuthResponseDto> {
