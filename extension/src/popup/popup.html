@@ -8,77 +8,17 @@
 </head>
 <body>
   <div id="app">
-    <!-- Home view -->
-    <div id="view-home" class="view">
-      <div class="header">
-        <h1>Visual Scraper</h1>
-        <span id="domain-badge" class="badge"></span>
-      </div>
-      <div id="rule-status" class="rule-status hidden">
-        <span class="status-dot"></span> Rule saved
-      </div>
-
-      <!-- Field definitions -->
-      <div class="section">
-        <div class="section-header">
-          <span>Fields</span>
-          <button id="btn-add-field" class="btn-small">+ Add Field</button>
-        </div>
-        <p class="hint">Define the fields you want to scrape, then click <strong>Start Mapping</strong>.</p>
-        <div id="field-defs-list" class="field-defs-list">
-          <!-- Dynamic field definition rows rendered by popup.ts -->
-        </div>
-      </div>
-
-      <div class="actions">
-        <button id="btn-start-mapping" class="btn btn-primary">Start Mapping</button>
-        <button id="btn-extract" class="btn btn-secondary">Extract Data</button>
-        <button id="btn-view-data" class="btn btn-ghost">View Data</button>
-      </div>
-      <div id="home-error" class="error hidden"></div>
+    <div class="header">
+      <h1>Visual Scraper</h1>
     </div>
-
-    <!-- Mapping view -->
-    <div id="view-mapping" class="view hidden">
-      <div class="header">
-        <h1>Mapping Mode</h1>
-        <span class="badge badge-active">Active</span>
-      </div>
-      <p class="hint">Click elements on the page to assign fields.</p>
-      <div class="fields-list" id="fields-list">
-        <div class="field-row" data-field="container">
-          <span class="field-name">Container</span>
-          <span class="field-selector" id="field-container">not set</span>
-        </div>
-        <!-- Dynamic field rows rendered by popup.ts -->
-      </div>
-      <div class="actions">
-        <button id="btn-save-rule" class="btn btn-primary" disabled>Save Rule</button>
-        <button id="btn-cancel-mapping" class="btn btn-ghost">Cancel</button>
-      </div>
+    <p class="hint">
+      Mapping, extraction, and saved rules now live in the web app. Open it to
+      create a rule or run an existing one.
+    </p>
+    <div class="actions">
+      <button id="btn-open-app" class="btn btn-primary">Open Visual Mapper</button>
     </div>
-
-    <!-- Data view (unchanged) -->
-    <div id="view-data" class="view hidden">
-      <div class="header">
-        <h1>Extracted Data</h1>
-      </div>
-      <p id="product-count" class="count"></p>
-      <div id="data-table-wrapper" class="table-wrapper">
-        <table id="data-table">
-          <thead><tr id="table-head"></tr></thead>
-          <tbody id="table-body"></tbody>
-        </table>
-      </div>
-      <div class="actions">
-        <button id="btn-export-csv" class="btn btn-primary">Export CSV</button>
-        <button id="btn-clear-data" class="btn btn-danger">Clear Data</button>
-        <button id="btn-back" class="btn btn-ghost">Back</button>
-      </div>
-    </div>
-
-    <!-- Toast -->
-    <div id="toast" class="toast hidden"></div>
+    <div id="error" class="error hidden"></div>
   </div>
   <script type="module" src="./popup.ts"></script>
 </body>

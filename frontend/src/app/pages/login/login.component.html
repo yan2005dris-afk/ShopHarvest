@@ -1,0 +1,44 @@
+<div class="login-wrap">
+  <form class="login-card" (ngSubmit)="submit()">
+    <h1 class="login-title">{{ title }}</h1>
+    <p class="login-sub">Visual Scraper</p>
+
+    <label class="login-field">
+      <span>Email</span>
+      <input
+        type="email"
+        name="email"
+        autocomplete="username"
+        [(ngModel)]="email"
+        required
+      />
+    </label>
+
+    <label class="login-field">
+      <span>Password</span>
+      <input
+        type="password"
+        name="password"
+        [attr.autocomplete]="mode === 'login' ? 'current-password' : 'new-password'"
+        [(ngModel)]="password"
+        required
+      />
+    </label>
+
+    @if (error) {
+      <p class="login-error">{{ error }}</p>
+    }
+
+    <button type="submit" class="login-btn" [disabled]="submitting">
+      @if (submitting) { Please wait… } @else { {{ title }} }
+    </button>
+
+    <button type="button" class="login-switch" (click)="toggleMode()">
+      @if (mode === 'login') {
+        Need an account? Register
+      } @else {
+        Already have an account? Sign in
+      }
+    </button>
+  </form>
+</div>

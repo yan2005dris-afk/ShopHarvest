@@ -1,12 +1,12 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
-import { NgFor, NgIf, DatePipe, CurrencyPipe } from '@angular/common';
+import { DatePipe, CurrencyPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ApiService, Product, PriceHistory } from '../../services/api.service';
 
 @Component({
   selector: 'app-products',
-  imports: [NgFor, NgIf, DatePipe, CurrencyPipe, RouterLink, FormsModule],
+  imports: [DatePipe, CurrencyPipe, RouterLink, FormsModule],
   templateUrl: './products.component.html',
   styleUrl: './products.component.css',
 })

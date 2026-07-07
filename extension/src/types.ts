@@ -32,23 +32,12 @@ export interface ExtractedProduct {
   [key: string]: string | number | null;
 }
 
-// ─── Storage ────────────────────────────────────────────────────────────────
-
-export interface StorageData {
-  rules: Record<string, DomainRule>;
-  products: Record<string, ExtractedProduct[]>;
-}
-
 // ─── Messaging ──────────────────────────────────────────────────────────────
+// The chrome.storage.local rule/product messages (GET_RULE, SAVE_RULE, …) were
+// removed in review batch 3 when the popup stopped persisting locally. Rules now
+// live in the backend via the Angular app.
 
 export type MessageType =
-  | 'GET_RULE'
-  | 'SAVE_RULE'
-  | 'GET_RULES'
-  | 'SAVE_PRODUCTS'
-  | 'GET_PRODUCTS'
-  | 'DELETE_RULE'
-  | 'CLEAR_PRODUCTS'
   | 'START_MAPPING'
   | 'STOP_MAPPING'
   | 'EXTRACT'

@@ -37,14 +37,27 @@ export class ExtensionService {
       if (e.source !== window) return;
       const data = e.data as Partial<HandshakeMessage>;
       if (data?.type === '__VS_READY__' && data.extensionId) {
-        const firstTime = this.extensionId === null;
+        // Always refresh the id (the extension may have been reloaded) and
+        // announce availability if we weren't already marked available.
         this.extensionId = data.extensionId;
-        if (firstTime) this.available$.next(true);
+        if (!this.available$.value) this.available$.next(true);
       }
     });
 
-    // Ping — triggers content script to respond if already loaded
-    window.postMessage({ type: '__VS_PING__' }, '*');
+    // The content script may load before OR after Angular, so a single ping can
+    // be missed. Retry with backoff until it answers (review §S6).
+    this.pingWithBackoff();
+  }
+
+  private pingWithBackoff(): void {
+    const delaysMs = [0, 250, 500, 1000, 2000];
+    for (const delay of delaysMs) {
+      setTimeout(() => {
+        if (this.extensionId === null) {
+          window.postMessage({ type: '__VS_PING__' }, '*');
+        }
+      }, delay);
+    }
   }
 
   isAvailable(): boolean {
@@ -102,4 +115,58 @@ export class ExtensionService {
       };
     });
   }
+
+  // ── Auto-replay scheduling (batch 5) ──────────────────────────────────────
+  // The extension owns the chrome.alarms; Angular just tells it what to run.
+
+  setSchedule(
+    domain: string,
+    intervalMinutes: number,
+    enabled: boolean,
+  ): Promise<{ ok: boolean; error?: string }> {
+    return this.sendExternal({
+      type: 'SET_SCHEDULE',
+      payload: { domain, intervalMinutes, enabled },
+    });
+  }
+
+  getSchedules(): Promise<{ ok: boolean; schedules?: Record<string, ScheduleEntry> }> {
+    return this.sendExternal({ type: 'GET_SCHEDULES' });
+  }
+
+  /**
+   * Hands the current JWT to the extension so its background scheduler can call
+   * the (now authenticated) backend. Rejects if the extension is unavailable.
+   */
+  setAuthToken(token: string): Promise<{ ok: boolean }> {
+    return this.sendExternal({ type: 'SET_AUTH_TOKEN', payload: { token } });
+  }
+
+  private sendExternal<T>(message: unknown): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+      if (!this.extensionId) {
+        reject(new Error('Extension not available'));
+        return;
+      }
+      const cr = (window as unknown as { chrome?: typeof chrome })?.chrome;
+      if (!cr?.runtime?.sendMessage) {
+        reject(new Error('Chrome runtime not available'));
+        return;
+      }
+      cr.runtime.sendMessage(this.extensionId, message, (response: T) => {
+        const err = cr.runtime?.lastError?.message;
+        if (err) {
+          reject(new Error(err));
+          return;
+        }
+        resolve(response);
+      });
+    });
+  }
+}
+
+export interface ScheduleEntry {
+  intervalMinutes: number;
+  enabled: boolean;
+  lastRunAt: number | null;
 }

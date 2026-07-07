@@ -2,6 +2,7 @@ packages:
   - 'backend'
   - 'frontend'
   - 'extension'
+  - 'worker'
 
 allowBuilds:
   '@nestjs/core': true
@@ -15,3 +16,4 @@ allowBuilds:
   'msgpackr-extract': true
   'unrs-resolver': true
   better-sqlite3: true
+  bcrypt: true

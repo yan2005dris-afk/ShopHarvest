@@ -562,17 +562,75 @@ function extractFieldsFrom(
       product[mapping.canonicalField] = el.innerHTML?.trim() ?? null;
     }
 
-    // Price parsing (only if field looks like a price)
-    if (typeof product[mapping.canonicalField] === 'string') {
-      const raw = product[mapping.canonicalField] as string;
-      const parsed = parseFloat(raw.replace(/[^0-9.]/g, '') ?? '');
-      if (!isNaN(parsed)) {
+    // Coerce to a number ONLY for price-like fields. Otherwise a title of
+    // "123" would become 123, and "4K TV" would collapse to 4 (review §S4).
+    if (
+      typeof product[mapping.canonicalField] === 'string' &&
+      /precio|price|amount|cost|costo/i.test(mapping.canonicalField)
+    ) {
+      const parsed = parseLocalizedPrice(
+        product[mapping.canonicalField] as string,
+      );
+      if (parsed !== null) {
         product[mapping.canonicalField] = parsed;
       }
     }
   }
   const hasValue = Object.values(product).some((v) => v !== null && v !== undefined);
   return hasValue ? product : null;
+}
+
+/**
+ * Extract the leading price string from an arbitrary text and parse it into
+ * a number, respecting the locale conventions most common in scraped
+ * e-commerce data:
+ *
+ *   • Both '.' and ',' present  → the rightmost separator is the decimal
+ *     mark; the other is the thousands separator. Drop everything else.
+ *     "$1,299.00" → 1299.00; "1.299,00" → 1299.00
+ *   • Only ',' present            → comma is the decimal separator
+ *     (European). "19,99" → 19.99
+ *   • Only '.' present            → period is the decimal separator
+ *     (US/UK). "19.99" → 19.99
+ *   • No digits → null (caller skips coercion).
+ *
+ * Exported for unit testing. Returns null when no number can be recovered
+ * so callers can leave the raw string alone.
+ */
+export function parseLocalizedPrice(raw: string): number | null {
+  if (typeof raw !== 'string') return null;
+  // Work only with the substring between leading and trailing non-numeric
+  // noise (currency symbols, "Price:" prefix, "USD" suffix, etc.).
+  const match = raw.match(/[-+]?\d[\d.,\s]*/);
+  if (!match) return null;
+  const trimmed = match[0].replace(/\s/g, '');
+  if (trimmed === '') return null;
+
+  const lastDot = trimmed.lastIndexOf('.');
+  const lastComma = trimmed.lastIndexOf(',');
+  const hasDot = lastDot !== -1;
+  const hasComma = lastComma !== -1;
+
+  let normalised: string;
+  if (hasDot && hasComma) {
+    // Rightmost separator wins as the decimal mark.
+    if (lastComma > lastDot) {
+      // European: dots are thousands, comma is decimal.
+      normalised = trimmed.replace(/\./g, '').replace(',', '.');
+    } else {
+      // US: commas are thousands, dot is decimal.
+      normalised = trimmed.replace(/,/g, '');
+    }
+  } else if (hasComma) {
+    // European with no thousands separator.
+    normalised = trimmed.replace(',', '.');
+  } else {
+    // US-style or plain: keep digits and the dot.
+    normalised = trimmed;
+  }
+
+  const parsed = parseFloat(normalised);
+  return Number.isFinite(parsed) ? parsed : null;
 }
 
 function extractProducts(rule: DomainRule): ExtractedProduct[] {

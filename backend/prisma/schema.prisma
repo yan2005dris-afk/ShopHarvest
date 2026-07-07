@@ -1,6 +1,8 @@
-// ─── Entry Point ─────────────────────────────────────────────────────────
-// Este archivo se genera a partir de los archivos en prisma/schema/
-// Para regenerarlo: pnpm prisma:generate-schema
+// ─── Prisma Schema ───────────────────────────────────────────────────────
+// Single source of truth. Edit this file directly; do NOT split it across
+// multiple files (a previous attempt at a `schema/models/` directory was
+// removed in batch 2 — it was never wired into a generator and produced
+// drift between source and generated client types).
 
 // Generator & Datasource
 generator client {
@@ -19,18 +21,15 @@ model DomainRule {
   domain          String   @unique
   name            String
 
-  // Legacy single-field selectors (optional — fieldMappings supersedes)
-  selectorTitle   String?
-  selectorPrice   String?
-  selectorImage   String?
-  selectorSku     String?
-
-  // Visual mapper: field mappings (supersedes selector* when non-empty)
+  // Single source of truth for extraction rules. The visual mapper writes
+  // here; the ingest endpoint reads from here. Legacy `selectorTitle/Price/
+  // Image/Sku/Type` columns were dropped in batch 2.
   fieldMappings       Json?
   containerSelector   String?
   productLimit        Int?
 
-  selectorType    String   @default("css")
+  // Pagination metadata — kept because batch 5 (auto-replay with scroll)
+  // will use these.
   paginationType  String   @default("scroll")
   paginationSelector String?
 
@@ -41,8 +40,6 @@ model DomainRule {
   updatedAt       DateTime @updatedAt
 
   products        Product[]
-  scrapingJobs    ScrapingJob[]
-  scrapingSchedules ScrapingSchedule[]
 }
 
 // Product — Datos normalizados extraídos
@@ -89,42 +86,70 @@ model PriceHistory {
   @@index([capturedAt])
 }
 
-// ScrapingJob — Lifecycle de cada trabajo de scraping
-model ScrapingJob {
-  id              String    @id @default(uuid()) @db.Uuid
-  domainRuleId    String    @db.Uuid
-  domainRule      DomainRule @relation(fields: [domainRuleId], references: [id])
+// ScrapingJob and ScrapingSchedule models were removed in review batch 4. The
+// headless worker they fed no longer exists; automated re-scraping now runs in
+// the extension via chrome.alarms (batch 5). See migration
+// 20260704020000_drop_scraping_jobs_schedules.
 
-  url             String
-  type            String    @default("single") // "single" | "listing"
-  status          String    @default("queued")
-  retryCount      Int       @default(0)
-  maxRetries      Int       @default(3)
-  errorMessage    String?
-  result          Json?
-
-  enqueuedAt      DateTime  @default(now())
-  startedAt       DateTime?
-  completedAt     DateTime?
-
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-
-  @@index([domainRuleId])
+// User — authentication (review batch 6, C2). JWT-based per-user auth gates the
+// API so arbitrary extensions can no longer POST/DELETE.
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
-// ScrapingSchedule — Programación cron para scraping automático
-model ScrapingSchedule {
-  id              String    @id @default(uuid()) @db.Uuid
-  domainRuleId    String    @db.Uuid
-  domainRule      DomainRule @relation(fields: [domainRuleId], references: [id])
+// ─── ETL integration (change: etl-integration-strategy, PR 1) ──────────────
+// The ETL worker process writes run history, scraped products, and quality
+// metrics here. Idempotency is enforced by the @@unique([source, sourceId])
+// constraint on EtlProduct — re-running the scraper upserts by composite key.
 
-  cronExpression  String
-  enabled         Boolean   @default(true)
-  lastRunAt       DateTime?
+enum EtlRunStatus {
+  RUNNING
+  SUCCESS
+  FAILED
+}
 
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+model EtlRun {
+  id            String        @id @default(uuid()) @db.Uuid
+  source        String
+  status        EtlRunStatus  @default(RUNNING)
+  startedAt     DateTime      @default(now())
+  finishedAt    DateTime?
+  rowsScraped   Int           @default(0)
+  rowsPersisted Int           @default(0)
+  errorSummary  String?
+  etlProducts   EtlProduct[]
+  qualityMetric QualityMetric?
 
-  @@index([enabled])
+  @@index([status, startedAt(sort: Desc)])
+}
+
+model EtlProduct {
+  id           String   @id @default(uuid()) @db.Uuid
+  etlRunId     String   @db.Uuid
+  etlRun       EtlRun   @relation(fields: [etlRunId], references: [id])
+  source       String
+  sourceId     String
+  title        String
+  price        Decimal? @db.Decimal(12, 2)
+  currency     String   @default("GBP")
+  availability String?
+  rawJson      Json
+  scrapedAt    DateTime
+
+  @@unique([source, sourceId])
+  @@index([etlRunId])
+  @@index([sourceId])
+}
+
+model QualityMetric {
+  id                String   @id @default(uuid()) @db.Uuid
+  etlRunId          String   @unique @db.Uuid
+  etlRun            EtlRun   @relation(fields: [etlRunId], references: [id])
+  completenessPct   Decimal  @db.Decimal(5, 2)
+  duplicatesRemoved Int      @default(0)
+  checks            Json
 }
