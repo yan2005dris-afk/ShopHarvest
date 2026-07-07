@@ -189,4 +189,50 @@ describe('DomainsController', () => {
     const dto = plainToInstance(UpdateDomainDto, { domain: 'Temu.COM' });
     expect((dto as unknown as { domain: string }).domain).toBe('temu.com');
   });
+
+  it('rejects a fieldMapping of type=attribute without an attribute name', async () => {
+    const topDto = plainToInstance(CreateDomainDto, {
+      domain: 'temu.com',
+      name: 'Temu',
+      fieldMappings: [
+        { canonicalField: 'image', selector: 'img', type: 'attribute' },
+      ],
+    });
+    const mapping = plainToInstance(
+      FieldMappingDto,
+      (topDto as unknown as { fieldMappings: unknown[] }).fieldMappings[0],
+    );
+    const errors = await validate(mapping, {
+      whitelist: true,
+      forbidNonWhitelisted: true,
+    });
+    expect(errors.length).toBeGreaterThan(0);
+  });
+
+  it('accepts a fieldMapping of type=text without an attribute name', async () => {
+    const mapping = plainToInstance(FieldMappingDto, {
+      canonicalField: 'title',
+      selector: '.t',
+      type: 'text',
+    });
+    const errors = await validate(mapping, {
+      whitelist: true,
+      forbidNonWhitelisted: true,
+    });
+    expect(errors.length).toBe(0);
+  });
+
+  it('accepts a fieldMapping of type=attribute with an attribute name', async () => {
+    const mapping = plainToInstance(FieldMappingDto, {
+      canonicalField: 'image',
+      selector: 'img',
+      type: 'attribute',
+      attribute: 'href',
+    });
+    const errors = await validate(mapping, {
+      whitelist: true,
+      forbidNonWhitelisted: true,
+    });
+    expect(errors.length).toBe(0);
+  });
 });
