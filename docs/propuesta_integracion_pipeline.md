@@ -53,7 +53,7 @@ graph TD
 Para embeber el pipeline dentro del backend NestJS actual, se creará un módulo especializado llamado `EtlModule`.
 
 ### A. Estructura de Módulos a incorporar:
-```
+```text
 backend/src/modules/etl/
 ├── etl.module.ts
 ├── etl.controller.ts
@@ -69,7 +69,7 @@ backend/src/modules/etl/
 ### B. Ejecución Automatizada (Cron Jobs)
 En `etl.service.ts`, se utilizará el decorador `@Cron` de NestJS para programar la extracción automática de datos sin necesidad de intervención manual:
 
-```typescript
+```ts
 import { Injectable } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 
