@@ -10,7 +10,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { FieldMappingDto } from '../../domains/dto/field-mapping.dto';
+import { FieldMappingDto } from '@web-scraping/contracts/domains';
 
 /**
  * Wire shape for `POST /products/ingest`.
