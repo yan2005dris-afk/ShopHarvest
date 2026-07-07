@@ -75,6 +75,19 @@ describe('AuthService', () => {
 
       await expect(service.register('a@b.com', 'password123')).rejects.toBe(other);
     });
+
+    it('normalizes email (trim + lowercase) before lookup and creation', async () => {
+      users.findByEmail.mockResolvedValue(null);
+      users.create.mockImplementation((email: string, passwordHash: string) =>
+        Promise.resolve({ id: 'u1', email, passwordHash }),
+      );
+
+      const res = await service.register('  A@B.COM  ', 'password123');
+
+      expect(users.findByEmail).toHaveBeenCalledWith('a@b.com');
+      expect(users.create).toHaveBeenCalledWith('a@b.com', expect.any(String));
+      expect(res.user.email).toBe('a@b.com');
+    });
   });
 
   describe('login', () => {
@@ -103,6 +116,16 @@ describe('AuthService', () => {
       await expect(service.login('nope@b.com', 'whatever')).rejects.toBeInstanceOf(
         UnauthorizedException,
       );
+    });
+
+    it('normalizes email (trim + lowercase) before lookup on login', async () => {
+      const passwordHash = await bcrypt.hash('password123', 10);
+      users.findByEmail.mockResolvedValue({ id: 'u1', email: 'a@b.com', passwordHash });
+
+      const res = await service.login('A@b.com', 'password123');
+
+      expect(users.findByEmail).toHaveBeenCalledWith('a@b.com');
+      expect(res.user.email).toBe('a@b.com');
     });
   });
 });
