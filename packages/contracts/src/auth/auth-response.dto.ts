@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Expose } from 'class-transformer';
+import { Expose, Type } from 'class-transformer';
 
 /**
  * Authenticated user shape returned alongside the access token.
@@ -23,6 +23,12 @@ export class AuthUserDto {
  * Standard response body for POST /api/auth/register and
  * POST /api/auth/login. Used by both the controller's return type and
  * the frontend's auth.service response type.
+ *
+ * `@Type(() => AuthUserDto)` is required so that `excludeExtraneousValues:
+ * true` recurses into the nested `user` object and strips any non-`@Expose`
+ * fields it may carry (e.g. a leaked `internalTraceId`). Without `@Type`,
+ * the nested object is treated as a plain POJO and the whitelist does
+ * not apply.
  */
 export class AuthResponseDto {
   @ApiProperty({ description: 'Signed JWT (Bearer) — 7d expiry.' })
@@ -31,5 +37,6 @@ export class AuthResponseDto {
 
   @ApiProperty({ type: AuthUserDto })
   @Expose()
+  @Type(() => AuthUserDto)
   user!: AuthUserDto;
 }

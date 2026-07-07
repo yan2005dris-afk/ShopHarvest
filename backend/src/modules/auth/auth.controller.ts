@@ -1,5 +1,6 @@
 import { Body, Controller, HttpCode, Post } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { plainToInstance } from 'class-transformer';
 import { AuthResponseDto, LoginDto, RegisterDto } from '@web-scraping/contracts/auth';
 import { AuthService } from './auth.service';
 import { Public } from './public.decorator';
@@ -15,7 +16,10 @@ export class AuthController {
   @ApiResponse({ status: 409, description: 'Email already registered' })
   @Post('register')
   register(@Body() dto: RegisterDto) {
-    return this.auth.register(dto.email, dto.password);
+    const result = this.auth.register(dto.email, dto.password);
+    return plainToInstance(AuthResponseDto, result, {
+      excludeExtraneousValues: true,
+    });
   }
 
   @Public()
@@ -25,6 +29,9 @@ export class AuthController {
   @HttpCode(200)
   @Post('login')
   login(@Body() dto: LoginDto) {
-    return this.auth.login(dto.email, dto.password);
+    const result = this.auth.login(dto.email, dto.password);
+    return plainToInstance(AuthResponseDto, result, {
+      excludeExtraneousValues: true,
+    });
   }
 }

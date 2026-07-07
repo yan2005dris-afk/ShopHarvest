@@ -6,16 +6,12 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { Prisma } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
+import { AuthResponseDto } from '@web-scraping/contracts/auth';
 import { UsersService } from './users.service';
 
 export interface JwtPayload {
   sub: string;
   email: string;
-}
-
-export interface AuthResult {
-  accessToken: string;
-  user: { id: string; email: string };
 }
 
 /**
@@ -35,7 +31,7 @@ export class AuthService {
     private readonly jwt: JwtService,
   ) {}
 
-  async register(email: string, password: string): Promise<AuthResult> {
+  async register(email: string, password: string): Promise<AuthResponseDto> {
     const normalizedEmail = normalizeEmail(email);
     const existing = await this.users.findByEmail(normalizedEmail);
     if (existing) {
@@ -60,7 +56,7 @@ export class AuthService {
     }
   }
 
-  async login(email: string, password: string): Promise<AuthResult> {
+  async login(email: string, password: string): Promise<AuthResponseDto> {
     const normalizedEmail = normalizeEmail(email);
     const user = await this.users.findByEmail(normalizedEmail);
     // Compare against a real (or dummy) hash either way, so a missing user and
@@ -73,8 +69,11 @@ export class AuthService {
     return this.issueToken(user.id, user.email);
   }
 
-  private issueToken(sub: string, email: string): AuthResult {
+  private issueToken(sub: string, email: string): AuthResponseDto {
     const payload: JwtPayload = { sub, email };
-    return { accessToken: this.jwt.sign(payload), user: { id: sub, email } };
+    return {
+      accessToken: this.jwt.sign(payload),
+      user: { id: sub, email },
+    };
   }
 }
