@@ -159,7 +159,12 @@ describe('HttpExceptionFilter', () => {
       );
       const body = filter.toBody(p2002, instance);
       expect(body.status).toBe(409);
-      expect(body.detail).toBe('Unique constraint violation');
+      expect(body.detail).toBe(RFC7807_MESSAGES.UNIQUE_CONSTRAINT);
+      // When Prisma omits `meta.target` we must NOT emit an empty errors
+      // array — clients should be able to treat "absent" the same as
+      // "no per-field data available". RFC 7807 permits additional
+      // members to be absent.
+      expect(body.errors).toBeUndefined();
     });
 
     it('Other Prisma codes → 500 with detail "Database error"', () => {

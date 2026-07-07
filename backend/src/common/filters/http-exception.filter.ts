@@ -186,18 +186,31 @@ export class HttpExceptionFilter implements ExceptionFilter {
         fields.length > 0
           ? `${RFC7807_MESSAGES.UNIQUE_CONSTRAINT} on ${fields.join(', ')}`
           : RFC7807_MESSAGES.UNIQUE_CONSTRAINT;
+      // When Prisma gives us no `meta.target` we still emit the canonical
+      // generic detail, but we OMIT the `errors[]` array entirely rather
+      // than ship `errors: []` to the wire — `[]` would force the client
+      // to special-case "empty" vs. "absent" when deciding whether to
+      // highlight a form field. RFC 7807 allows additional members to be
+      // absent, so leaving it off matches the convention.
       return plainToInstance(ErrorResponseDto, {
         type: RFC7807_TYPE_ABOUT_BLANK,
         title: reasonFor(HttpStatus.CONFLICT),
         status: HttpStatus.CONFLICT,
         detail,
         instance,
-        errors: fields.map(
-          (property): ValidationErrorDto => ({
-            property,
-            messages: [detail],
-          }),
-        ),
+        errors:
+          fields.length > 0
+            ? fields.map((property): ValidationErrorDto => {
+                // Per-property message is still derived from the generic
+                // detail so the wording stays consistent across the
+                // array entry and the top-level `detail`.
+                const msg = `${RFC7807_MESSAGES.UNIQUE_CONSTRAINT} on ${property}`;
+                return {
+                  property,
+                  messages: [msg],
+                };
+              })
+            : undefined,
       });
     }
     if (err.code === 'P2025') {
