@@ -100,3 +100,56 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
+
+// ─── ETL integration (change: etl-integration-strategy, PR 1) ──────────────
+// The ETL worker process writes run history, scraped products, and quality
+// metrics here. Idempotency is enforced by the @@unique([source, sourceId])
+// constraint on EtlProduct — re-running the scraper upserts by composite key.
+
+enum EtlRunStatus {
+  RUNNING
+  SUCCESS
+  FAILED
+}
+
+model EtlRun {
+  id            String        @id @default(uuid()) @db.Uuid
+  source        String
+  status        EtlRunStatus  @default(RUNNING)
+  startedAt     DateTime      @default(now())
+  finishedAt    DateTime?
+  rowsScraped   Int           @default(0)
+  rowsPersisted Int           @default(0)
+  errorSummary  String?
+  etlProducts   EtlProduct[]
+  qualityMetric QualityMetric?
+
+  @@index([status, startedAt(sort: Desc)])
+}
+
+model EtlProduct {
+  id           String   @id @default(uuid()) @db.Uuid
+  etlRunId     String   @db.Uuid
+  etlRun       EtlRun   @relation(fields: [etlRunId], references: [id])
+  source       String
+  sourceId     String
+  title        String
+  price        Decimal? @db.Decimal(12, 2)
+  currency     String   @default("GBP")
+  availability String?
+  rawJson      Json
+  scrapedAt    DateTime
+
+  @@unique([source, sourceId])
+  @@index([etlRunId])
+  @@index([sourceId])
+}
+
+model QualityMetric {
+  id                String   @id @default(uuid()) @db.Uuid
+  etlRunId          String   @unique @db.Uuid
+  etlRun            EtlRun   @relation(fields: [etlRunId], references: [id])
+  completenessPct   Decimal  @db.Decimal(5, 2)
+  duplicatesRemoved Int      @default(0)
+  checks            Json
+}
