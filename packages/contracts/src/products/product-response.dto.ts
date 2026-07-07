@@ -1,3 +1,4 @@
+import { ApiProperty } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
 
 /**
@@ -22,51 +23,62 @@ import { Expose, Type } from 'class-transformer';
  *   whitelist controls response serialization when the controller calls
  *   `plainToInstance(ProductResponseDto, row)` with
  *   `{ excludeExtraneousValues: true }`.
- *
- * Note: @ApiProperty decorators are intentionally omitted — Swagger /
- * OpenAPI metadata is deferred to Slice 3.
  */
 export class ProductResponseDto {
+  @ApiProperty({ format: 'uuid' })
   @Expose()
   id!: string;
 
+  @ApiProperty({ format: 'uuid' })
   @Expose()
   domainRuleId!: string;
 
+  @ApiProperty({ required: false })
   @Expose()
   externalId?: string;
 
+  @ApiProperty({ example: 'Wireless Earbuds' })
   @Expose()
   title!: string;
 
+  @ApiProperty({ type: Number, example: 19.99 })
   @Expose()
   @Type(() => Number)
   price!: number;
 
+  @ApiProperty({ example: 'USD' })
   @Expose()
   currency!: string;
 
+  @ApiProperty({ required: false, format: 'url' })
   @Expose()
   imageUrl?: string;
 
+  @ApiProperty({ format: 'url' })
   @Expose()
   productUrl!: string;
 
+  @ApiProperty({ required: false })
   @Expose()
   sku?: string;
 
+  @ApiProperty({ required: false })
   @Expose()
   description?: string;
 
+  @ApiProperty({ required: false, type: Object })
   @Expose()
   rawData?: Record<string, unknown>;
 
+  @ApiProperty({ format: 'date-time' })
   @Expose()
   extractedAt!: string;
 
+  @ApiProperty({ format: 'date-time' })
   @Expose()
   createdAt!: string;
 
+  @ApiProperty({ format: 'date-time' })
   @Expose()
   updatedAt!: string;
 }

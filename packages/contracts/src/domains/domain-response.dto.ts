@@ -1,3 +1,4 @@
+import { ApiProperty } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
 import { FieldMappingDto } from './field-mapping.dto.js';
 
@@ -27,31 +28,33 @@ export type DomainPaginationType = 'scroll' | 'page-number';
  * can rehydrate from a single GET. It may be omitted for legacy rules
  * created before Slice 2 or for rules auto-derived from extension payloads
  * without an explicit mapping session.
- *
- * Note: @ApiProperty decorators are intentionally omitted — Swagger /
- * OpenAPI metadata is deferred to Slice 3. @Expose + @Type control
- * class-transformer serialization (used by NestJS' built-in
- * ClassSerializerInterceptor when consuming controllers wire it up).
  */
 export class DomainResponseDto {
+  @ApiProperty({ format: 'uuid' })
   @Expose()
   id!: string;
 
+  @ApiProperty({ example: 'temu.com' })
   @Expose()
   domain!: string;
 
+  @ApiProperty({ example: 'Temu' })
   @Expose()
   name!: string;
 
+  @ApiProperty({ required: false, example: '.product-card' })
   @Expose()
   containerSelector?: string;
 
+  @ApiProperty({ required: false, minimum: 1, example: 50 })
   @Expose()
   productLimit?: number;
 
+  @ApiProperty({ required: false, format: 'url' })
   @Expose()
   sampleUrl?: string;
 
+  @ApiProperty({ required: false, format: 'date-time' })
   @Expose()
   lastScrapedAt?: string;
 
@@ -63,19 +66,24 @@ export class DomainResponseDto {
    *
    * See `DomainPaginationType` for the named alias.
    */
+  @ApiProperty({ enum: ['scroll', 'page-number'] })
   @Expose()
   paginationType!: DomainPaginationType;
 
+  @ApiProperty({ required: false, example: 'button.load-more' })
   @Expose()
   paginationSelector?: string;
 
+  @ApiProperty({ required: false, type: [FieldMappingDto] })
   @Expose()
   @Type(() => FieldMappingDto)
   fieldMappings?: FieldMappingDto[];
 
+  @ApiProperty({ format: 'date-time' })
   @Expose()
   createdAt!: string;
 
+  @ApiProperty({ format: 'date-time' })
   @Expose()
   updatedAt!: string;
 }

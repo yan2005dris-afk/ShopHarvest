@@ -1,3 +1,4 @@
+import { ApiProperty } from '@nestjs/swagger';
 import {
   IsString,
   IsNotEmpty,
@@ -15,24 +16,34 @@ import {
  * Mirrors `extension/src/types.ts:FieldMapping`. Keep canonicalField,
  * selector, type, and attribute in sync with the extension when either side
  * changes.
- *
- * Note: @ApiProperty decorators are intentionally omitted — Swagger /
- * OpenAPI metadata is deferred to Slice 3. class-validator decorators are
- * the source of truth for runtime validation.
  */
 export class FieldMappingDto {
+  @ApiProperty({
+    maxLength: 120,
+    example: 'title',
+    description: 'Canonical field role (title, price, image, …).',
+  })
   @IsString()
   @IsNotEmpty()
   @Matches(/\S/, { message: 'canonicalField cannot be whitespace-only' })
   @MaxLength(120)
   canonicalField!: string;
 
+  @ApiProperty({
+    maxLength: 2000,
+    example: 'h1.product-title',
+    description: 'CSS selector relative to the product card container.',
+  })
   @IsString()
   @IsNotEmpty()
   @Matches(/\S/, { message: 'selector cannot be whitespace-only' })
   @MaxLength(2000)
   selector!: string;
 
+  @ApiProperty({
+    enum: ['text', 'attribute', 'html'],
+    example: 'text',
+  })
   @IsIn(['text', 'attribute', 'html'])
   type!: 'text' | 'attribute' | 'html';
 
@@ -41,6 +52,12 @@ export class FieldMappingDto {
    * guard, `{ canonicalField: 'image', selector: 'img', type: 'attribute' }`
    * validates but breaks downstream attribute extraction.
    */
+  @ApiProperty({
+    maxLength: 60,
+    required: false,
+    example: 'href',
+    description: 'Required when type === "attribute".',
+  })
   @ValidateIf((o: { type?: string }) => o.type === 'attribute')
   @IsString()
   @IsNotEmpty()
