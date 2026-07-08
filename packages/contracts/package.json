@@ -57,7 +57,7 @@
     "lint": "tsc --noEmit",
     "clean": "rm -rf dist dist-cjs",
     "test": "jest",
-    "prepare": "tsc -p tsconfig.build.json && tsc -p tsconfig.build.cjs.json"
+    "prepare": "node -e \"if (require('fs').existsSync('tsconfig.build.json')) require('child_process').execSync('tsc -p tsconfig.build.json && tsc -p tsconfig.build.cjs.json', { stdio: 'inherit' })\""
   },
   "peerDependencies": {
     "@nestjs/swagger": "^11.0.0",

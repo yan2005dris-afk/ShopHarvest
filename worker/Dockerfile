@@ -2,7 +2,7 @@
 # Standalone Node.js process that runs Playwright scrapers on a cron schedule
 # and persists results to Postgres. Does NOT include NestJS — see backend
 # Dockerfile for the API container.
-FROM node:20-alpine
+FROM node:22-alpine
 
 # Playwright system deps for headless Chromium
 RUN apk add --no-cache \

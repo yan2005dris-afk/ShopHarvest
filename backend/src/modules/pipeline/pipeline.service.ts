@@ -118,7 +118,7 @@ export class PipelineService {
           source: adapter.source,
           outputDir: `pipeline/raw/scraping/${adapter.source}`,
         };
-        return adapter.run(cfg).catch((err) => ({
+        return adapter.run(cfg).catch((err: any) => ({
           source: adapter.source,
           totalScraped: 0,
           outputPath: '',
@@ -128,7 +128,7 @@ export class PipelineService {
       }),
     );
 
-    this.logger.log(`runAll scrapes done in ${scrapeResults.reduce((acc, r) => acc + r.durationMs, 0)}ms`);
+    this.logger.log(`runAll scrapes done in ${scrapeResults.reduce((acc: number, r: ScrapeResult) => acc + r.durationMs, 0)}ms`);
 
     // Staging is sequential by design (single writer to disk).
     let stagingResult: StagingResult | undefined;
