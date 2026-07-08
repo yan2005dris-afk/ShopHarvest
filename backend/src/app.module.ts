@@ -8,6 +8,7 @@ import { JwtAuthGuard } from './modules/auth/jwt-auth.guard';
 import { DomainsModule } from './modules/domains/domains.module';
 import { ProductsModule } from './modules/products/products.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 // ScrapingJobsModule and SchedulesModule were removed in review batch 4. They
 // modelled a headless-worker pipeline that no longer exists (the worker was
@@ -34,6 +35,7 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
       envFilePath: '../.env',
     }),
     PrismaModule,
+    ScheduleModule.forRoot(),
     AuthModule,
     DomainsModule,
     ProductsModule,

@@ -8,6 +8,7 @@ import { PipelineController } from './pipeline.controller';
 import { PipelineService } from './pipeline.service';
 import { DwLoaderAdapter } from './adapters/dw-loader.adapter';
 import { StagingProcessorAdapter } from './adapters/staging-processor.adapter';
+import { EtlSchedulerService } from './etl-scheduler.service';
 import {
   MercadoLibreAdapter,
   AliExpressAdapter,
@@ -34,6 +35,7 @@ import {
   controllers: [PipelineController],
   providers: [
     PipelineService,
+    EtlSchedulerService,
     // DW loader — by class + alias
     DwLoaderAdapter,
     { provide: DW_LOADER, useExisting: DwLoaderAdapter },
@@ -71,6 +73,6 @@ import {
       ],
     },
   ],
-  exports: [PipelineService, DW_LOADER, DATA_SOURCES, STAGING_PROCESSOR],
+  exports: [PipelineService, DW_LOADER, DATA_SOURCES, STAGING_PROCESSOR, EtlSchedulerService],
 })
 export class PipelineModule {}
