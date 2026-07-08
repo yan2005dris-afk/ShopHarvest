@@ -31,8 +31,8 @@ services:
       - .env
     environment:
       # Inherits POSTGRES_PASSWORD and friends from the .env file (env_file above).
-      # DATABASE_URL is left to the backend's own env wiring so we don't
-      # duplicate credential material in plain text here.
+      # Overrides DATABASE_URL to use the internal docker network database host and port.
+      DATABASE_URL: postgresql://${POSTGRES_USER:-scraper}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-scraperdb}
       NODE_ENV: production
       PORT: 3000
     ports:
