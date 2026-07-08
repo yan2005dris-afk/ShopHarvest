@@ -9,7 +9,7 @@
 ## Estructura de Carpetas a Crear
 
 ```
-pipeline/                        ← carpeta nueva en la raíz
+backend/pipeline/                        ← carpeta nueva en la raíz
 ├── raw/
 │   ├── scraping/
 │   │   ├── mercadolibre/
@@ -34,7 +34,7 @@ pipeline/                        ← carpeta nueva en la raíz
 
 ## Setup del pipeline
 
-### `pipeline/package.json`
+### `backend/pipeline/package.json`
 ```json
 {
   "name": "pipeline",
@@ -716,7 +716,7 @@ runQualityChecks();
 
 ## Lista de Verificación Final ⬜
 
-- [ ] `pipeline/package.json` configurado y `npm install` ejecutado
+- [ ] `backend/pipeline/package.json` configurado y `npm install` ejecutado
 - [ ] Git tiene commits reales de todos los miembros
 - [ ] README.md explica cómo correr el pipeline (`npm run scrape:mercadolibre`, etc.)
 - [ ] 4 scripts de scraping guardan JSON en `raw/scraping/{fuente}/fuente_YYYY-MM-DD.json`
@@ -733,7 +733,7 @@ runQualityChecks();
 
 ```
 Día 1:
-1. Crear carpeta pipeline/ y hacer npm install
+1. Crear carpeta backend/pipeline/ y hacer npm install
 2. Correr scraper MercadoLibre → verificar JSON en raw/
 3. Correr fetch de ExchangeRates API
 4. Lanzar Google Form para encuesta

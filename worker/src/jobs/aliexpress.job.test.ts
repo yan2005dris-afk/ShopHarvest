@@ -10,11 +10,11 @@ import { runAliexpressScrape } from './aliexpress.job';
 
 // Mock the underlying scrape function so we don't hit the network or
 // require Playwright at test time. The mock is hoisted by jest.mock.
-jest.mock('../../../pipeline/scripts/scraping/aliexpress', () => ({
+jest.mock('../../../backend/pipeline/scripts/scraping/aliexpress', () => ({
   scrapeBooks: jest.fn(),
 }));
 
-import { scrapeBooks } from '../../../pipeline/scripts/scraping/aliexpress';
+import { scrapeBooks } from '../../../backend/pipeline/scripts/scraping/aliexpress';
 
 const mockedScrape = scrapeBooks as jest.MockedFunction<typeof scrapeBooks>;
 

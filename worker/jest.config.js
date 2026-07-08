@@ -12,7 +12,7 @@ module.exports = {
   moduleFileExtensions: ['ts', 'js', 'json'],
   // Redirect any `import 'playwright'` in the test's module graph (including
   // pipeline's local copy) to a deterministic manual mock. Required because
-  // pipeline/ has its own playwright in pipeline/node_modules, which a plain
+  // backend/pipeline/ has its own playwright in backend/pipeline/node_modules, which a plain
   // jest.mock('playwright') in the test file would NOT intercept.
   moduleNameMapper: {
     '^playwright$': '<rootDir>/../__mocks__/playwright.ts',

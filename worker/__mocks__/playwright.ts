@@ -1,7 +1,7 @@
 /**
  * Manual mock for the `playwright` module.
  *
- * Used by jest tests that exercise the REAL pipeline/scripts/scraping/* code
+ * Used by jest tests that exercise the REAL backend/pipeline/scripts/scraping/* code
  * without launching a real browser or hitting the network. Only the
  * `chromium` export is needed because that's all the scrapers import.
  *

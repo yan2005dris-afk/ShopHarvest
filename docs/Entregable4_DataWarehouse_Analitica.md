@@ -289,8 +289,8 @@ El Data Warehouse se ha implementado sobre **PostgreSQL 16** corriendo en Docker
 ### 3.2 Esquema DDL — Creación del Data Warehouse
 
 El script completo de creación del DW se encuentra en:
-[`scripts/dw/dw_schema.sql`](../pipeline/scripts/dw/dw_schema.sql)
-[`scripts/dw/dw_load.sql`](../pipeline/scripts/dw/dw_load.sql)
+[`scripts/dw/dw_schema.sql`](../backend/pipeline/scripts/dw/dw_schema.sql)
+[`scripts/dw/dw_load.sql`](../backend/pipeline/scripts/dw/dw_load.sql)
 
 ```sql
 -- =============================================================
@@ -1246,11 +1246,11 @@ El Data Warehouse corre en el mismo PostgreSQL del proyecto, accesible vía:
 ### 8.2 Dump del Data Warehouse
 
 El archivo dump ejecutable se encuentra en:
-[`pipeline/scripts/dw/dw_dump.sql`](../pipeline/scripts/dw/dw_dump.sql)
+[`backend/pipeline/scripts/dw/dw_dump.sql`](../backend/pipeline/scripts/dw/dw_dump.sql)
 
 Para restaurar:
 ```bash
-psql -h localhost -p 5433 -U scraper -d scraperdb -f pipeline/scripts/dw/dw_dump.sql
+psql -h localhost -p 5433 -U scraper -d scraperdb -f backend/pipeline/scripts/dw/dw_dump.sql
 ```
 
 ### 8.3 Comandos de Verificación
@@ -1286,22 +1286,22 @@ SELECT 'fact_encuesta_consumo', COUNT(*) FROM dw.fact_encuesta_consumo;
 
 | Script | Ubicación | Propósito |
 |--------|-----------|-----------|
-| `dw_schema.sql` | `pipeline/scripts/dw/dw_schema.sql` | DDL completo del modelo estrella |
-| `dw_load_staging.ts` | `pipeline/scripts/dw/dw_load_staging.ts` | Carga ETL desde staging JSON al DW |
-| `dw_analytical_queries.sql` | `pipeline/scripts/dw/dw_analytical_queries.sql` | Consultas analíticas y vistas KPI |
-| `dw_dump.sql` | `pipeline/scripts/dw/dw_dump.sql` | Dump completo del DW para entrega |
+| `dw_schema.sql` | `backend/pipeline/scripts/dw/dw_schema.sql` | DDL completo del modelo estrella |
+| `dw_load_staging.ts` | `backend/pipeline/scripts/dw/dw_load_staging.ts` | Carga ETL desde staging JSON al DW |
+| `dw_analytical_queries.sql` | `backend/pipeline/scripts/dw/dw_analytical_queries.sql` | Consultas analíticas y vistas KPI |
+| `dw_dump.sql` | `backend/pipeline/scripts/dw/dw_dump.sql` | Dump completo del DW para entrega |
 
-**Nota:** Los scripts DDL de creación del DW se encuentran en la carpeta `pipeline/scripts/dw/`. Ejecutar en orden:
+**Nota:** Los scripts DDL de creación del DW se encuentran en la carpeta `backend/pipeline/scripts/dw/`. Ejecutar en orden:
 
 ```bash
 # 1. Crear esquema y tablas
-psql -h localhost -p 5433 -U scraper -d scraperdb -f pipeline/scripts/dw/dw_schema.sql
+psql -h localhost -p 5433 -U scraper -d scraperdb -f backend/pipeline/scripts/dw/dw_schema.sql
 
 # 2. Cargar datos desde staging
 cd pipeline && npx ts-node scripts/dw/dw_load_staging.ts
 
 # 3. Crear vistas analíticas y KPIs
-psql -h localhost -p 5433 -U scraper -d scraperdb -f pipeline/scripts/dw/dw_analytical_queries.sql
+psql -h localhost -p 5433 -U scraper -d scraperdb -f backend/pipeline/scripts/dw/dw_analytical_queries.sql
 ```
 
 ---

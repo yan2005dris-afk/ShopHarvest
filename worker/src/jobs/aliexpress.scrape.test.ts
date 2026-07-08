@@ -1,7 +1,7 @@
 /**
  * Regression test for CRITICAL-2: scrapeBooks() must return the results array.
  *
- * Before fix: scrapeBooks() in pipeline/scripts/scraping/aliexpress.ts saved
+ * Before fix: scrapeBooks() in backend/pipeline/scripts/scraping/aliexpress.ts saved
  * to disk via saveToRaw but did NOT return the array. TypeScript inferred
  * `Promise<void>`, and worker/src/jobs/aliexpress.job.ts errored with
  * TS2322 ("Type 'void' is not assignable to type 'ScrapedProduct[]'").
@@ -13,19 +13,19 @@
  *
  * Mocking strategy (rationale for each):
  *  - `playwright` → manual mock via moduleNameMapper (see jest.config.js).
- *    Required because pipeline/ has its OWN playwright in pipeline/node_modules
+ *    Required because backend/pipeline/ has its OWN playwright in backend/pipeline/node_modules
  *    and jest.mock('playwright') alone wouldn't intercept that resolution.
- *  - `pipeline/scripts/scraping/_base` → file-level jest.mock. Scrape uses
+ *  - `backend/pipeline/scripts/scraping/_base` → file-level jest.mock. Scrape uses
  *    randomDelay(2000, 4000) twice per page × 3 pages = 12-24s of wall time.
  *    Mocking randomDelay to resolve instantly keeps the test fast. saveToRaw
- *    and logError are stubbed so we don't touch pipeline/raw/ (tracked by
+ *    and logError are stubbed so we don't touch backend/pipeline/raw/ (tracked by
  *    git). USER_AGENT is a constant.
  *  - `fs` → file-level jest.mock with mkdirSync/writeFileSync/appendFileSync
  *    stubbed, to belt-and-suspenders the hermeticity guarantee in case
  *    _base.ts is reached through a code path that bypasses our mock above.
  */
 
-jest.mock('../../../pipeline/scripts/scraping/_base', () => ({
+jest.mock('../../../backend/pipeline/scripts/scraping/_base', () => ({
   USER_AGENT: 'mocked-ua/1.0',
   saveToRaw: jest.fn(),
   logError: jest.fn(),
@@ -44,7 +44,7 @@ jest.mock('fs', () => {
   };
 });
 
-import { scrapeBooks } from '../../../pipeline/scripts/scraping/aliexpress';
+import { scrapeBooks } from '../../../backend/pipeline/scripts/scraping/aliexpress';
 
 describe('scrapeBooks (pipeline) — CRITICAL-2 regression', () => {
   it('returns the array of scraped products (not undefined)', async () => {

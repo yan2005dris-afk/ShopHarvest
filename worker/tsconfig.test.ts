@@ -3,7 +3,7 @@
  *
  * Regression coverage for CRITICAL-1 (worker build was broken because
  * `rootDir: "./src"` in tsconfig.json conflicted with the cross-package
- * import of `pipeline/scripts/scraping/aliexpress`, and `@types/node-cron`
+ * import of `backend/pipeline/scripts/scraping/aliexpress`, and `@types/node-cron`
  * was missing from package.json).
  *
  * RED phase: this test fails if `tsc -p tsconfig.build.json` exits non-zero

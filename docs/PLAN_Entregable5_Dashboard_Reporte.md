@@ -36,7 +36,7 @@
 | 7 consultas analíticas validadas | `docs/Entregable4_DataWarehouse_Analitica.md` §4 | ✅ Documentadas |
 | 6 hallazgos cuantitativos | E4 §6 | ✅ Documentados |
 | 168 productos + 24 encuestas | `dw.fact_productos`, `dw.fact_encuesta_consumo` | ✅ Cargados |
-| Pipeline ETL Staging → DW | `pipeline/scripts/dw/` | ✅ Funcional |
+| Pipeline ETL Staging → DW | `backend/pipeline/scripts/dw/` | ✅ Funcional |
 | NestJS backend con Prisma, Swagger, Schedule | `backend/` | ✅ Operativo |
 | `@web-scraping/contracts` con DTOs | `packages/contracts/` | ✅ Operativo (cambio SDD previo) |
 | Frontend Angular 22 con Signals + standalone | `frontend/` | ✅ Operativo |
@@ -145,7 +145,7 @@ packages/contracts/src/analytics/ ← DTOs compartidos
 | 0.3 | Crear cuenta Neon + proyecto `upse-bi-2026` | URL de conexión | 30 min |
 | 0.4 | Crear cuentas Render + Vercel (vinculadas a GitHub) | Servicios listos | 30 min |
 | 0.5 | ✅ Decidir librería de charts — **TOMADA: ng-apexcharts** | — | 0 min |
-| 0.6 | Snapshot del DW local en `pipeline/scripts/dw/dw_dump.sql` | Dump ejecutable | 15 min |
+| 0.6 | Snapshot del DW local en `backend/pipeline/scripts/dw/dw_dump.sql` | Dump ejecutable | 15 min |
 
 ### Fase 1 — D-6 (Miércoles 8): Schema Prisma + migración a Neon
 
@@ -169,7 +169,7 @@ packages/contracts/src/analytics/ ← DTOs compartidos
 | 2.3 | Crear `analytics.controller.ts` con los 11 endpoints según propuesta | `analytics.controller.ts` (120 líneas) | 3 h |
 | 2.4 | Crear `analytics.service.ts` con `getAllKpis()` y `getKpi(name)` | `analytics.service.ts` (60 líneas) | 1 h |
 | 2.5 | Crear `analytics-query.service.ts` con los 7 métodos raw SQL del E4 §4 | `analytics-query.service.ts` (200 líneas) | 3 h |
-| 2.6 | Crear `dw-loader.service.ts` (paridad con `pipeline/scripts/dw/dw_load_staging.ts`) | `dw-loader.service.ts` (250 líneas) | 3 h |
+| 2.6 | Crear `dw-loader.service.ts` (paridad con `backend/pipeline/scripts/dw/dw_load_staging.ts`) | `dw-loader.service.ts` (250 líneas) | 3 h |
 | 2.7 | Registrar `AnalyticsModule` en `app.module.ts` | `backend/src/app.module.ts` | 5 min |
 | 2.8 | Tests unitarios de los 7 métodos del query service (RED-first) | `*.spec.ts` | 4 h |
 | 2.9 | Test e2e `analytics.e2e-spec.ts` con `supertest` | `backend/test/analytics.e2e-spec.ts` | 2 h |
@@ -371,7 +371,7 @@ export class KpiFiltersService {
 - **Prueba 1**: `pnpm dev` del backend, Swagger UI en `/api/docs` muestra los 11 endpoints `/api/analytics/*` con sus responses.
 - **Prueba 2**: `curl http://localhost:3000/api/analytics/kpis` devuelve JSON real del `dw.*`.
 - **Prueba 3**: en producción, el código de los services usa `prisma.$queryRawUnsafe(\`SELECT ... FROM dw.v_kpi_*\`)` — **verificable por auditoría del código**.
-- **Anti-CSV**: en `code review`, ningún service importa `fs.readFile` ni lee de `pipeline/staging/*.json`.
+- **Anti-CSV**: en `code review`, ningún service importa `fs.readFile` ni lee de `backend/pipeline/staging/*.json`.
 
 ### 4.6 URL pública esperada
 
