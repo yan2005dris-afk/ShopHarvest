@@ -17,11 +17,11 @@ SELECT
     df.nombre_fuente          AS fuente,
     dc.nombre_categoria       AS categoria,
     COUNT(fp.id_hecho)        AS total_productos,
-    ROUND(AVG(fp.precio_usd), 2) AS precio_promedio_usd,
+    ROUND(AVG(fp.precio_usd)::numeric, 2) AS precio_promedio_usd,
     ROUND(MIN(fp.precio_usd), 2)  AS precio_minimo_usd,
     ROUND(MAX(fp.precio_usd), 2)  AS precio_maximo_usd,
-    ROUND(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY fp.precio_usd), 2) AS mediana_precio_usd,
-    ROUND(STDDEV(fp.precio_usd), 2) AS desviacion_estandar
+    ROUND(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY fp.precio_usd)::numeric, 2) AS mediana_precio_usd,
+    ROUND(STDDEV(fp.precio_usd)::numeric, 2) AS desviacion_estandar
 FROM dw.fact_productos fp
 JOIN dw.dim_fuente df       ON fp.id_fuente = df.id_fuente
 JOIN dw.dim_categoria dc    ON fp.id_categoria = dc.id_categoria
@@ -79,7 +79,7 @@ SELECT
         1
     ) AS pct_disponibilidad,
     COUNT(fp.id_calificacion) AS con_calificacion,
-    ROUND(AVG(dc.valor_numerico), 2) AS calificacion_promedio
+    ROUND(AVG(dc.valor_numerico)::numeric, 2) AS calificacion_promedio
 FROM dw.fact_productos fp
 JOIN dw.dim_fuente df ON fp.id_fuente = df.id_fuente
 LEFT JOIN dw.dim_calificacion dc ON fp.id_calificacion = dc.id_calificacion
@@ -95,7 +95,7 @@ SELECT
     dc.nombre_categoria       AS categoria,
     COUNT(fp.id_hecho)        AS total_productos,
     ROUND(COUNT(fp.id_hecho) * 100.0 / SUM(COUNT(fp.id_hecho)) OVER(), 1) AS pct_del_total,
-    ROUND(AVG(fp.precio_usd), 2) AS precio_promedio,
+    ROUND(AVG(fp.precio_usd)::numeric, 2) AS precio_promedio,
     DENSE_RANK() OVER (ORDER BY COUNT(fp.id_hecho) DESC) AS rank_frecuencia
 FROM dw.fact_productos fp
 JOIN dw.dim_categoria dc ON fp.id_categoria = dc.id_categoria
@@ -129,12 +129,12 @@ ORDER BY total_encuestados DESC;
 SELECT
     df.nombre_fuente AS fuente,
     COUNT(fp.precio_usd) AS total_con_precio,
-    ROUND(PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY fp.precio_usd), 2) AS percentil_25,
-    ROUND(PERCENTILE_CONT(0.50) WITHIN GROUP (ORDER BY fp.precio_usd), 2) AS mediana,
-    ROUND(PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY fp.precio_usd), 2) AS percentil_75,
-    ROUND(PERCENTILE_CONT(0.90) WITHIN GROUP (ORDER BY fp.precio_usd), 2) AS percentil_90,
-    ROUND(AVG(fp.precio_usd), 2) AS media,
-    ROUND(STDDEV(fp.precio_usd), 2) AS desviacion
+    ROUND(PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY fp.precio_usd)::numeric, 2) AS percentil_25,
+    ROUND(PERCENTILE_CONT(0.50) WITHIN GROUP (ORDER BY fp.precio_usd)::numeric, 2) AS mediana,
+    ROUND(PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY fp.precio_usd)::numeric, 2) AS percentil_75,
+    ROUND(PERCENTILE_CONT(0.90) WITHIN GROUP (ORDER BY fp.precio_usd)::numeric, 2) AS percentil_90,
+    ROUND(AVG(fp.precio_usd)::numeric, 2) AS media,
+    ROUND(STDDEV(fp.precio_usd)::numeric, 2) AS desviacion
 FROM dw.fact_productos fp
 JOIN dw.dim_fuente df ON fp.id_fuente = df.id_fuente
 WHERE fp.precio_usd IS NOT NULL
@@ -179,10 +179,10 @@ CREATE OR REPLACE VIEW dw.v_kpi_precio_promedio_categoria AS
 SELECT
     dc.nombre_categoria AS categoria,
     COUNT(fp.id_hecho)  AS total_productos,
-    ROUND(AVG(fp.precio_usd), 2) AS precio_promedio_usd,
+    ROUND(AVG(fp.precio_usd)::numeric, 2) AS precio_promedio_usd,
     ROUND(MIN(fp.precio_usd), 2) AS precio_minimo,
     ROUND(MAX(fp.precio_usd), 2) AS precio_maximo,
-    CONCAT('$', ROUND(AVG(fp.precio_usd), 2)) AS display_kpi
+    CONCAT('$', ROUND(AVG(fp.precio_usd)::numeric, 2)) AS display_kpi
 FROM dw.fact_productos fp
 JOIN dw.dim_categoria dc ON fp.id_categoria = dc.id_categoria
 WHERE fp.precio_usd IS NOT NULL
@@ -256,7 +256,7 @@ SELECT
     df.nombre_fuente AS plataforma,
     COUNT(fec.id_hecho) AS votos,
     ROUND(COUNT(fec.id_hecho) * 100.0 / SUM(COUNT(fec.id_hecho)) OVER(), 1) AS pct_preferencia,
-    ROUND(AVG(fec.edad), 1) AS edad_promedio_usuario,
+    ROUND(AVG(fec.edad)::numeric, 1) AS edad_promedio_usuario,
     STRING_AGG(DISTINCT fec.frecuencia_compra, ', ') AS frecuencias_asociadas
 FROM dw.fact_encuesta_consumo fec
 JOIN dw.dim_fuente df ON fec.id_sitio_preferido = df.id_fuente

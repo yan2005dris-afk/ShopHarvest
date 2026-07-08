@@ -117,9 +117,9 @@ SELECT
     df.nombre_fuente,
     dc.nombre_categoria,
     COUNT(*) AS total,
-    ROUND(AVG(fp.precio_usd), 2) AS precio_promedio,
-    ROUND(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY fp.precio_usd), 2) AS mediana,
-    ROUND(STDDEV(fp.precio_usd), 2) AS desviacion,
+    ROUND(AVG(fp.precio_usd)::numeric, 2) AS precio_promedio,
+    ROUND(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY fp.precio_usd)::numeric, 2) AS mediana,
+    ROUND(STDDEV(fp.precio_usd)::numeric, 2) AS desviacion,
     MIN(fp.precio_usd) AS minimo,
     MAX(fp.precio_usd) AS maximo
 FROM dw.fact_productos fp

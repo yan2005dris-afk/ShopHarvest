@@ -15,6 +15,7 @@
     "pipeline": "npm run scrape:mercadolibre && npm run scrape:aliexpress && npm run scrape:temu && npm run scrape:shein && npm run fetch:api && npm run load:csv && npm run load:encuesta && npm run staging && npm run quality"
   },
   "dependencies": {
+    "@prisma/client": "^7.8.0",
     "axios": "^1.7.0",
     "csv-parse": "^5.5.6",
     "playwright": "^1.45.0",
@@ -22,6 +23,7 @@
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
+    "prisma": "^7.8.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.4.0"
   }

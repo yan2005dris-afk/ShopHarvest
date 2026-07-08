@@ -8,8 +8,12 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
 
-const prisma = new PrismaClient();
+// Prisma 7 requiere driver adapter; pasamos DATABASE_URL al adapter pg.
+const prisma = new PrismaClient({
+  adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL! }),
+});
 
 // ── Logging ──────────────────────────────────────────────
 function log(msg: string) {
