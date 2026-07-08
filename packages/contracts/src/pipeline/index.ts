@@ -16,3 +16,4 @@ export type {
 } from './pipeline.types.js';
 export type { IDwLoader, IDataSource, IStagingProcessor } from './pipeline.ports.js';
 export { DW_LOADER, DATA_SOURCES, STAGING_PROCESSOR } from './pipeline.token.js';
+export type { BrowserFactoryOptions } from './browser-factory-options.js';
