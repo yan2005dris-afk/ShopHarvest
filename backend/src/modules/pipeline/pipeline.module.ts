@@ -9,6 +9,7 @@ import { PipelineService } from './pipeline.service';
 import { DwLoaderAdapter } from './adapters/dw-loader.adapter';
 import { StagingProcessorAdapter } from './adapters/staging-processor.adapter';
 import { EtlSchedulerService } from './etl-scheduler.service';
+import { BrowserFactoryService } from './scraping/browser-factory.service';
 import {
   MercadoLibreAdapter,
   AliExpressAdapter,
@@ -36,6 +37,10 @@ import {
   providers: [
     PipelineService,
     EtlSchedulerService,
+    // BrowserFactoryService — singleton, stealth always-on, proxy opt-in
+    // Consumed by Playwright-based scrapers (MELI/AliExpress in PR 3/4).
+    // Extension-based scrapers (Temu/Shein in PR 5) MUST NOT inject it.
+    BrowserFactoryService,
     // DW loader — by class + alias
     DwLoaderAdapter,
     { provide: DW_LOADER, useExisting: DwLoaderAdapter },
@@ -73,6 +78,13 @@ import {
       ],
     },
   ],
-  exports: [PipelineService, DW_LOADER, DATA_SOURCES, STAGING_PROCESSOR, EtlSchedulerService],
+  exports: [
+    PipelineService,
+    DW_LOADER,
+    DATA_SOURCES,
+    STAGING_PROCESSOR,
+    EtlSchedulerService,
+    BrowserFactoryService,
+  ],
 })
 export class PipelineModule {}
