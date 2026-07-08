@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PipelineSource } from '@web-scraping/contracts/pipeline';
 import type { IDataSource, ScrapeResult, SourceConfig } from '../../interfaces';
-import { runCsvScrape } from '../../pipeline-scripts-bridge';
+import { loadCsvDataset } from '../../scraping/csv-loader';
 
 @Injectable()
 export class CsvAdapter implements IDataSource {
@@ -10,6 +10,6 @@ export class CsvAdapter implements IDataSource {
 
   async run(config: SourceConfig): Promise<ScrapeResult> {
     this.logger.log(`Cargando CSV dataset → ${config.outputDir}`);
-    return runCsvScrape(config);
+    return loadCsvDataset(config.outputDir);
   }
 }

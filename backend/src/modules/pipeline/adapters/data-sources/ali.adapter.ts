@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PipelineSource } from '@web-scraping/contracts/pipeline';
 import type { IDataSource, ScrapeResult, SourceConfig } from '../../interfaces';
-import { runAliExpressScrape } from '../../pipeline-scripts-bridge';
+import { scrapeAliExpress } from '../../scraping/aliexpress';
 
 @Injectable()
 export class AliExpressAdapter implements IDataSource {
@@ -10,6 +10,6 @@ export class AliExpressAdapter implements IDataSource {
 
   async run(config: SourceConfig): Promise<ScrapeResult> {
     this.logger.log(`Iniciando scrape AliExpress → ${config.outputDir}`);
-    return runAliExpressScrape(config);
+    return scrapeAliExpress(config);
   }
 }

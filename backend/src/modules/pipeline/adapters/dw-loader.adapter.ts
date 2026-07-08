@@ -1,31 +1,28 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '../../../common/prisma/prisma.service';
 import type { IDwLoader, LoadResult } from '../interfaces';
-import { runEtlScript } from '../pipeline-scripts-bridge';
 
 /**
- * DwLoaderAdapter — implements `IDwLoader` by delegating to the
- * canonical runEtl() function in `backend/pipeline/scripts/dw/`.
+ * DwLoaderAdapter — placeholder until PR 6 wires the native
+ * `DwLoaderService` via the `DW_LOADER` DI token. The service
+ * upserts staging rows into `dw.dim_fuente` + `dw.hecho_producto`
+ * via Prisma and returns `LoadResult.estado ∈ {completado, fallido}`.
  *
- * The legacy `dw-loader.service.ts` (still in AnalyticsModule for
- * backward compatibility with `POST /api/analytics/load`) now uses
- * this adapter internally. NestJS dependency injection wires the
- * concrete adapter under both the `DwLoaderAdapter` class token and
- * the `DW_LOADER` injection symbol so consumers can pick the form
- * that suits them.
+ * For PR 1b the adapter keeps its `IDwLoader` contract and throws
+ * "see PR 6" — the build stays green, DI bindings resolve, and
+ * callers see the documented error instead of a runtime crash.
  */
 @Injectable()
 export class DwLoaderAdapter implements IDwLoader {
   private readonly logger = new Logger(DwLoaderAdapter.name);
 
-  constructor(private readonly prisma: PrismaService) {}
-
+  // eslint-disable-next-line @typescript-eslint/require-await
   async load(opts?: { truncateFirst?: boolean }): Promise<LoadResult> {
-    this.logger.log(
-      `Iniciando carga DW via runEtl${opts?.truncateFirst ? ' (truncateFirst=true)' : ''}...`,
+    void opts;
+    this.logger.warn(
+      'DwLoaderAdapter: native DwLoaderService not wired yet; see PR 6 (etl-staging-dw-native)',
     );
-    return runEtlScript(this.prisma as unknown as import('@prisma/client').PrismaClient, {
-      truncateFirst: opts?.truncateFirst,
-    });
+    throw new Error(
+      'dw-loader: not implemented yet; see PR 6 (etl-staging-dw-native)',
+    );
   }
 }

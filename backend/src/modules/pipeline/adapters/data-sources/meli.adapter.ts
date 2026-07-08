@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PipelineSource } from '@web-scraping/contracts/pipeline';
 import type { IDataSource, ScrapeResult, SourceConfig } from '../../interfaces';
-import { runMercadoLibreScrape } from '../../pipeline-scripts-bridge';
+import { scrapeMercadoLibre } from '../../scraping/mercadolibre';
 
 /**
  * MercadoLibreAdapter — IDataSource implementation that calls into
@@ -18,6 +18,6 @@ export class MercadoLibreAdapter implements IDataSource {
 
   async run(config: SourceConfig): Promise<ScrapeResult> {
     this.logger.log(`Iniciando scrape MercadoLibre → ${config.outputDir}`);
-    return runMercadoLibreScrape(config);
+    return scrapeMercadoLibre(config);
   }
 }

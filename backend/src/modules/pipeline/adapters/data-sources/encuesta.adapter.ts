@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PipelineSource } from '@web-scraping/contracts/pipeline';
 import type { IDataSource, ScrapeResult, SourceConfig } from '../../interfaces';
-import { runEncuestaScrape } from '../../pipeline-scripts-bridge';
+import { loadEncuesta } from '../../scraping/encuesta-loader';
 
 @Injectable()
 export class EncuestaAdapter implements IDataSource {
@@ -10,6 +10,6 @@ export class EncuestaAdapter implements IDataSource {
 
   async run(config: SourceConfig): Promise<ScrapeResult> {
     this.logger.log(`Cargando encuesta CSV → ${config.outputDir}`);
-    return runEncuestaScrape(config);
+    return loadEncuesta(config.outputDir);
   }
 }
