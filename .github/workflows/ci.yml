@@ -22,20 +22,24 @@ jobs:
       - name: Demo domain / runtime bridge guardrail
         run: |
           set -e
-          # Rule 1: no demo fallback
-          if rg -n 'quotes\.toscrape\.com|books\.toscrape\.com' backend/src/ legacy/; then
-            echo "::error::demo domain reference found — quotes.toscrape.com or books.toscrape.com is banned"
+          # Rule 1: no demo fallback in production code.
+          # legacy/ archive is exempt (historical evidence only).
+          if rg -n 'quotes\.toscrape\.com|books\.toscrape\.com' backend/src/; then
+            echo "::error::demo domain banned in backend/src/"
             exit 1
           fi
           # Rule 2: no ts-node / eval('require') in backend
           if rg -n "ts-node|eval\('require'\)" backend/src/; then
-            echo "::error::ts-node or eval('require') found in backend — bridge re-introduced"
+            echo "::error::ts-node or eval('require') in backend"
             exit 1
           fi
-          # Rule 3: BrowserFactoryService must not leak into extension adapters (PR 5 enforcement; safe no-op in PR 1a)
+          # Rule 3: BrowserFactoryService must not leak into extension adapters
+          # (PR 5 enforcement; safe no-op in PR 1a/1b)
           if [ -f backend/src/modules/pipeline/scraping/temu.ts ]; then
-            if rg -n 'BrowserFactoryService' backend/src/modules/pipeline/scraping/temu.ts backend/src/modules/pipeline/scraping/shein.ts; then
-              echo "::error::BrowserFactoryService referenced from an extension-based adapter"
+            if rg -n 'BrowserFactoryService' \
+              backend/src/modules/pipeline/scraping/temu.ts \
+              backend/src/modules/pipeline/scraping/shein.ts; then
+              echo "::error::BrowserFactoryService in extension adapter"
               exit 1
             fi
           fi
