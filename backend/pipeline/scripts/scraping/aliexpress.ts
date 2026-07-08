@@ -1,14 +1,16 @@
 /**
- * Scraper — books.toscrape.com (sitio demo de scraping académico)
- * Representa la fuente "AliExpress" en el pipeline para demostrar la técnica.
- * Sitio diseñado específicamente para practicar web scraping (sin bloqueos).
+ * Scraper — books.toscrape.com (sitio demo académico que representa
+ * la fuente AliExpress en este pipeline — la operación real contra
+ * AliExpress.DataDome requeriría proxies residenciales y queda fuera
+ * del alcance académico del E3).
  *
- * NOTA METODOLÓGICA: AliExpress implementa protecciones anti-bot avanzadas
- * (DataDome) que requieren proxies residenciales para eludir. Para el alcance
- * académico de este entregable se usa books.toscrape.com como fuente equivalente
- * que permite demostrar todos los requerimientos técnicos del E3.
+ * Dual-use: callable as a pure module (`scrapeBooks(config)`) or
+ * self-executing via `npx ts-node scripts/scraping/aliexpress.ts`.
  */
+import * as path from 'path';
 import { chromium } from 'playwright';
+import type { ScrapeResult, SourceConfig } from '@web-scraping/contracts/pipeline';
+import { PipelineSource } from '@web-scraping/contracts/pipeline';
 import { saveToRaw, logError, randomDelay, USER_AGENT } from './_base';
 
 const PAGES = [
@@ -17,10 +19,23 @@ const PAGES = [
   'https://books.toscrape.com/catalogue/category/books/nonfiction_13/index.html',
 ];
 
-export async function scrapeBooks(): Promise<Record<string, unknown>[]> {
+/**
+ * Scrape books.toscrape.com into the configured raw dir.
+ *
+ * Used as a stand-in for AliExpress per the academic-method note above.
+ */
+export async function scrapeBooks(config: SourceConfig): Promise<ScrapeResult> {
+  const start = Date.now();
+  const outputDir = config.outputDir
+    ? path.isAbsolute(config.outputDir)
+      ? config.outputDir
+      : path.join(process.cwd(), config.outputDir)
+    : path.join(process.cwd(), 'pipeline/raw/scraping/aliexpress');
+
   const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({ userAgent: USER_AGENT });
   const results: Record<string, unknown>[] = [];
+  const errors: string[] = [];
 
   for (const url of PAGES) {
     const page = await context.newPage();
@@ -55,8 +70,10 @@ export async function scrapeBooks(): Promise<Record<string, unknown>[]> {
 
       console.log(`  → ${enriched.length} productos`);
       results.push(...enriched);
-    } catch (err: any) {
-      logError('aliexpress', 'ScrapingError', err.message, 'Página omitida');
+    } catch (err) {
+      const message = (err as Error).message ?? String(err);
+      logError('aliexpress', 'ScrapingError', message, 'Página omitida');
+      errors.push(message);
     } finally {
       await page.close();
       await randomDelay(2000, 4000);
@@ -64,6 +81,25 @@ export async function scrapeBooks(): Promise<Record<string, unknown>[]> {
   }
 
   await browser.close();
-  saveToRaw('aliexpress', results);
-  return results;
+
+  const maxItems = config.maxItems ?? Infinity;
+  const trimmed = results.slice(0, maxItems);
+  const outputPath = saveToRaw('aliexpress', trimmed);
+  return {
+    source: PipelineSource.ALIEXPRESS,
+    totalScraped: trimmed.length,
+    outputPath: path.isAbsolute(outputPath) ? outputPath : path.resolve(outputPath),
+    durationMs: Date.now() - start,
+    errors,
+  };
+}
+
+if (require.main === module) {
+  scrapeBooks({
+    source: PipelineSource.ALIEXPRESS,
+    outputDir: 'pipeline/raw/scraping/aliexpress',
+  }).catch(err => {
+    logError('aliexpress', 'FatalError', (err as Error).message, 'Proceso terminado');
+    process.exit(1);
+  });
 }

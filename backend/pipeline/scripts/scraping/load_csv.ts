@@ -1,20 +1,42 @@
-import { parse } from 'csv-parse/sync';
+/**
+ * Source — CSV dataset loader (Kaggle u otro dataset público).
+ *
+ * Dual-use: pure module (`loadCsvDataset(config)`) + CLI self-execution.
+ *
+ * Busca el CSV en `config.extra.inputPath` (CLI default:
+ * `pipeline/raw/archivos/dataset_original.csv`). Si no existe, emite
+ * un warning, registra en `logs/pipeline_errors.log` y devuelve
+ * `totalScraped: 0` en lugar de tirar — preserva idempotencia del
+ * pipeline completo cuando todavía no hay dataset cargado.
+ */
 import * as fs from 'fs';
 import * as path from 'path';
+import { parse } from 'csv-parse/sync';
+import type { ScrapeResult, SourceConfig } from '@web-scraping/contracts/pipeline';
+import { PipelineSource } from '@web-scraping/contracts/pipeline';
 import { logError } from './_base';
 
-/**
- * Carga un dataset CSV público y lo persiste en Raw.
- * Dataset recomendado: https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce
- * o cualquier dataset de e-commerce de Kaggle.
- * Coloca el CSV en: raw/archivos/dataset_original.csv
- */
-function loadCsvDataset(inputPath: string) {
+export async function loadCsvDataset(config: SourceConfig): Promise<ScrapeResult> {
+  const start = Date.now();
+  const errors: string[] = [];
+  const inputPath =
+    (config.extra && typeof config.extra['inputPath'] === 'string'
+      ? (config.extra['inputPath'] as string)
+      : path.join(process.cwd(), 'pipeline/raw/archivos/dataset_original.csv'));
+
   if (!fs.existsSync(inputPath)) {
-    console.warn(`⚠ Dataset no encontrado: ${inputPath}`);
+    const msg = `Dataset no encontrado: ${inputPath}`;
+    console.warn(`⚠ ${msg}`);
     console.warn('  Descarga un dataset CSV de e-commerce de Kaggle y colócalo ahí.');
-    logError('csv-dataset', 'FileNotFound', `CSV no encontrado: ${inputPath}`, 'Descargar dataset de Kaggle');
-    return;
+    logError('csv-dataset', 'FileNotFound', msg, 'Descargar dataset de Kaggle');
+    errors.push(msg);
+    return {
+      source: PipelineSource.CSV_DATASET,
+      totalScraped: 0,
+      outputPath: '',
+      durationMs: Date.now() - start,
+      errors,
+    };
   }
 
   const raw = fs.readFileSync(inputPath, 'utf-8');
@@ -25,24 +47,36 @@ function loadCsvDataset(inputPath: string) {
   });
 
   console.log(`Filas cargadas: ${records.length}`);
-  console.log(`Columnas: ${Object.keys(records[0]).join(', ')}`);
+  console.log(`Columnas: ${records[0] ? Object.keys(records[0]).join(', ') : '(empty)'}`);
   console.log(`Tamaño archivo: ${(fs.statSync(inputPath).size / 1024).toFixed(1)} KB`);
 
-  // Validación mínima de esquema — ajusta las columnas a tu dataset
-  const required: string[] = [];
-  const missing = required.filter(col => !(col in records[0]));
-  if (missing.length) {
-    logError('csv-dataset', 'SchemaError', `Columnas faltantes: ${missing}`, 'Revisar dataset');
-    throw new Error(`Columnas faltantes: ${missing}`);
-  }
-
+  const outputDir = config.outputDir
+    ? path.isAbsolute(config.outputDir)
+      ? config.outputDir
+      : path.join(process.cwd(), config.outputDir)
+    : path.join(process.cwd(), 'pipeline/raw/archivos');
+  fs.mkdirSync(outputDir, { recursive: true });
   const date = new Date().toISOString().split('T')[0];
-  const dir = path.join(__dirname, '../../raw/archivos');
-  fs.mkdirSync(dir, { recursive: true });
-  const outFile = path.join(dir, `dataset_${date}.json`);
+  const outFile = path.join(outputDir, `dataset_${date}.json`);
   fs.writeFileSync(outFile, JSON.stringify(records, null, 2), 'utf-8');
   console.log(`✓ Dataset guardado en Raw: ${outFile}`);
+
+  return {
+    source: PipelineSource.CSV_DATASET,
+    totalScraped: records.length,
+    outputPath: outFile,
+    durationMs: Date.now() - start,
+    errors,
+  };
 }
 
-const inputPath = path.join(__dirname, '../../raw/archivos/dataset_original.csv');
-loadCsvDataset(inputPath);
+if (require.main === module) {
+  loadCsvDataset({
+    source: PipelineSource.CSV_DATASET,
+    outputDir: 'pipeline/raw/archivos',
+    extra: { inputPath: path.join(process.cwd(), 'pipeline/raw/archivos/dataset_original.csv') },
+  }).catch(err => {
+    logError('csv-dataset', 'FatalError', (err as Error).message, 'Proceso terminado');
+    process.exit(1);
+  });
+}

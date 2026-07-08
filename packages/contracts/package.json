@@ -43,6 +43,12 @@
       "import": "./dist/analytics/index.js",
       "require": "./dist-cjs/analytics/index.js",
       "default": "./dist/analytics/index.js"
+    },
+    "./pipeline": {
+      "types": "./dist/pipeline/index.d.ts",
+      "import": "./dist/pipeline/index.js",
+      "require": "./dist-cjs/pipeline/index.js",
+      "default": "./dist/pipeline/index.js"
     }
   },
   "files": ["dist", "dist-cjs", "README.md"],

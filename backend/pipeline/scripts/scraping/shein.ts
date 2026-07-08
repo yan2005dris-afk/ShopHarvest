@@ -1,15 +1,17 @@
 /**
- * Scraper — toscrape.com/login (sitio demo con autenticación) + datos de extensión Chrome
+ * Scraper — Shein (vía extensión Chrome) con fallback a
+ * quotes.toscrape.com/login (escena de autenticación).
  *
- * Para Shein: usa export de extensión Chrome. Como respaldo, scrapeamos
- * quotes.toscrape.com/login para demostrar manejo de sesiones autenticadas.
+ * Dual-use: pure module (`scrapeShein(config)`) + CLI self-execution.
  */
-import { chromium } from 'playwright';
-import { saveToRaw, logError, randomDelay, USER_AGENT } from './_base';
 import * as fs from 'fs';
 import * as path from 'path';
+import { chromium } from 'playwright';
+import type { ScrapeResult, SourceConfig } from '@web-scraping/contracts/pipeline';
+import { PipelineSource } from '@web-scraping/contracts/pipeline';
+import { saveToRaw, logError, randomDelay, USER_AGENT } from './_base';
 
-const EXPORT_PATH = path.join(__dirname, '../../raw/scraping/shein/extension_export.json');
+const EXPORT_PATH = path.join(process.cwd(), 'pipeline/raw/scraping/shein/extension_export.json');
 
 async function scrapeWithSession(): Promise<Record<string, unknown>[]> {
   const browser = await chromium.launch({ headless: true });
@@ -18,7 +20,6 @@ async function scrapeWithSession(): Promise<Record<string, unknown>[]> {
   const results: Record<string, unknown>[] = [];
 
   try {
-    // Login con credenciales demo
     console.log('Autenticando en quotes.toscrape.com/login...');
     await page.goto('https://quotes.toscrape.com/login', { timeout: 20000, waitUntil: 'domcontentloaded' });
     await page.fill('input[name="username"]', 'admin');
@@ -30,7 +31,6 @@ async function scrapeWithSession(): Promise<Record<string, unknown>[]> {
     const loginOk = page.url().includes('/login') === false;
     console.log(`  Login: ${loginOk ? 'exitoso' : 'fallido'}`);
 
-    // Scraping post-login con delays preventivos
     for (let p = 1; p <= 3; p++) {
       await page.goto(`https://quotes.toscrape.com/page/${p}/`, { timeout: 20000 });
       await randomDelay(1500, 3000);
@@ -41,7 +41,7 @@ async function scrapeWithSession(): Promise<Record<string, unknown>[]> {
           autor: q.querySelector('.author')?.textContent?.trim() ?? null,
           tags: Array.from(q.querySelectorAll('.tag')).map(t => t.textContent?.trim()),
           precio: null,
-        }))
+        })),
       );
 
       const enriched = items.map(item => ({
@@ -55,8 +55,8 @@ async function scrapeWithSession(): Promise<Record<string, unknown>[]> {
       results.push(...enriched);
       await randomDelay(2000, 4000);
     }
-  } catch (err: any) {
-    logError('shein', 'ScrapingError', err.message, 'Sesión omitida');
+  } catch (err) {
+    logError('shein', 'ScrapingError', (err as Error).message, 'Sesión omitida');
   } finally {
     await browser.close();
   }
@@ -78,7 +78,9 @@ async function loadFromExtension(): Promise<Record<string, unknown>[]> {
   }));
 }
 
-async function main() {
+export async function scrapeShein(config: SourceConfig): Promise<ScrapeResult> {
+  const start = Date.now();
+  const errors: string[] = [];
   let results: Record<string, unknown>[];
 
   if (fs.existsSync(EXPORT_PATH)) {
@@ -90,10 +92,25 @@ async function main() {
     results = await scrapeWithSession();
   }
 
-  saveToRaw('shein', results);
+  const maxItems = config.maxItems ?? Infinity;
+  const trimmed = results.slice(0, maxItems);
+  const outputPath = saveToRaw('shein', trimmed);
+
+  return {
+    source: PipelineSource.SHEIN,
+    totalScraped: trimmed.length,
+    outputPath: path.isAbsolute(outputPath) ? outputPath : path.resolve(outputPath),
+    durationMs: Date.now() - start,
+    errors,
+  };
 }
 
-main().catch(err => {
-  logError('shein', 'FatalError', err.message, 'Proceso terminado');
-  process.exit(1);
-});
+if (require.main === module) {
+  scrapeShein({
+    source: PipelineSource.SHEIN,
+    outputDir: 'pipeline/raw/scraping/shein',
+  }).catch(err => {
+    logError('shein', 'FatalError', (err as Error).message, 'Proceso terminado');
+    process.exit(1);
+  });
+}

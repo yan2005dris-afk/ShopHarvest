@@ -1,29 +1,34 @@
 /**
- * Scraper — quotes.toscrape.com (sitio demo) + datos de extensión Chrome
+ * Scraper — Temu (vía extensión Chrome) con fallback a quotes.toscrape.com.
  *
- * Para Temu: usa la extensión Chrome del proyecto (scraping en sesión real del usuario)
- * y carga el export JSON aquí. Si el export no existe, usa quotes.toscrape.com
- * como fuente de respaldo para demostrar la técnica de scraping.
+ * Dual-use: pure module (`scrapeTemu(config)`) + CLI self-execution.
+ *
+ * Si el export JSON de la extensión Chrome existe en
+ * `pipeline/raw/scraping/temu/extension_export.json`, se usa ese (vía
+ * scraping real del usuario). Si no, se scrappea quotes.toscrape.com
+ * como fuente de respaldo para demostrar la técnica (igual que en E3).
  */
-import { chromium } from 'playwright';
-import { saveToRaw, logError, randomDelay, USER_AGENT } from './_base';
 import * as fs from 'fs';
 import * as path from 'path';
+import { chromium } from 'playwright';
+import type { ScrapeResult, SourceConfig } from '@web-scraping/contracts/pipeline';
+import { PipelineSource } from '@web-scraping/contracts/pipeline';
+import { saveToRaw, logError, randomDelay, USER_AGENT } from './_base';
 
-const EXPORT_PATH = path.join(__dirname, '../../raw/scraping/temu/extension_export.json');
+const EXPORT_PATH = path.join(process.cwd(), 'pipeline/raw/scraping/temu/extension_export.json');
+
+const FALLBACK_PAGES = [
+  'https://quotes.toscrape.com/page/1/',
+  'https://quotes.toscrape.com/page/2/',
+  'https://quotes.toscrape.com/page/3/',
+];
 
 async function scrapeQuotes(): Promise<Record<string, unknown>[]> {
   const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({ userAgent: USER_AGENT });
   const results: Record<string, unknown>[] = [];
 
-  const pages = [
-    'https://quotes.toscrape.com/page/1/',
-    'https://quotes.toscrape.com/page/2/',
-    'https://quotes.toscrape.com/page/3/',
-  ];
-
-  for (const url of pages) {
+  for (const url of FALLBACK_PAGES) {
     const page = await context.newPage();
     try {
       console.log(`Scrapeando: ${url}`);
@@ -40,12 +45,12 @@ async function scrapeQuotes(): Promise<Record<string, unknown>[]> {
           texto: q.querySelector('.text')?.textContent?.trim() ?? null,
           autor: q.querySelector('.author')?.textContent?.trim() ?? null,
           tags: Array.from(q.querySelectorAll('.tag')).map(t => t.textContent?.trim()),
-        }))
+        })),
       );
 
       const enriched = items.map(item => ({
         ...item,
-        titulo: item['texto'],          // campo canónico para staging
+        titulo: item['texto'],
         precio: null,
         _fuente: 'temu',
         _extraido_en: new Date().toISOString(),
@@ -53,8 +58,8 @@ async function scrapeQuotes(): Promise<Record<string, unknown>[]> {
 
       console.log(`  → ${enriched.length} registros`);
       results.push(...enriched);
-    } catch (err: any) {
-      logError('temu', 'ScrapingError', err.message, 'Página omitida');
+    } catch (err) {
+      logError('temu', 'ScrapingError', (err as Error).message, 'Página omitida');
     } finally {
       await page.close();
       await randomDelay(2000, 4000);
@@ -79,7 +84,9 @@ async function loadFromExtension(): Promise<Record<string, unknown>[]> {
   }));
 }
 
-async function main() {
+export async function scrapeTemu(config: SourceConfig): Promise<ScrapeResult> {
+  const start = Date.now();
+  const errors: string[] = [];
   let results: Record<string, unknown>[];
 
   if (fs.existsSync(EXPORT_PATH)) {
@@ -91,10 +98,25 @@ async function main() {
     results = await scrapeQuotes();
   }
 
-  saveToRaw('temu', results);
+  const maxItems = config.maxItems ?? Infinity;
+  const trimmed = results.slice(0, maxItems);
+  const outputPath = saveToRaw('temu', trimmed);
+
+  return {
+    source: PipelineSource.TEMU,
+    totalScraped: trimmed.length,
+    outputPath: path.isAbsolute(outputPath) ? outputPath : path.resolve(outputPath),
+    durationMs: Date.now() - start,
+    errors,
+  };
 }
 
-main().catch(err => {
-  logError('temu', 'FatalError', err.message, 'Proceso terminado');
-  process.exit(1);
-});
+if (require.main === module) {
+  scrapeTemu({
+    source: PipelineSource.TEMU,
+    outputDir: 'pipeline/raw/scraping/temu',
+  }).catch(err => {
+    logError('temu', 'FatalError', (err as Error).message, 'Proceso terminado');
+    process.exit(1);
+  });
+}
