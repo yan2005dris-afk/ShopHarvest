@@ -7,6 +7,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { JwtAuthGuard } from './modules/auth/jwt-auth.guard';
 import { DomainsModule } from './modules/domains/domains.module';
 import { ProductsModule } from './modules/products/products.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 
 // ScrapingJobsModule and SchedulesModule were removed in review batch 4. They
 // modelled a headless-worker pipeline that no longer exists (the worker was
@@ -21,6 +22,11 @@ import { ProductsModule } from './modules/products/products.module';
 // Slice 3: HttpExceptionFilter is registered via APP_FILTER so every
 // uncaught failure becomes an RFC 7807 problem-details envelope without
 // per-controller decoration.
+//
+// Cambio SDD: bi-dashboard-analytics. AnalyticsModule expone los 12
+// endpoints REST bajo /api/analytics/*. Toda la superficie es @Public()
+// para que el dashboard Vercel pueda consumirla sin JWT (requisito
+// "URL pública" del Entregable 5).
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -31,6 +37,7 @@ import { ProductsModule } from './modules/products/products.module';
     AuthModule,
     DomainsModule,
     ProductsModule,
+    AnalyticsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

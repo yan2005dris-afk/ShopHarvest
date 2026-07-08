@@ -37,6 +37,12 @@
       "import": "./dist/errors/index.js",
       "require": "./dist-cjs/errors/index.js",
       "default": "./dist/errors/index.js"
+    },
+    "./analytics": {
+      "types": "./dist/analytics/index.d.ts",
+      "import": "./dist/analytics/index.js",
+      "require": "./dist-cjs/analytics/index.js",
+      "default": "./dist/analytics/index.js"
     }
   },
   "files": ["dist", "dist-cjs", "README.md"],

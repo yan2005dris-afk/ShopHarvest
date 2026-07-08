@@ -6,11 +6,31 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // Global route prefix `/api`. The legacy controllers (auth, products,
+  // domains) ship without `/api/` baked into the `@Controller('…')`
+  // decorator, so this single `setGlobalPrefix` call lifts every route
+  // to `/api/*`. Documented in docs/PLAN_Entregable5_Dashboard_Reporte.md §2.2
+  // (the analytics surface was always advertised as `/api/analytics/*`).
+  app.setGlobalPrefix('api');
+
+  // CORS whitelist: local dev origins + the production frontend.
+  //
+  // Cambio SDD: bi-dashboard-analytics. Production frontend lives on
+  // Vercel (`https://upse-bi-dashboard.vercel.app`). The origin is
+  // sourced from `FRONTEND_ORIGIN` so a future domain swap doesn't
+  // require a code change — only an env-var update on Render.
+  const defaultFrontendOrigin = 'http://localhost:4200';
+  const frontendOrigins = (process.env.FRONTEND_ORIGIN ?? defaultFrontendOrigin)
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+
   app.enableCors({
     origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
       const allowed = [
         'http://localhost:8080',
         'http://localhost:4200',
+        ...frontendOrigins,
       ];
       if (!origin || allowed.includes(origin) || /^(moz|chrome)-extension:\/\//.test(origin)) {
         callback(null, true);
@@ -42,6 +62,10 @@ async function bootstrap() {
       .addTag('Auth', 'User registration and login')
       .addTag('Domains', 'Per-domain scraping rules')
       .addTag('Products', 'Extracted product catalog and price history')
+      .addTag(
+        'Analytics',
+        'BI dashboard endpoints backed by dw.v_kpi_* views and analytical queries (public).',
+      )
       .build();
     const document = SwaggerModule.createDocument(app, config);
     SwaggerModule.setup('api/docs', app, document);
