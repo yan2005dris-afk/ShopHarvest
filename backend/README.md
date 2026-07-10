@@ -57,6 +57,20 @@ $ pnpm run test:e2e
 $ pnpm run test:cov
 ```
 
+## Real-target scraper probes
+
+Unit tests mock `BrowserFactoryService`; they never hit a real site.
+To verify a scraper against its live target, run its probe script with
+`MELI_PROBE_TOKEN` (or the scraper's equivalent) set — this is a manual
+opt-in gate so probes never fire from CI or `pnpm test`:
+
+```bash
+MELI_PROBE_TOKEN=1 PIPELINE_RAW_DIR=/tmp/meli-probe \
+  pnpm --filter backend exec ts-node scripts/probe-meli.ts
+```
+
+Exits 0 and prints the item count on success; exits 1 if `totalScraped === 0`.
+
 ## Deployment
 
 When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
