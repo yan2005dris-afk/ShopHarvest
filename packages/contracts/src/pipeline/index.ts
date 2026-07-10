@@ -18,3 +18,8 @@ export type { IDwLoader, IDataSource, IStagingProcessor } from './pipeline.ports
 export { DW_LOADER, DATA_SOURCES, STAGING_PROCESSOR } from './pipeline.token.js';
 export type { BrowserFactoryOptions } from './browser-factory-options.js';
 export type { ScraperMetrics, EtlRunState } from './scraper-metrics.js';
+export type { SourceMechanism } from './source-mechanism.js';
+export { SOURCE_MECHANISM_MAP } from './source-mechanism.js';
+export type { ExtensionExport, ExtensionExportProduct } from './extension-export.js';
+export { validateExtensionExport } from './extension-export.js';
+export { BadExtensionExportError } from './bad-extension-export.error.js';
