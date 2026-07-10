@@ -10,6 +10,9 @@ import { DwLoaderAdapter } from './adapters/dw-loader.adapter';
 import { StagingProcessorAdapter } from './adapters/staging-processor.adapter';
 import { EtlSchedulerService } from './etl-scheduler.service';
 import { BrowserFactoryService } from './scraping/browser-factory.service';
+import { QualityService } from './etl/quality.service';
+import { StagingProcessorService } from './etl/staging-processor.service';
+import { DwLoaderService } from './etl/dw-loader.service';
 import {
   MercadoLibreAdapter,
   AliExpressAdapter,
@@ -41,6 +44,10 @@ import {
     // Consumed by Playwright-based scrapers (MELI/AliExpress in PR 3/4).
     // Extension-based scrapers (Temu/Shein in PR 5) MUST NOT inject it.
     BrowserFactoryService,
+    // ETL native services (PR 6) — consumed by the adapters below.
+    QualityService,
+    StagingProcessorService,
+    DwLoaderService,
     // DW loader — by class + alias
     DwLoaderAdapter,
     { provide: DW_LOADER, useExisting: DwLoaderAdapter },

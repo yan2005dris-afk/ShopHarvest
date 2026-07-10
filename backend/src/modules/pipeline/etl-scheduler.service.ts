@@ -2,6 +2,17 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { SchedulerRegistry } from '@nestjs/schedule';
 import { CronJob } from 'cron';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { PipelineService } from './pipeline.service';
+
+/**
+ * A single tick fans out to every registered scraper, then runs
+ * staging → quality → DW load as one batch (`PipelineService.runAll`).
+ * `EtlRun.source` is a single free-form string column, not an FK, so
+ * 'all' is used as the tick-level label — the per-source outcomes
+ * live in the returned `PipelineRunSummary.scrapeResults`, logged but
+ * not persisted per-source (no schema change in this change, per ETL-5).
+ */
+const TICK_SOURCE_LABEL = 'all';
 
 @Injectable()
 export class EtlSchedulerService implements OnModuleInit {
@@ -10,6 +21,7 @@ export class EtlSchedulerService implements OnModuleInit {
   constructor(
     private readonly prisma: PrismaService,
     private readonly schedulerRegistry: SchedulerRegistry,
+    private readonly pipelineService: PipelineService,
   ) {}
 
   onModuleInit() {
@@ -37,14 +49,15 @@ export class EtlSchedulerService implements OnModuleInit {
   }
 
   /**
-   * Run one ETL tick end-to-end.
-   * Leverages the same idempotency, scraping, and database persistence rules
-   * previously handled by the external etl-worker.
+   * Run one ETL tick end-to-end: scrape every source → staging →
+   * quality gate → DW load (`PipelineService.runAll`). Preserves the
+   * 4-state `EtlRun` lifecycle (ETL-5): `queued` has no row yet,
+   * `running` on create, `success`/`failed` on completion.
    */
   async runEtlTick(): Promise<void> {
-    const source = 'aliexpress';
+    const source = TICK_SOURCE_LABEL;
 
-    // 1. Idempotency gate: skip if a previous RUNNING run exists for this source
+    // 1. Idempotency gate: skip if a previous RUNNING run exists.
     const inFlight = await this.prisma.etlRun.findFirst({
       where: { source, status: 'RUNNING' },
     });
@@ -59,37 +72,66 @@ export class EtlSchedulerService implements OnModuleInit {
     const run = await this.prisma.etlRun.create({
       data: { source, status: 'RUNNING' },
     });
-    const startedAt = new Date();
     this.logger.log(`ETL run ${run.id} started.`);
 
     try {
-      // 3. Stub: the bridge import was deleted in PR 1a; the actual
-      //    scraper wiring (AliExpressAdapter → STAGING_PROCESSOR →
-      //    QualityService → DW_LOADER) lands across PR 3, PR 4, and
-      //    PR 6. Until then the run is created, the throw fires, and
-      //    the catch marks the run as FAILED — no runtime crash.
-      void run;
-      void startedAt;
-      this.logger.warn(
-        'etl-scheduler: native scraper not wired yet; see PR 3 (MELI), PR 4 (AliExpress), PR 6 (ETL)',
+      const summary = await this.pipelineService.runAll();
+
+      const rowsScraped = summary.scrapeResults.reduce(
+        (acc, r) => acc + r.totalScraped,
+        0,
       );
-      throw new Error(
-        'etl-scheduler: native scraper not wired yet; see PR 3 (MELI), PR 4 (AliExpress), PR 6 (ETL)',
-      );
+      const scrapeErrors = summary.scrapeResults
+        .filter((r) => r.errors.length > 0)
+        .map((r) => `${r.source}: ${r.errors.join('; ')}`);
+
+      for (const r of summary.scrapeResults) {
+        this.logger.log(
+          `  scrape ${r.source}: items=${r.totalScraped} errors=${r.errors.length}`,
+        );
+      }
+
+      const loadResult = summary.loadResult;
+      const rowsPersisted = loadResult
+        ? loadResult.productosCargados + loadResult.encuestasCargadas
+        : 0;
+      const dwFailed = !loadResult || loadResult.estado === 'fallido';
+
+      const errorSummary = dwFailed
+        ? [loadResult?.error, ...scrapeErrors]
+            .filter(Boolean)
+            .join(' | ')
+            .slice(0, 2000)
+        : undefined;
+
+      await this.prisma.etlRun.update({
+        where: { id: run.id },
+        data: {
+          status: dwFailed ? 'FAILED' : 'SUCCESS',
+          rowsScraped,
+          rowsPersisted,
+          errorSummary: errorSummary || null,
+          finishedAt: new Date(),
+        },
+      });
+
+      if (dwFailed) {
+        this.logger.error(`ETL run ${run.id} failed: ${errorSummary}`);
+      } else {
+        this.logger.log(
+          `ETL run ${run.id} succeeded: scraped=${rowsScraped} persisted=${rowsPersisted}`,
+        );
+      }
     } catch (err) {
       const error = err instanceof Error ? err : new Error(String(err));
-      const endedAt = new Date();
-
-      // Update run status to FAILED and store the error summary
       await this.prisma.etlRun.update({
         where: { id: run.id },
         data: {
           status: 'FAILED',
-          errorSummary: error.message,
-          finishedAt: endedAt,
+          errorSummary: error.message.slice(0, 2000),
+          finishedAt: new Date(),
         },
       });
-
       this.logger.error(`ETL run ${run.id} failed: ${error.message}`);
     }
   }

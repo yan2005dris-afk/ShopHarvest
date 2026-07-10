@@ -71,7 +71,10 @@ export class PipelineService {
   }
 
   /** Run one scraper by source. Throws on unknown source. */
-  async runScraper(source: PipelineSource, config: SourceConfig): Promise<ScrapeResult> {
+  async runScraper(
+    source: PipelineSource,
+    config: SourceConfig,
+  ): Promise<ScrapeResult> {
     const adapter = this.pickSource(source);
     if (adapter.source !== config.source) {
       // Defensive — keep the config and the adapter in sync so callers
@@ -84,7 +87,10 @@ export class PipelineService {
   }
 
   /** Run only the staging transform (raw → staging). */
-  async runStaging(opts?: { inputDir?: string; outputDir?: string }): Promise<StagingResult> {
+  async runStaging(opts?: {
+    inputDir?: string;
+    outputDir?: string;
+  }): Promise<StagingResult> {
     return this.staging.run(opts);
   }
 
@@ -110,13 +116,17 @@ export class PipelineService {
 
     this.logger.log(`runAll starting: ${requested.length} sources`);
 
-    // Fan-out all scrapers in parallel. The default output dir is the
-    // conventional raw/ tree; callers can override per-source.
+    // Fan-out all scrapers in parallel. outputDir is just the bare
+    // source name — each scraper joins it onto PIPELINE_RAW_DIR itself
+    // (resolveRawDir), so the real layout is PIPELINE_RAW_DIR/<source>/.
+    // A hardcoded 'pipeline/raw/scraping/<source>' here would double-nest
+    // under PIPELINE_RAW_DIR (same bug class fixed in mercadolibre.ts's
+    // resolveRawDir — see pipeline-consolidation PR 3).
     const scrapeResults = await Promise.all(
       adapters.map((adapter) => {
         const cfg: SourceConfig = {
           source: adapter.source,
-          outputDir: `pipeline/raw/scraping/${adapter.source}`,
+          outputDir: adapter.source,
         };
         return adapter.run(cfg).catch((err: any) => ({
           source: adapter.source,
@@ -124,11 +134,13 @@ export class PipelineService {
           outputPath: '',
           durationMs: 0,
           errors: [(err as Error).message ?? String(err)],
-        })) as Promise<ScrapeResult>;
+        }));
       }),
     );
 
-    this.logger.log(`runAll scrapes done in ${scrapeResults.reduce((acc: number, r: ScrapeResult) => acc + r.durationMs, 0)}ms`);
+    this.logger.log(
+      `runAll scrapes done in ${scrapeResults.reduce((acc: number, r: ScrapeResult) => acc + r.durationMs, 0)}ms`,
+    );
 
     // Staging is sequential by design (single writer to disk).
     let stagingResult: StagingResult | undefined;

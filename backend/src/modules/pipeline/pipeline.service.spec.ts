@@ -29,6 +29,9 @@ import { DwLoaderAdapter } from './adapters/dw-loader.adapter';
 import { StagingProcessorAdapter } from './adapters/staging-processor.adapter';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { BrowserFactoryService } from './scraping/browser-factory.service';
+import { DwLoaderService } from './etl/dw-loader.service';
+import { StagingProcessorService } from './etl/staging-processor.service';
+import { QualityService } from './etl/quality.service';
 
 /**
  * RED-first specs for PipelineService.
@@ -49,15 +52,17 @@ describe('PipelineService', () => {
   let logSpy: jest.SpyInstance;
 
   beforeEach(async () => {
-    logSpy = jest.spyOn(Logger.prototype, 'log').mockImplementation(() => undefined);
+    logSpy = jest
+      .spyOn(Logger.prototype, 'log')
+      .mockImplementation(() => undefined);
 
     dwLoaderStub = {
       load: jest.fn(),
-    } as unknown as jest.Mocked<IDwLoader>;
+    };
 
     stagingStub = {
       run: jest.fn(),
-    } as unknown as jest.Mocked<IStagingProcessor>;
+    };
 
     // Stub each source so we can assert which one fired on runAll().
     dataSourceStubs = [
@@ -68,7 +73,7 @@ describe('PipelineService', () => {
       { source: PipelineSource.API_RATES, run: jest.fn() },
       { source: PipelineSource.CSV_DATASET, run: jest.fn() },
       { source: PipelineSource.ENCUESTA, run: jest.fn() },
-    ] as unknown as jest.Mocked<IDataSource>[];
+    ];
 
     const moduleRef: TestingModule = await Test.createTestingModule({
       providers: [
@@ -152,13 +157,15 @@ describe('PipelineService', () => {
   describe('runAll', () => {
     it('runs every source in parallel, then staging, then DW load', async () => {
       // All seven adapters return successful scrape results.
-      const scrapeResults: ScrapeResult[] = dataSourceStubs.map((stub, idx) => ({
-        source: stub.source,
-        totalScraped: 10 + idx,
-        outputPath: `/tmp/${stub.source}.json`,
-        durationMs: 100 + idx,
-        errors: [],
-      }));
+      const scrapeResults: ScrapeResult[] = dataSourceStubs.map(
+        (stub, idx) => ({
+          source: stub.source,
+          totalScraped: 10 + idx,
+          outputPath: `/tmp/${stub.source}.json`,
+          durationMs: 100 + idx,
+          errors: [],
+        }),
+      );
       for (let i = 0; i < dataSourceStubs.length; i++) {
         dataSourceStubs[i].run.mockResolvedValueOnce(scrapeResults[i]);
       }
@@ -247,13 +254,19 @@ describe('PipelineModule DI wiring', () => {
       providers: [
         {
           provide: PrismaService,
-          useValue: { $executeRawUnsafe: jest.fn(), $queryRawUnsafe: jest.fn() },
+          useValue: {
+            $executeRawUnsafe: jest.fn(),
+            $queryRawUnsafe: jest.fn(),
+          },
         },
         {
           provide: ConfigService,
           useValue: { get: jest.fn() },
         },
         BrowserFactoryService,
+        QualityService,
+        StagingProcessorService,
+        DwLoaderService,
         MercadoLibreAdapter,
         AliExpressAdapter,
         TemuAdapter,
@@ -266,8 +279,12 @@ describe('PipelineModule DI wiring', () => {
       ],
     }).compile();
 
-    expect(moduleRef.get(MercadoLibreAdapter).source).toBe(PipelineSource.MERCADOLIBRE);
-    expect(moduleRef.get(AliExpressAdapter).source).toBe(PipelineSource.ALIEXPRESS);
+    expect(moduleRef.get(MercadoLibreAdapter).source).toBe(
+      PipelineSource.MERCADOLIBRE,
+    );
+    expect(moduleRef.get(AliExpressAdapter).source).toBe(
+      PipelineSource.ALIEXPRESS,
+    );
     expect(moduleRef.get(TemuAdapter).source).toBe(PipelineSource.TEMU);
     expect(moduleRef.get(SheinAdapter).source).toBe(PipelineSource.SHEIN);
     expect(moduleRef.get(ApiRateAdapter).source).toBe(PipelineSource.API_RATES);
