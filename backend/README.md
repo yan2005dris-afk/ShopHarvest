@@ -67,6 +67,9 @@ opt-in gate so probes never fire from CI or `pnpm test`:
 ```bash
 MELI_PROBE_TOKEN=1 PIPELINE_RAW_DIR=/tmp/meli-probe \
   pnpm --filter backend exec ts-node scripts/probe-meli.ts
+
+ALI_PROBE_TOKEN=1 PIPELINE_RAW_DIR=/tmp/ali-probe \
+  pnpm --filter backend exec ts-node scripts/probe-ali.ts
 ```
 
 Exits 0 and prints the item count on success; exits 1 if `totalScraped === 0`.
