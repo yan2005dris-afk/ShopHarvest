@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import {
   PipelineSource,
   DW_LOADER,
@@ -27,6 +28,7 @@ import {
 import { DwLoaderAdapter } from './adapters/dw-loader.adapter';
 import { StagingProcessorAdapter } from './adapters/staging-processor.adapter';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { BrowserFactoryService } from './scraping/browser-factory.service';
 
 /**
  * RED-first specs for PipelineService.
@@ -247,6 +249,11 @@ describe('PipelineModule DI wiring', () => {
           provide: PrismaService,
           useValue: { $executeRawUnsafe: jest.fn(), $queryRawUnsafe: jest.fn() },
         },
+        {
+          provide: ConfigService,
+          useValue: { get: jest.fn() },
+        },
+        BrowserFactoryService,
         MercadoLibreAdapter,
         AliExpressAdapter,
         TemuAdapter,
