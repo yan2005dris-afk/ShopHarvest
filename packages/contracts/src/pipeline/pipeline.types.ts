@@ -10,6 +10,7 @@
  * internals stay idiomatic TS.
  */
 import type { PipelineSource } from './pipeline.source.js';
+import type { ScraperMetrics } from './scraper-metrics.js';
 
 /**
  * Input for `IDataSource.run`. The scraper is told where to write the
@@ -39,6 +40,13 @@ export interface ScrapeResult {
   outputPath: string;
   durationMs: number;
   errors: string[];
+  /**
+   * Observability payload (items, retries, run state, timestamps).
+   * Optional so adapters that haven't adopted `ScraperMetrics` yet
+   * (Ali/Temu/Shein/CSV/Encuesta/API-rates, pending their own PRs)
+   * keep compiling. PR 6's persistence layer reads this when present.
+   */
+  metrics?: ScraperMetrics;
 }
 
 /**
