@@ -53,11 +53,11 @@
   },
   "files": ["dist", "dist-cjs", "README.md"],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json && tsc -p tsconfig.build.cjs.json",
+    "build": "tsc -p tsconfig.build.json && tsc -p tsconfig.build.cjs.json && node -e \"require('fs').writeFileSync('dist-cjs/package.json', JSON.stringify({ type: 'commonjs' }))\"",
     "lint": "tsc --noEmit",
     "clean": "rm -rf dist dist-cjs",
     "test": "jest",
-    "prepare": "node -e \"if (require('fs').existsSync('tsconfig.build.json')) require('child_process').execSync('tsc -p tsconfig.build.json && tsc -p tsconfig.build.cjs.json', { stdio: 'inherit' })\""
+    "prepare": "node -e \"if (require('fs').existsSync('tsconfig.build.json')) require('child_process').execSync('pnpm run build', { stdio: 'inherit' })\""
   },
   "peerDependencies": {
     "@nestjs/swagger": "^11.0.0",

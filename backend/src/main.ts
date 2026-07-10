@@ -1,7 +1,18 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+
+/**
+ * --smoke-run: boot the app, resolve every provider (DI graph +
+ * lifecycle hooks), then exit 0 without opening a real port or
+ * triggering the ETL cron tick. Used by CI to catch DI wiring
+ * regressions without a live listener.
+ *
+ * NestJS 11 doesn't emit a built-in "bootstrapped" log line (older
+ * versions did) — logging our own confirmation line instead.
+ */
+const SMOKE_RUN = process.argv.includes('--smoke-run');
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -69,6 +80,16 @@ async function bootstrap() {
       .build();
     const document = SwaggerModule.createDocument(app, config);
     SwaggerModule.setup('api/docs', app, document);
+  }
+
+  if (SMOKE_RUN) {
+    await app.init();
+    new Logger('Bootstrap').log(
+      'Nest application successfully bootstrapped (smoke-run)',
+    );
+    await app.close();
+    process.exit(0);
+    return;
   }
 
   await app.listen(process.env.PORT ?? 3000);

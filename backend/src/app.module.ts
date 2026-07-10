@@ -8,6 +8,7 @@ import { JwtAuthGuard } from './modules/auth/jwt-auth.guard';
 import { DomainsModule } from './modules/domains/domains.module';
 import { ProductsModule } from './modules/products/products.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { PipelineModule } from './modules/pipeline/pipeline.module';
 import { ScheduleModule } from '@nestjs/schedule';
 
 // ScrapingJobsModule and SchedulesModule were removed in review batch 4. They
@@ -28,6 +29,11 @@ import { ScheduleModule } from '@nestjs/schedule';
 // endpoints REST bajo /api/analytics/*. Toda la superficie es @Public()
 // para que el dashboard Vercel pueda consumirla sin JWT (requisito
 // "URL pública" del Entregable 5).
+//
+// Cambio SDD: pipeline-consolidation. PipelineModule was implemented
+// across PRs 1-4 but never imported here — the controller and ETL
+// cron were dead code at runtime until this line. Wired in once the
+// MELI/AliExpress adapters had real (non-stub) implementations.
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -40,6 +46,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     DomainsModule,
     ProductsModule,
     AnalyticsModule,
+    PipelineModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },
