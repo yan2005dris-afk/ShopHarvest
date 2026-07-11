@@ -3,6 +3,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
+import { Prisma } from '../../generated/operational';
 import { OperationalPrismaService } from '../../common/prisma/operational-prisma.service';
 import { IngestRawCaptureDto } from '@web-scraping/contracts/raw-captures';
 
@@ -37,10 +38,10 @@ export class RawCapturesService {
       create: {
         offerId: dto.offerId,
         sourceId: dto.sourceId,
-        payload: dto.payload as Record<string, unknown>,
+        payload: dto.payload as Prisma.InputJsonValue,
       },
       update: {
-        payload: dto.payload as Record<string, unknown>,
+        payload: dto.payload as Prisma.InputJsonValue,
         capturedAt: new Date(),
       },
     });
