@@ -1,5 +1,5 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { AnalyticsPrismaService } from '../../common/prisma/analytics-prisma.service';
 import {
   AllKpisResponseDto,
   KpiPrecioCategoriaDto,
@@ -50,7 +50,7 @@ export class AnalyticsService {
       preferencia: 'SELECT * FROM dw.v_kpi_preferencia_plataformas',
     };
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: AnalyticsPrismaService) {}
 
   /**
    * Run all five KPI views in parallel and assemble the aggregated

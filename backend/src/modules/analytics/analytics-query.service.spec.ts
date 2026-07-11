@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { Logger } from '@nestjs/common';
 import { AnalyticsQueryService } from './analytics-query.service';
 import { AnalyticsService } from './analytics.service';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { AnalyticsPrismaService } from '../../common/prisma/analytics-prisma.service';
 
 /**
  * RED-first spec for AnalyticsQueryService.
@@ -51,7 +51,7 @@ describe('AnalyticsQueryService', () => {
           },
         },
         {
-          provide: PrismaService,
+          provide: AnalyticsPrismaService,
           useValue: {
             $queryRawUnsafe: queryRawUnsafeMock,
             $executeRawUnsafe: executeRawUnsafeMock,

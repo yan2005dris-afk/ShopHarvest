@@ -21,7 +21,7 @@ import { ConfigService } from '@nestjs/config';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import type { IDwLoader, LoadResult } from '../interfaces';
-import { PrismaService } from '../../../common/prisma/prisma.service';
+import { AnalyticsPrismaService } from '../../../common/prisma/analytics-prisma.service';
 import { QualityService } from './quality.service';
 import {
   FUENTES,
@@ -76,7 +76,7 @@ export class DwLoaderService implements IDwLoader {
   private readonly logger = new Logger(DwLoaderService.name);
 
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly prisma: AnalyticsPrismaService,
     private readonly configService: ConfigService,
     private readonly qualityService: QualityService,
   ) {}
@@ -452,7 +452,7 @@ export class DwLoaderService implements IDwLoader {
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
 if (require.main === module) {
   const configService = new ConfigService();
-  const prisma = new PrismaService();
+  const prisma = new AnalyticsPrismaService();
   const truncateFirst = process.argv.includes('--truncate');
   new DwLoaderService(prisma, configService, new QualityService())
     .load({ truncateFirst })

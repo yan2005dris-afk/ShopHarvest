@@ -45,21 +45,21 @@ PR 2 depends on PR 1 deployed/verified first.
 
 ## Phase 3: Flip DI — Analytics Consumers
 
-- [ ] 3.1 `backend/src/modules/analytics/analytics.service.ts:2,53` — `PrismaService` → `AnalyticsPrismaService`
-- [ ] 3.2 `backend/src/modules/analytics/analytics-query.service.ts:2,35` — same swap
-- [ ] 3.3 `backend/src/modules/pipeline/etl/dw-loader.service.ts:24,79` — same swap (constructor injection)
-- [ ] 3.4 `backend/src/modules/pipeline/etl/dw-loader.service.ts:455` — replace bare `new PrismaService()` CLI entrypoint with direct `AnalyticsPrismaService` instantiation
+- [x] 3.1 `backend/src/modules/analytics/analytics.service.ts:2,53` — `PrismaService` → `AnalyticsPrismaService`
+- [x] 3.2 `backend/src/modules/analytics/analytics-query.service.ts:2,35` — same swap
+- [x] 3.3 `backend/src/modules/pipeline/etl/dw-loader.service.ts:24,79` — same swap (constructor injection)
+- [x] 3.4 `backend/src/modules/pipeline/etl/dw-loader.service.ts:455` — replace bare `new PrismaService()` CLI entrypoint with direct `AnalyticsPrismaService` instantiation
 
 ## Phase 4: Flip DI — Operational Consumer
 
-- [ ] 4.1 `backend/src/modules/pipeline/etl-scheduler.service.ts:4,22` — `PrismaService` → `OperationalPrismaService` (NOT Analytics; only touches `EtlRun`)
+- [x] 4.1 `backend/src/modules/pipeline/etl-scheduler.service.ts:4,22` — `PrismaService` → `OperationalPrismaService` (NOT Analytics; only touches `EtlRun`)
 
 ## Phase 5: Update Mocks + Verify
 
-- [ ] 5.1 `analytics.service.spec.ts:4,114` — mock token → `AnalyticsPrismaService`
-- [ ] 5.2 `analytics-query.service.spec.ts:5,54` — mock token → `AnalyticsPrismaService`
-- [ ] 5.3 `etl-scheduler.service.spec.ts:3,48,55` — mock token → `OperationalPrismaService`
-- [ ] 5.4 `pipeline.service.spec.ts:30,256` — mock token → corrected `dw-loader` DI target (per 3.3)
-- [ ] 5.5 `rg "common/prisma/prisma.service'" backend/src` — confirm zero matches outside the shim file
-- [ ] 5.6 `pnpm --filter backend test` — full suite, including 4 updated specs, passes
-- [ ] 5.7 Docker-compose smoke check: each `/api/analytics/*` endpoint returns 200 with empty-but-well-formed payload against the provisioned empty analytics DB
+- [x] 5.1 `analytics.service.spec.ts:4,114` — mock token → `AnalyticsPrismaService`
+- [x] 5.2 `analytics-query.service.spec.ts:5,54` — mock token → `AnalyticsPrismaService`
+- [x] 5.3 `etl-scheduler.service.spec.ts:3,48,55` — mock token → `OperationalPrismaService`
+- [x] 5.4 `pipeline.service.spec.ts:30,256` — mock token → corrected `dw-loader` DI target (per 3.3)
+- [x] 5.5 `rg "common/prisma/prisma.service'" backend/src` — confirm zero matches outside the shim file
+- [x] 5.6 `pnpm --filter backend test` — full suite, including 4 updated specs, passes
+- [x] 5.7 Docker-compose smoke check: each `/api/analytics/*` endpoint returns 200 with empty-but-well-formed payload against the provisioned empty analytics DB
