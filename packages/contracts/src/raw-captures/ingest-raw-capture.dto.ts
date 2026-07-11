@@ -14,5 +14,6 @@ export class IngestRawCaptureDto {
 
   @ApiProperty({ type: Object })
   @IsObject()
+  @IsNotEmpty()
   payload!: Record<string, unknown>;
 }

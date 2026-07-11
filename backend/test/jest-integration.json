@@ -1,0 +1,15 @@
+{
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": ".",
+  "testEnvironment": "node",
+  "testRegex": ".integration-spec.ts$",
+  "transform": {
+    "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "transformIgnorePatterns": [
+    "/node_modules/(?!(@web-scraping/contracts|class-transformer|class-validator|@nestjs)/)"
+  ],
+  "moduleNameMapper": {
+    "^@web-scraping/contracts(.*)$": "<rootDir>/../packages/contracts/src$1"
+  }
+}

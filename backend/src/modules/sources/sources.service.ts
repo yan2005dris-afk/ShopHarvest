@@ -5,7 +5,7 @@ import {
   BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma } from '../../generated/operational';
+import { Prisma, SourceStatus } from '../../generated/operational';
 import { OperationalPrismaService } from '../../common/prisma/operational-prisma.service';
 import {
   CreateSourceDto,
@@ -81,7 +81,7 @@ export class SourcesService {
         ...(dto.name !== undefined && { name: dto.name }),
         ...(dto.baseUrl !== undefined && { baseUrl: dto.baseUrl }),
         ...(dto.status !== undefined && {
-          status: dto.status as 'inactive' | 'active' | 'error',
+          status: dto.status as SourceStatus,
         }),
         ...(dto.config !== undefined && { config: dto.config as Prisma.InputJsonValue }),
       },
