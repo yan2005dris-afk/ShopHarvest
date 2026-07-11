@@ -7,6 +7,8 @@ import { AuthModule } from './modules/auth/auth.module';
 import { JwtAuthGuard } from './modules/auth/jwt-auth.guard';
 import { DomainsModule } from './modules/domains/domains.module';
 import { ProductsModule } from './modules/products/products.module';
+import { SourcesModule } from './modules/sources/sources.module';
+import { CategoriesModule } from './modules/categories/categories.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { PipelineModule } from './modules/pipeline/pipeline.module';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -45,6 +47,8 @@ import { ScheduleModule } from '@nestjs/schedule';
     AuthModule,
     DomainsModule,
     ProductsModule,
+    SourcesModule,
+    CategoriesModule,
     AnalyticsModule,
     PipelineModule,
   ],

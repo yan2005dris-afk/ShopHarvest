@@ -21,6 +21,28 @@ services:
     networks:
       - scraper-network
 
+  postgres-dw:
+    image: postgres:16-alpine
+    container_name: scraper-postgres-dw
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_DW_USER:-scraper}
+      # No fallback for the password on purpose (same policy as the operational
+      # DB): the host .env MUST define POSTGRES_DW_PASSWORD.
+      POSTGRES_PASSWORD: ${POSTGRES_DW_PASSWORD:?POSTGRES_DW_PASSWORD must be set in .env}
+      POSTGRES_DB: ${POSTGRES_DW_DB:-scraperdw}
+    ports:
+      - "${POSTGRES_DW_PORT:-5434}:5432"
+    volumes:
+      - postgres_dw_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_DW_USER:-scraper} -d ${POSTGRES_DW_DB:-scraperdw}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - scraper-network
+
   backend:
     build:
       context: .
@@ -33,12 +55,15 @@ services:
       # Inherits POSTGRES_PASSWORD and friends from the .env file (env_file above).
       # Overrides DATABASE_URL to use the internal docker network database host and port.
       DATABASE_URL: postgresql://${POSTGRES_USER:-scraper}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-scraperdb}
+      ANALYTICS_DATABASE_URL: postgresql://${POSTGRES_DW_USER:-scraper}:${POSTGRES_DW_PASSWORD}@postgres-dw:5432/${POSTGRES_DW_DB:-scraperdw}
       NODE_ENV: production
       PORT: 3000
     ports:
       - "${BACKEND_PORT:-3000}:3000"
     depends_on:
       postgres:
+        condition: service_healthy
+      postgres-dw:
         condition: service_healthy
     networks:
       - scraper-network
@@ -63,3 +88,4 @@ networks:
 
 volumes:
   postgres_data:
+  postgres_dw_data:

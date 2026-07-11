@@ -6,12 +6,11 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 export default defineConfig({
-  schema: 'prisma/schema.prisma',
+  schema: 'prisma/analytics/schema.prisma',
   migrations: {
-    path: 'prisma/migrations',
-    seed: 'ts-node prisma/seed.ts',
+    path: 'prisma/analytics/migrations',
   },
   datasource: {
-    url: process.env.DATABASE_URL,
+    url: process.env.ANALYTICS_DATABASE_URL,
   },
 });

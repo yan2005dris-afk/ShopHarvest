@@ -7,7 +7,7 @@ import {
   HttpStatus,
   Logger,
 } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma } from '../../generated/operational';
 import type { Request, Response } from 'express';
 import { plainToInstance } from 'class-transformer';
 import {

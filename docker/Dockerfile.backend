@@ -9,6 +9,8 @@ ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 ENV PNPM_CONFIG_PACKAGE_IMPORT_METHOD=copy
 ENV PRISMA_SKIP_POSTINSTALL_GENERATE=true
+ENV SCARF_NO_ANALYTICS=true
+ENV DO_NOT_TRACK=1
 RUN corepack enable && corepack prepare pnpm@11 --activate
 
 WORKDIR /app
@@ -16,13 +18,22 @@ WORKDIR /app
 # ─── Stage: Installer ─────────────────────────────────────────────────────────
 FROM base AS installer
 
-# Copy workspace manifests and config
+# Copy workspace manifests, config, and ALL workspace package.json files
+# so pnpm can resolve workspace dependencies (especially @web-scraping/contracts)
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc ./
 COPY backend/package.json ./backend/
 COPY frontend/package.json ./frontend/
 COPY packages/contracts/package.json ./packages/contracts/
 
-RUN pnpm install --frozen-lockfile
+# pnpm 11 requires build-script approval for packages with postinstall hooks.
+# --frozen-lockfile + --ignore-scripts lets us install with the locked
+# resolution while deferring the allowed builds to a separate step.
+RUN pnpm install --frozen-lockfile --ignore-scripts
+
+# Re-run only the approved build scripts (same list as pnpm.onlyBuiltDependencies
+# in package.json). @scarf/scarf is intentionally excluded — it is telemetry-only
+# and its absence does not affect swagger-ui-dist at runtime.
+RUN pnpm rebuild @nestjs/core @parcel/watcher @prisma/engines better-sqlite3 esbuild lmdb msgpackr-extract playwright prisma sharp unrs-resolver
 
 # ─── Stage: Builder ───────────────────────────────────────────────────────────
 FROM installer AS builder
@@ -31,16 +42,18 @@ COPY packages/contracts/ ./packages/contracts/
 RUN pnpm --filter @web-scraping/contracts run build
 
 COPY backend/ ./backend/
+COPY packages/contracts/ ./packages/contracts/
 
-# Generate Prisma client and build
-RUN pnpm --filter backend exec prisma generate
+# Build shared contracts package BEFORE backend (backend depends on it)
+RUN pnpm --filter @web-scraping/contracts run build
+
+# Generate Prisma clients for both databases (used at build time for type-checking)
+RUN pnpm --filter backend exec prisma generate --config prisma.operational.config.ts
+RUN pnpm --filter backend exec prisma generate --config prisma.analytics.config.ts
 RUN pnpm --filter backend run build
 
 # Deploy: extract flat production node_modules (no symlinks, Docker-safe)
 RUN pnpm deploy --filter=backend --prod --legacy /prod/backend
-
-# Fix: pnpm deploy doesn't preserve .prisma/client node_modules entry
-RUN cp -r /app/node_modules/.pnpm/@prisma+client@*/node_modules/.prisma /prod/backend/node_modules/.prisma
 
 # ─── Stage: Runner ────────────────────────────────────────────────────────────
 FROM base AS runner
@@ -51,9 +64,20 @@ COPY --from=builder /prod/backend/node_modules ./node_modules
 COPY --from=builder /prod/backend/package.json ./package.json
 COPY --from=builder /app/backend/dist ./dist
 COPY --from=builder /app/backend/prisma ./prisma
-COPY --from=builder /app/backend/prisma.config.ts ./prisma.config.ts
+COPY --from=builder /app/backend/prisma.operational.config.ts ./prisma.operational.config.ts
+COPY --from=builder /app/backend/prisma.analytics.config.ts ./prisma.analytics.config.ts
+
+# Generate Prisma clients at build time against the deployed flat node_modules
+# so runtime imports (e.g. @prisma/client-runtime-utils) resolve correctly.
+RUN npx prisma generate --config prisma.operational.config.ts && \
+    npx prisma generate --config prisma.analytics.config.ts
+
+# Copy generated clients into dist/ so the compiled JS resolves them
+RUN cp -r src/generated dist/generated
 
 USER node
 EXPOSE 3000
 
-CMD ["sh", "-c", "node node_modules/prisma/build/index.js migrate deploy && node dist/main.js"]
+# Run migrations for both databases before starting the app.
+# Use npx prisma to avoid corepack-permission issues (node user cannot download pnpm).
+CMD ["sh", "-c", "npx prisma migrate deploy --config prisma.operational.config.ts && npx prisma db push --config prisma.analytics.config.ts && node dist/main.js"]

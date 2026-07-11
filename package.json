@@ -12,9 +12,10 @@
     "build:frontend": "pnpm --filter ./frontend build",
     "build:worker": "pnpm --filter worker build",
     "test:contracts": "pnpm --filter @web-scraping/contracts test",
-    "prisma:generate": "pnpm --filter backend prisma generate",
-    "prisma:push": "pnpm --filter backend prisma db push",
-    "prisma:migrate": "pnpm --filter backend prisma migrate dev",
+    "prisma:generate": "pnpm --filter backend prisma generate --config prisma.operational.config.ts && pnpm --filter backend prisma generate --config prisma.analytics.config.ts",
+    "prisma:push": "pnpm --filter backend prisma db push --config prisma.operational.config.ts && pnpm --filter backend prisma db push --config prisma.analytics.config.ts",
+    "prisma:migrate": "pnpm --filter backend prisma migrate dev --config prisma.operational.config.ts && pnpm --filter backend prisma db push --config prisma.analytics.config.ts",
+    "prisma:migrate:deploy": "pnpm --filter backend prisma migrate deploy --config prisma.operational.config.ts && pnpm --filter backend prisma db push --config prisma.analytics.config.ts",
     "build:extension": "pnpm --filter visual-scraper-extension build",
     "build:extension:chrome": "BROWSER=chrome pnpm --filter visual-scraper-extension build",
     "build:extension:firefox": "BROWSER=firefox pnpm --filter visual-scraper-extension build",
@@ -24,6 +25,11 @@
     "docker:up": "docker compose up -d --build",
     "docker:down": "docker compose down",
     "docker:logs": "docker compose logs -f"
+  },
+  "pnpm": {
+    "overrides": {
+      "@scarf/scarf": "0.0.0"
+    }
   },
   "engines": {
     "node": ">=20",
