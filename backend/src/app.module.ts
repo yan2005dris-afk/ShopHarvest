@@ -9,6 +9,8 @@ import { DomainsModule } from './modules/domains/domains.module';
 import { ProductsModule } from './modules/products/products.module';
 import { SourcesModule } from './modules/sources/sources.module';
 import { CategoriesModule } from './modules/categories/categories.module';
+import { BrandsModule } from './modules/brands/brands.module';
+import { RawCapturesModule } from './modules/raw-captures/raw-captures.module';
 
 // ScrapingJobsModule and SchedulesModule were removed in review batch 4. They
 // modelled a headless-worker pipeline that no longer exists (the worker was
@@ -35,6 +37,8 @@ import { CategoriesModule } from './modules/categories/categories.module';
     ProductsModule,
     SourcesModule,
     CategoriesModule,
+    BrandsModule,
+    RawCapturesModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },
