@@ -96,8 +96,6 @@ export async function scrapeMercadoLibre(
   const rawDir = resolveRawDir(config, configService);
   const maxItems = config.maxItems ?? MAX_ITEMS_PER_CATEGORY;
 
-  const browser = await browserFactory.launch({ acceptLanguage });
-  const context = await browserFactory.newContext(browser, { acceptLanguage });
   const results: Record<string, unknown>[] = [];
   const errors: string[] = [];
   const metrics: ScraperMetrics = {
@@ -111,19 +109,25 @@ export async function scrapeMercadoLibre(
     errors: [],
   };
 
+  const browser = await browserFactory.launch({ acceptLanguage });
   try {
+    const context = await browserFactory.newContext(browser, {
+      acceptLanguage,
+    });
     for (const cat of CATEGORIES) {
-      const catResult = await scrapeCategoryWithRetry(
-        context,
-        cat,
-        maxItems,
-        maxRetries,
-        retryBaseMs,
-        settlePauseMs,
-        scrollPauseMs,
-        errors,
-      );
+      const { items: catResult, retries: catRetries } =
+        await scrapeCategoryWithRetry(
+          context,
+          cat,
+          maxItems,
+          maxRetries,
+          retryBaseMs,
+          settlePauseMs,
+          scrollPauseMs,
+          errors,
+        );
       results.push(...catResult);
+      metrics.retries += catRetries;
     }
     metrics.itemsExtracted = results.length;
     metrics.state = errors.length === 0 ? 'success' : 'failed';
@@ -133,7 +137,7 @@ export async function scrapeMercadoLibre(
     errors.push(`fatal: ${msg}`);
     metrics.state = 'failed';
   } finally {
-    await browser.close();
+    await browser.close().catch(() => undefined);
     metrics.durationMs = Date.now() - start;
     metrics.finishedAt = new Date().toISOString();
     metrics.errors = errors;
@@ -160,6 +164,11 @@ export async function scrapeMercadoLibre(
   };
 }
 
+interface CategoryScrapeResult {
+  items: Record<string, unknown>[];
+  retries: number;
+}
+
 async function scrapeCategoryWithRetry(
   context: import('playwright').BrowserContext,
   cat: { url: string; label: string },
@@ -169,9 +178,10 @@ async function scrapeCategoryWithRetry(
   settlePauseMs: number,
   scrollPauseMs: number,
   errors: string[],
-): Promise<Record<string, unknown>[]> {
+): Promise<CategoryScrapeResult> {
   const logger = new Logger('scrapeMercadoLibre');
   let attempt = 0;
+  let retries = 0;
   let lastError: Error | null = null;
   while (attempt <= maxRetries) {
     const page = await context.newPage();
@@ -198,13 +208,14 @@ async function scrapeCategoryWithRetry(
       logger.log(
         `category=${cat.label} items=${enriched.length} attempt=${attempt}`,
       );
-      return enriched;
+      return { items: enriched, retries };
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err));
       logger.warn(
         `category=${cat.label} attempt=${attempt} failed: ${lastError.message}`,
       );
       if (attempt === maxRetries) break;
+      retries++;
       const backoff = Math.min(
         retryBaseMs * Math.pow(2, attempt),
         MAX_BACKOFF_MS,
@@ -217,7 +228,7 @@ async function scrapeCategoryWithRetry(
     attempt += 1;
   }
   errors.push(`${cat.url}: ${lastError?.message ?? 'unknown'}`);
-  return [];
+  return { items: [], retries };
 }
 
 async function extractItems(
