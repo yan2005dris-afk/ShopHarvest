@@ -28,6 +28,18 @@ export class RawCapturesService {
       );
     }
 
+    // Cambio SDD: product-offer-split — RawCapture.offerId is now a real
+    // FK to Offer. Without this check, a non-existent offerId would fail
+    // as a raw Prisma P2003 foreign-key violation (mapped to a generic 500
+    // by the global exception filter) instead of a clean 404, regressing
+    // this endpoint's existing error-shape contract.
+    const offer = await this.prisma.offer.findUnique({
+      where: { id: dto.offerId },
+    });
+    if (!offer) {
+      throw new NotFoundException(`Offer with id ${dto.offerId} not found`);
+    }
+
     return this.prisma.rawCapture.upsert({
       where: {
         offerId_sourceId: {
