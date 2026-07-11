@@ -43,6 +43,7 @@ import type {
         [chart]="baseChart()"
         [series]="series()"
         [xaxis]="xaxis()"
+        [labels]="labels()"
         [colors]="colors()"
         [title]="title()"
         [plotOptions]="plotOptions()"
@@ -70,6 +71,8 @@ export class ChartHostComponent {
   readonly type = input.required<ChartType>();
   readonly series = input.required<ApexAxisChartSeries | ApexNonAxisChartSeries>();
   readonly xaxis = input<ApexXAxis>({});
+  /** Slice names for pie/donut charts — ApexCharts ignores xaxis.categories for these types. */
+  readonly labels = input<string[]>([]);
   readonly colors = input<string[]>(['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6']);
   readonly height = input<number>(320);
   readonly title = input<ApexTitleSubtitle>({} as ApexTitleSubtitle);

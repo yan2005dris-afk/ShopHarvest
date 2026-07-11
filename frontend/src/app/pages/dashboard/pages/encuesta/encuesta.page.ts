@@ -77,7 +77,7 @@ function sitioLabelFallback(sitios: string[]): string {
         <app-chart-host
           [type]="'pie'"
           [series]="pieSeries()"
-          [xaxis]="pieXaxis()"
+          [labels]="pieLabels()"
           [colors]="palette"
           [legend]="{ position: 'bottom' }"
         />
@@ -207,9 +207,13 @@ export class EncuestaPage {
     return generos.map((g) => rows.filter((r) => r.genero === g).length);
   });
 
-  readonly pieXaxis = computed<any>(() => ({
-    categories: Array.from(new Set(this.filteredRows().map((r) => r.genero))).sort(),
-  }));
+  /**
+   * ApexCharts pie/donut charts ignore `xaxis.categories` — the
+   * slice names come from `labels` instead (CodeRabbit finding, PR #11).
+   */
+  readonly pieLabels = computed<string[]>(() =>
+    Array.from(new Set(this.filteredRows().map((r) => r.genero))).sort(),
+  );
 
   constructor() {
     this.dashboardService.getEncuesta().subscribe({

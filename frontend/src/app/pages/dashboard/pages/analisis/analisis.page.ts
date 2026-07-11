@@ -22,6 +22,28 @@ import type {
 } from '../../core/dashboard.types';
 import { ChartHostComponent } from '../../shared/chart-host/chart-host.component';
 
+/** Linear-interpolation quantile over a pre-sorted numeric array. */
+function quantile(sorted: number[], q: number): number {
+  const pos = (sorted.length - 1) * q;
+  const base = Math.floor(pos);
+  const rest = pos - base;
+  return sorted[base + 1] !== undefined
+    ? sorted[base] + rest * (sorted[base + 1] - sorted[base])
+    : sorted[base];
+}
+
+/** ApexCharts boxPlot five-number summary: [min, Q1, median, Q3, max]. */
+function fiveNumberSummary(precios: number[]): [number, number, number, number, number] {
+  const sorted = [...precios].sort((a, b) => a - b);
+  return [
+    sorted[0],
+    quantile(sorted, 0.25),
+    quantile(sorted, 0.5),
+    quantile(sorted, 0.75),
+    sorted[sorted.length - 1],
+  ];
+}
+
 /**
  * Analisis page — 3 chart families + reactive filter sidebar.
  *
@@ -404,24 +426,51 @@ export class AnalisisPage {
 
   // ─── Chart 2: Line (trimestre × fuente) ───────────────────
 
+  /**
+   * Ordered (anio, trimestre) quarter keys, deduped in first-seen
+   * order. `timeSeriesSeries` and `timeSeriesXaxis` both iterate this
+   * exact array so a fuente missing a quarter gets `null` at that
+   * position instead of shifting its later points onto the wrong
+   * x-axis label (CodeRabbit finding, PR #11).
+   */
+  private readonly timeSeriesQuarterKeys = computed<string[]>(() => {
+    const rows = this.filteredTimeSeries();
+    const seen = new Set<string>();
+    const keys: string[] = [];
+    for (const r of rows) {
+      const key = `${r.anio}-Q${r.trimestre}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        keys.push(key);
+      }
+    }
+    return keys;
+  });
+
   readonly timeSeriesSeries = computed<any[]>(() => {
     const rows = this.filteredTimeSeries();
     const fuentes = Array.from(new Set(rows.map((r) => r.fuente))).sort();
+    const keys = this.timeSeriesQuarterKeys();
     return fuentes.map((fuente) => ({
       name: fuente,
-      data: rows.filter((r) => r.fuente === fuente).map((r) => r.precio_promedio),
+      data: keys.map((key) => {
+        const row = rows.find(
+          (r) => r.fuente === fuente && `${r.anio}-Q${r.trimestre}` === key,
+        );
+        return row ? row.precio_promedio : null;
+      }),
     }));
   });
 
   readonly timeSeriesXaxis = computed<any>(() => {
     const rows = this.filteredTimeSeries();
-    // Dedupe by (anio, trimestre) and produce human-friendly labels.
-    const seen = new Map<string, string>();
+    const keys = this.timeSeriesQuarterKeys();
+    const labels = new Map<string, string>();
     for (const r of rows) {
       const key = `${r.anio}-Q${r.trimestre}`;
-      if (!seen.has(key)) seen.set(key, `Q${r.trimestre} ${r.anio}`);
+      if (!labels.has(key)) labels.set(key, `Q${r.trimestre} ${r.anio}`);
     }
-    return { categories: Array.from(seen.values()) };
+    return { categories: keys.map((key) => labels.get(key)!) };
   });
 
   // ─── Chart 3: Scatter (precio vs id_hecho) ─────────────────
@@ -448,13 +497,17 @@ export class AnalisisPage {
   readonly boxPlotSeries = computed<any[]>(() => {
     const rows = this.filteredOutliers();
     const fuentes = Array.from(new Set(rows.map((r) => r.fuente))).sort();
-    return fuentes.map((fuente) => {
+    const data = fuentes.map((fuente) => {
       const precios = rows.filter((r) => r.fuente === fuente).map((r) => r.precio_usd);
       return {
         x: fuente,
-        y: precios.length ? precios : [0],
+        y: precios.length ? fiveNumberSummary(precios) : [0, 0, 0, 0, 0],
       };
     });
+    // ApexCharts boxPlot expects series: [{ data: [{x,y}, ...] }] — a
+    // flat array of points (the pre-fix shape here) is not a valid
+    // series array.
+    return [{ data }];
   });
 
   readonly boxPlotXaxis = computed<any>(() => ({

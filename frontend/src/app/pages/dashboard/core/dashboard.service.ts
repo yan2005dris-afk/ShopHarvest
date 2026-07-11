@@ -16,10 +16,12 @@ import type {
 
 /**
  * One-line cache TTL for the high-traffic KPIs endpoint. We re-use
- * `shareReplay({ bufferSize: 1, refCount: false, windowTime })` so a
+ * `shareReplay({ bufferSize: 1, refCount: true, windowTime })` so a
  * second subscriber within `CACHE_TTL_MS` reuses the previous
- * payload; the analytics module is `@Public()` so the cost of an
- * extra GET on cold-load is negligible.
+ * payload. `refCount: true` lets the source re-subscribe once all
+ * subscribers unsubscribe and the window expires — with `false` the
+ * source never re-fires after the cache evicts, so the dashboard
+ * would show no summary data past the first `CACHE_TTL_MS`.
  */
 const CACHE_TTL_MS = 60_000;
 
@@ -69,8 +71,8 @@ export class DashboardService {
   getSummary(): Observable<Summary | null> {
     return this.http.get<Summary>(`${this.base}/analytics/summary`).pipe(
       retry<Summary>({ count: 1, delay: 500 }),
-      shareReplay({ bufferSize: 1, refCount: false, windowTime: CACHE_TTL_MS }),
       catchError((err: HttpErrorResponse) => this.handleSoftError<Summary>('getSummary', err)),
+      shareReplay({ bufferSize: 1, refCount: true, windowTime: CACHE_TTL_MS }),
     );
   }
 
