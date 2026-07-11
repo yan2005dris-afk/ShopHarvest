@@ -56,7 +56,7 @@ export class SourcesService {
         code: dto.code,
         name: dto.name,
         baseUrl: dto.baseUrl,
-        config: dto.config as Record<string, unknown>,
+        config: dto.config as Prisma.InputJsonValue,
       },
     });
   }
@@ -81,9 +81,9 @@ export class SourcesService {
         ...(dto.name !== undefined && { name: dto.name }),
         ...(dto.baseUrl !== undefined && { baseUrl: dto.baseUrl }),
         ...(dto.status !== undefined && {
-          status: dto.status as Prisma.$Enums.SourceStatus,
+          status: dto.status as 'inactive' | 'active' | 'error',
         }),
-        ...(dto.config !== undefined && { config: dto.config as Record<string, unknown> }),
+        ...(dto.config !== undefined && { config: dto.config as Prisma.InputJsonValue }),
       },
     });
   }
