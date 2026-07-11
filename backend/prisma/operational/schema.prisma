@@ -158,3 +158,84 @@ model QualityMetric {
   duplicatesRemoved Int      @default(0)
   checks            Json
 }
+
+// ─── Fase 1a — Modelo Operacional ──────────────────────────────────────────
+// Source, Category, Brand, and RawCapture entities for structured scraping
+// source management. Added in PR 1 of the 3-slice feature-branch chain.
+
+enum SourceStatus {
+  inactive
+  active
+  error
+
+  @@map("source_status")
+}
+
+model Source {
+  id        String       @id @default(uuid()) @db.Uuid
+  code      String       @unique
+  name      String
+  baseUrl   String
+  status    SourceStatus @default(inactive)
+  config    Json?        @db.JsonB
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  categories CategorySourceMapping[]
+  rawCaptures RawCapture[]
+
+  @@map("sources")
+}
+
+model Category {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  parentId  String?  @db.Uuid
+  path      String   @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  parent     Category?              @relation("CategoryTree", fields: [parentId], references: [id])
+  children   Category[]             @relation("CategoryTree")
+  mappings   CategorySourceMapping[]
+
+  @@index([parentId])
+  @@index([path])
+  @@map("categories")
+}
+
+model CategorySourceMapping {
+  categoryId String @db.Uuid
+  sourceId   String @db.Uuid
+  remoteCode String
+
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  source   Source   @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+
+  @@id([categoryId, sourceId])
+  @@map("category_source_mappings")
+}
+
+model Brand {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @unique
+  aliases   String[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([aliases], type: Gin)
+  @@map("brands")
+}
+
+model RawCapture {
+  offerId    String   @db.Uuid
+  sourceId   String   @db.Uuid
+  payload    Json     @db.JsonB
+  capturedAt DateTime @default(now()) @db.Timestamp(6)
+
+  source Source @relation(fields: [sourceId], references: [id])
+
+  @@id([offerId, sourceId])
+  @@index([capturedAt])
+  @@map("raw_captures")
+}
