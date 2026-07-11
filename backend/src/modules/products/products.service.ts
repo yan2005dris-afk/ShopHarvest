@@ -1,10 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Prisma } from '../../generated/operational';
 import { OperationalPrismaService } from '../../common/prisma/operational-prisma.service';
-import type {
-  UpsertProductDto,
-  IngestProductsDto,
-} from '@web-scraping/contracts/products';
+import type { IngestProductsDto } from '@web-scraping/contracts/products';
 import type { FieldMappingDto } from '@web-scraping/contracts/domains';
 
 @Injectable()
@@ -16,269 +13,267 @@ export class ProductsService {
   async findAll(includeHistory = true) {
     return this.prisma.product.findMany({
       include: {
-        domainRule: true,
-        priceHistory: includeHistory,
+        offers: {
+          include: { priceObservations: includeHistory },
+        },
       },
       orderBy: { updatedAt: 'desc' },
     });
   }
 
+  /**
+   * `domainRuleId` now lives on `Offer`, not `Product` (product-offer-split).
+   * Returns every `Product` that has at least one `Offer` scoped to that
+   * rule, with only the matching offer(s) nested in the response.
+   */
   async findAllByDomain(domainRuleId: string) {
     return this.prisma.product.findMany({
-      where: { domainRuleId },
-      include: { priceHistory: true },
+      where: { offers: { some: { domainRuleId } } },
+      include: {
+        offers: {
+          where: { domainRuleId },
+          include: { priceObservations: true },
+        },
+      },
     });
   }
 
   async findOne(id: string) {
     return this.prisma.product.findUnique({
       where: { id },
-      include: { domainRule: true, priceHistory: true },
+      include: {
+        offers: { include: { priceObservations: true } },
+      },
     });
   }
 
   /**
-   * Upsert a product by productUrl + domainRuleId.
-   * If found: update fields.
-   * If not found: create.
-   * In both cases: create a new PriceHistory entry.
+   * Price history across all of a product's `Offer`(s) — spec's "Price
+   * History Retrieval Across Offers" requirement. Each entry still carries
+   * its own `offerId`, so a multi-offer product's series stays attributable
+   * per-offer instead of merging into one undifferentiated series.
    */
-  async upsert(dto: UpsertProductDto) {
-    return this.prisma.$transaction(async (tx) => {
-      // 1. Find existing product by productUrl + domainRuleId
-      const existing = await tx.product.findFirst({
-        where: {
-          productUrl: dto.productUrl,
-          domainRuleId: dto.domainRuleId,
-        },
-      });
-
-      const price = dto.price ?? 0;
-
-      if (existing) {
-        // Update existing product
-        const updated = await tx.product.update({
-          where: { id: existing.id },
-          data: {
-            title: dto.title ?? existing.title,
-            price,
-            currency: dto.currency ?? existing.currency,
-            imageUrl: dto.imageUrl ?? existing.imageUrl,
-            sku: dto.sku ?? existing.sku,
-            description: dto.description ?? existing.description,
-            rawData: (dto.rawData as Prisma.InputJsonValue) ?? existing.rawData,
-            extractedAt: new Date(),
-          },
-        });
-
-        // Create price history entry
-        await tx.priceHistory.create({
-          data: {
-            productId: existing.id,
-            price,
-            currency: dto.currency ?? 'USD',
-          },
-        });
-
-        this.logger.log(
-          `Updated product ${existing.id} with new price ${price}`,
-        );
-        return updated;
-      } else {
-        // Create new product
-        const created = await tx.product.create({
-          data: {
-            domainRuleId: dto.domainRuleId,
-            title: dto.title ?? 'Unknown Product',
-            price,
-            currency: dto.currency ?? 'USD',
-            imageUrl: dto.imageUrl,
-            productUrl: dto.productUrl,
-            sku: dto.sku,
-            description: dto.description,
-            rawData: dto.rawData as Prisma.InputJsonValue,
-          },
-        });
-
-        // Create initial price history entry
-        await tx.priceHistory.create({
-          data: {
-            productId: created.id,
-            price,
-            currency: dto.currency ?? 'USD',
-          },
-        });
-
-        this.logger.log(`Created product ${created.id} with price ${price}`);
-        return created;
-      }
-    });
-  }
-
   async getPriceHistory(productId: string, from?: string, to?: string) {
-    const where: Record<string, unknown> = { productId };
+    const where: Prisma.PriceObservationWhereInput = {
+      offer: { productId },
+    };
 
     if (from || to) {
-      const capturedAt: Record<string, unknown> = {};
-      if (from) capturedAt.gte = new Date(from);
-      if (to) capturedAt.lte = new Date(to);
-      where.capturedAt = capturedAt;
+      where.observedAt = {
+        ...(from && { gte: new Date(from) }),
+        ...(to && { lte: new Date(to) }),
+      };
     }
 
-    return this.prisma.priceHistory.findMany({
+    return this.prisma.priceObservation.findMany({
       where,
-      orderBy: { capturedAt: 'desc' },
+      orderBy: { observedAt: 'desc' },
     });
   }
 
-  async create(data: {
-    domainRuleId: string;
-    externalId?: string;
-    title: string;
-    price: number;
-    currency?: string;
-    imageUrl?: string;
-    productUrl: string;
-    sku?: string;
-    description?: string;
-    rawData?: Prisma.InputJsonValue;
-  }) {
-    return this.prisma.product.create({ data });
-  }
-
+  /**
+   * Ingest a batch of extension-extracted products.
+   *
+   * Rewritten by `product-offer-split` (design.md "Data Flow (ingest)") to
+   * write the canonical Product + Offer + PriceObservation + RawCapture
+   * shape, all inside one `$transaction`:
+   *
+   *   upsert Source (code=domain) → backfill DomainRule.sourceId →
+   *   upsert Product+Offer (keyed by (sourceId, url), no cross-source
+   *   dedup — 1 ingested item = 1 Offer) → create PriceObservation →
+   *   tx.rawCapture.upsert (real FK to Offer).
+   *
+   * Written inline (not via `RawCapturesService`, which holds a separate
+   * Prisma connection and would break the transaction's atomicity).
+   */
   async ingestFromExtension(dto: IngestProductsDto) {
-    let domainRule = await this.prisma.domainRule.findUnique({
-      where: { domain: dto.domain },
-    });
-
-    const incomingMappings =
-      dto.fieldMappings && dto.fieldMappings.length > 0
-        ? dto.fieldMappings
-        : null;
-
-    if (!domainRule) {
-      // First time we see this domain: create a rule from the inbound
-      // mappings (preferred) or, as a degraded fallback, derive from
-      // payload keys.
-      const fieldMappings =
-        incomingMappings ?? this.deriveFieldMappingsFromPayload(dto.products);
-
-      domainRule = await this.prisma.domainRule.create({
-        data: {
-          domain: dto.domain,
-          name: dto.domain,
-          fieldMappings: fieldMappings as unknown as Prisma.InputJsonValue,
-        },
+    return this.prisma.$transaction(async (tx) => {
+      // 1. Resolve/create the Source the extension is scraping (Decision 1,
+      // design.md) — the extension only ever sends `dto.domain`.
+      let source = await tx.source.findUnique({
+        where: { code: dto.domain },
       });
-    } else {
-      // Rule already exists. Backfill its `fieldMappings` only when the
-      // stored rule has none yet (legacy install or auto-create from a
-      // previous ingest without mappings). We do NOT overwrite UI-edited
-      // mappings (PATCH /domains/:id) on every ingest — that would
-      // clobber user customizations. If the extension genuinely changed
-      // the rule, PATCH it explicitly.
-      const storedMappings = (domainRule.fieldMappings ??
-        []) as unknown as FieldMappingDto[];
-      if (
-        storedMappings.length === 0 &&
-        incomingMappings &&
-        incomingMappings.length > 0
-      ) {
-        domainRule = await this.prisma.domainRule.update({
-          where: { id: domainRule.id },
+      if (!source) {
+        source = await tx.source.create({
           data: {
-            fieldMappings: incomingMappings as unknown as Prisma.InputJsonValue,
+            code: dto.domain,
+            name: dto.domain,
+            baseUrl: `https://${dto.domain}`,
           },
         });
       }
-    }
 
-    const mappings =
-      (domainRule.fieldMappings as unknown as FieldMappingDto[]) ?? [];
+      // 2. Resolve/create the DomainRule for this domain and backfill its
+      // sourceId bridge when missing (legacy rows have none).
+      let domainRule = await tx.domainRule.findUnique({
+        where: { domain: dto.domain },
+      });
 
-    // Hoist the "no title mapping" warning so a 500-product ingest does
-    // not log 500 lines.
-    const hasTitleMapping = mappings.some((m) =>
-      /^title$|^nombre$|^name$/i.test(m.canonicalField),
-    );
-    if (!hasTitleMapping) {
-      this.logger.warn(
-        `Ingest for "${dto.domain}" has no canonical title mapping (title/nombre/name); products will fall back to "Raw product"`,
-      );
-    }
+      const incomingMappings =
+        dto.fieldMappings && dto.fieldMappings.length > 0
+          ? dto.fieldMappings
+          : null;
 
-    const results = [];
+      if (!domainRule) {
+        // First time we see this domain: create a rule from the inbound
+        // mappings (preferred) or, as a degraded fallback, derive from
+        // payload keys.
+        const fieldMappings =
+          incomingMappings ?? this.deriveFieldMappingsFromPayload(dto.products);
 
-    for (let index = 0; index < dto.products.length; index++) {
-      const product = dto.products[index];
-      try {
-        const mapped = this.mapProductByRule(product, mappings);
-        const titleSlug = mapped.title
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, '-')
-          .slice(0, 80);
-        // Disambiguate duplicates: productUrl is the dedup key against
-        // (productUrl, domainRuleId), so two items with identical titles
-        // would otherwise collide and the second silently overwrites the
-        // first. Append the batch index as a stable suffix. If sku is
-        // present it stays the same across runs so re-ingest still upserts.
-        const productUrl = `${dto.pageUrl ?? dto.domain}#${titleSlug}-${index}`;
-
-        const existing = await this.prisma.product.findFirst({
-          where: { productUrl, domainRuleId: domainRule.id },
+        domainRule = await tx.domainRule.create({
+          data: {
+            domain: dto.domain,
+            name: dto.domain,
+            fieldMappings: fieldMappings as unknown as Prisma.InputJsonValue,
+            sourceId: source.id,
+          },
         });
+      } else {
+        // Rule already exists. Backfill its `fieldMappings` only when the
+        // stored rule has none yet (legacy install or auto-create from a
+        // previous ingest without mappings) — do NOT overwrite UI-edited
+        // mappings on every ingest. Also backfill `sourceId` when the rule
+        // predates the Source bridge (product-offer-split).
+        const storedMappings = (domainRule.fieldMappings ??
+          []) as unknown as FieldMappingDto[];
+        const needsMappingsBackfill =
+          storedMappings.length === 0 &&
+          incomingMappings !== null &&
+          incomingMappings.length > 0;
+        const needsSourceBackfill = domainRule.sourceId == null;
 
-        if (existing) {
-          await this.prisma.product.update({
-            where: { id: existing.id },
+        if (needsMappingsBackfill || needsSourceBackfill) {
+          domainRule = await tx.domainRule.update({
+            where: { id: domainRule.id },
             data: {
-              title: mapped.title,
-              price: mapped.price,
-              currency: 'USD',
-              imageUrl: mapped.imageUrl ?? undefined,
-              sku: mapped.sku ?? undefined,
-              description: mapped.description ?? undefined,
-              rawData: product,
-              extractedAt: new Date(),
+              ...(needsMappingsBackfill && {
+                fieldMappings:
+                  incomingMappings as unknown as Prisma.InputJsonValue,
+              }),
+              ...(needsSourceBackfill && { sourceId: source.id }),
             },
           });
-          await this.prisma.priceHistory.create({
-            data: {
-              productId: existing.id,
-              price: mapped.price,
-              currency: 'USD',
-            },
-          });
-          results.push(existing);
-        } else {
-          const created = await this.prisma.product.create({
-            data: {
-              domainRuleId: domainRule.id,
-              title: mapped.title,
-              price: mapped.price,
-              currency: 'USD',
-              imageUrl: mapped.imageUrl ?? undefined,
-              productUrl,
-              sku: mapped.sku ?? undefined,
-              description: mapped.description ?? undefined,
-              rawData: product,
-            },
-          });
-          await this.prisma.priceHistory.create({
-            data: {
-              productId: created.id,
-              price: mapped.price,
-              currency: 'USD',
-            },
-          });
-          results.push(created);
         }
-      } catch (err) {
-        this.logger.error(`Failed to ingest product: ${err}`);
       }
-    }
 
-    return { ingested: results.length, domainRuleId: domainRule.id };
+      const mappings =
+        (domainRule.fieldMappings as unknown as FieldMappingDto[]) ?? [];
+
+      // Hoist the "no title mapping" warning so a 500-product ingest does
+      // not log 500 lines.
+      const hasTitleMapping = mappings.some((m) =>
+        /^title$|^nombre$|^name$/i.test(m.canonicalField),
+      );
+      if (!hasTitleMapping) {
+        this.logger.warn(
+          `Ingest for "${dto.domain}" has no canonical title mapping (title/nombre/name); products will fall back to "Raw product"`,
+        );
+      }
+
+      const results = [];
+
+      for (let index = 0; index < dto.products.length; index++) {
+        const product = dto.products[index];
+        try {
+          const mapped = this.mapProductByRule(product, mappings);
+          const titleSlug = mapped.title
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .slice(0, 80);
+          // Disambiguate duplicates: `url` is the dedup key against
+          // (sourceId, url) on Offer, so two items with identical titles
+          // would otherwise collide and the second silently overwrites the
+          // first. Append the batch index as a stable suffix.
+          const url = `${dto.pageUrl ?? dto.domain}#${titleSlug}-${index}`;
+
+          const existingOffer = await tx.offer.findUnique({
+            where: { sourceId_url: { sourceId: source.id, url } },
+          });
+
+          let offer;
+          if (existingOffer) {
+            // Re-ingest of the same (sourceId, url) pair: update the
+            // existing Offer + its canonical Product, do NOT create a
+            // duplicate (spec: "Re-ingesting the same pair updates, not
+            // duplicates").
+            offer = await tx.offer.update({
+              where: { id: existingOffer.id },
+              data: {
+                price: mapped.price,
+                currency: 'USD',
+                sku: mapped.sku ?? undefined,
+                rawData: product,
+                extractedAt: new Date(),
+              },
+            });
+            await tx.product.update({
+              where: { id: existingOffer.productId },
+              data: {
+                title: mapped.title,
+                imageUrl: mapped.imageUrl ?? undefined,
+                description: mapped.description ?? undefined,
+              },
+            });
+          } else {
+            // New (sourceId, url) pair: create a new Product and a new
+            // Offer — no cross-source/cross-item dedup (spec: "One Offer
+            // Per Ingested Item").
+            const createdProduct = await tx.product.create({
+              data: {
+                title: mapped.title,
+                imageUrl: mapped.imageUrl,
+                description: mapped.description,
+              },
+            });
+            offer = await tx.offer.create({
+              data: {
+                productId: createdProduct.id,
+                sourceId: source.id,
+                domainRuleId: domainRule.id,
+                url,
+                sku: mapped.sku,
+                currency: 'USD',
+                price: mapped.price,
+                rawData: product,
+              },
+            });
+          }
+
+          await tx.priceObservation.create({
+            data: {
+              offerId: offer.id,
+              price: mapped.price,
+              currency: 'USD',
+            },
+          });
+
+          // RawCapture — real FK to Offer (design.md Decision 2). Written
+          // inline via the same `tx`, not `RawCapturesService` (separate
+          // connection, would break atomicity).
+          await tx.rawCapture.upsert({
+            where: {
+              offerId_sourceId: { offerId: offer.id, sourceId: source.id },
+            },
+            create: {
+              offerId: offer.id,
+              sourceId: source.id,
+              payload: product as Prisma.InputJsonValue,
+            },
+            update: {
+              payload: product as Prisma.InputJsonValue,
+              capturedAt: new Date(),
+            },
+          });
+
+          results.push(offer);
+        } catch (err) {
+          this.logger.error(`Failed to ingest product: ${err}`);
+        }
+      }
+
+      return { ingested: results.length, domainRuleId: domainRule.id };
+    });
   }
 
   /**

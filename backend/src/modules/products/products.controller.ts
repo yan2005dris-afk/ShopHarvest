@@ -8,22 +8,15 @@ import {
   Query,
   NotFoundException,
 } from '@nestjs/common';
-import {
-  ApiExcludeEndpoint,
-  ApiOperation,
-  ApiQuery,
-  ApiResponse,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { plainToInstance } from 'class-transformer';
 import { ErrorResponseDto } from '@web-scraping/contracts/errors';
 import { ProductsService } from './products.service';
 import {
-  UpsertProductDto,
   ProductQueryDto,
   IngestProductsDto,
   ProductResponseDto,
-  PriceHistoryResponseDto,
+  PriceObservationResponseDto,
 } from '@web-scraping/contracts/products';
 
 @ApiTags('Products')
@@ -36,8 +29,8 @@ export class ProductsController {
    * strings back to JS numbers via `@Type(() => Number)` on the DTOs and
    * strips Prisma nested relations through the `@Expose()` whitelist with
    * `excludeExtraneousValues: true`. Centralizing avoids repeating the
-   * option (missing it leaks `domainRule`/`priceHistory` into the wire and
-   * crashes on the second capture with `[DecimalError] Invalid argument: undefined`).
+   * option (missing it leaks unlisted relations into the wire and crashes
+   * on a live `Prisma.Decimal` with `[DecimalError] Invalid argument: undefined`).
    */
   private toDto<T extends object, V>(cls: new () => T, row: V): T {
     return plainToInstance(cls, row, { excludeExtraneousValues: true });
@@ -63,11 +56,10 @@ export class ProductsController {
       products = await this.productsService.findAll(includeHistory);
     }
 
-    // 4R CRITICAL #2 fix: wrap list endpoints with plainToInstance so the
-    // @Type(() => Number) decorator on ProductResponseDto.price coerces
-    // the Prisma `Decimal.toJSON()` string back to a real JS number on
-    // the wire — AND `excludeExtraneousValues: true` strips nested
-    // `domainRule` + `priceHistory[]` relations from the response.
+    // `excludeExtraneousValues: true` activates the @Expose() whitelist on
+    // ProductResponseDto/OfferResponseDto so nested Prisma relations are
+    // stripped AND the @Type(() => Number) decorator on OfferResponseDto.price
+    // coerces the Prisma `Decimal.toJSON()` string back to a real JS number.
     return products.map((row) => this.toDto(ProductResponseDto, row));
   }
 
@@ -83,28 +75,6 @@ export class ProductsController {
   @Post('ingest')
   async ingestFromExtension(@Body() dto: IngestProductsDto) {
     return this.productsService.ingestFromExtension(dto);
-  }
-
-  @ApiOperation({ summary: 'Upsert a product by (domainRuleId, productUrl)' })
-  @ApiResponse({ status: 200, type: ProductResponseDto })
-  @ApiResponse({
-    status: 400,
-    type: ErrorResponseDto,
-    description: 'Validation failed',
-  })
-  @ApiResponse({
-    status: 404,
-    type: ErrorResponseDto,
-    description: 'Domain rule not found',
-  })
-  @ApiResponse({
-    status: 409,
-    type: ErrorResponseDto,
-    description: 'Unique constraint violation (P2002)',
-  })
-  @Post('upsert')
-  async upsert(@Body() body: UpsertProductDto) {
-    return this.productsService.upsert(body);
   }
 
   @ApiOperation({ summary: 'Get a single product by id' })
@@ -126,20 +96,21 @@ export class ProductsController {
       throw new NotFoundException(`Product with id ${id} not found`);
     }
     // Spec 2 REQ-DT-1: pipe Prisma row through plainToInstance so the
-    // @Type(() => Number) decorator on ProductResponseDto.price coerces
-    // the JSON-string Decimal back to a real JS number on the wire.
+    // @Type(() => Number) decorator on OfferResponseDto.price coerces the
+    // JSON-string Decimal back to a real JS number on the wire.
     //
-    // 4R BLOCKER fix: `excludeExtraneousValues: true` (now centralized in
-    // `this.toDto`) activates the @Expose() whitelist so Prisma's nested
-    // `domainRule` relation and `priceHistory[]` array are STRIPPED before
-    // serialization — without it, class-transformer recurses into nested
-    // relations and crashes with `[DecimalError] Invalid argument: undefined`
-    // on every request where priceHistory is non-empty. See pre-PR 4R review R1 BLOCKER.
+    // `excludeExtraneousValues: true` (centralized in `this.toDto`)
+    // activates the @Expose() whitelist so Prisma's nested `offers[]`
+    // relation is walked ONLY through OfferResponseDto's own whitelist —
+    // without it, class-transformer recurses into unannotated fields and
+    // crashes with `[DecimalError] Invalid argument: undefined`.
     return this.toDto(ProductResponseDto, product);
   }
 
-  @ApiOperation({ summary: 'Get the price history for a product' })
-  @ApiResponse({ status: 200, type: PriceHistoryResponseDto, isArray: true })
+  @ApiOperation({
+    summary: 'Get the price history for a product, across all its offers',
+  })
+  @ApiResponse({ status: 200, type: PriceObservationResponseDto, isArray: true })
   @ApiResponse({
     status: 400,
     type: ErrorResponseDto,
@@ -160,12 +131,15 @@ export class ProductsController {
     if (!product) {
       throw new NotFoundException(`Product with id ${id} not found`);
     }
-    // Same Decimal→number fix as findOne, applied per entry. 4R CRITICAL #3
-    // fix: `excludeExtraneousValues: true` (via `this.toDto`) activates the
-    // @Expose() whitelist — without it, `productId` (FK to Product) and the
-    // joined `product` relation leak into the wire response.
+    // Same Decimal→number fix as findOne, applied per entry. Each entry
+    // still carries its own `offerId` (spec: "Price History Retrieval
+    // Across Offers" — observations stay attributable per Offer). The
+    // @Expose() whitelist (via `this.toDto`) strips the joined `offer`
+    // relation, if the caller ever selects it.
     const history = await this.productsService.getPriceHistory(id, from, to);
-    return history.map((entry) => this.toDto(PriceHistoryResponseDto, entry));
+    return history.map((entry) =>
+      this.toDto(PriceObservationResponseDto, entry),
+    );
   }
 
   @ApiOperation({ summary: 'List products scoped to a single domain rule' })
@@ -183,23 +157,9 @@ export class ProductsController {
   @Get('by-domain/:domainRuleId')
   async findByDomain(@Param('domainRuleId') domainRuleId: string) {
     const rows = await this.productsService.findAllByDomain(domainRuleId);
-    // 4R CRITICAL #2 fix: same wrap as findAll above. Without this the
-    // list endpoint ships `price: "19.99"` (string) instead of `price: 19.99`
-    // (number), AND leaks nested `domainRule` + `priceHistory[]` relations.
+    // Same wrap as findAll above — coerces price to a number and strips
+    // nested relations through the @Expose() whitelist.
     return rows.map((row) => this.toDto(ProductResponseDto, row));
-  }
-
-  // TODO: remove this legacy admin path entirely. It accepts an untyped body
-  // (cast through `any`), bypasses the ValidationPipe contract, and duplicates
-  // `POST /products/upsert`. Hidden from the Swagger UI via @ApiExcludeEndpoint
-  // until the upsert endpoint is confirmed stable enough to delete this.
-  @ApiExcludeEndpoint()
-  @ApiOperation({
-    summary: 'Create a product (legacy admin path, do not use)',
-  })
-  @Post()
-  async create(@Body() body: Record<string, unknown>) {
-    return this.productsService.create(body as any);
   }
 
   @ApiOperation({ summary: 'Delete a product' })
