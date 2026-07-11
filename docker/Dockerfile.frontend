@@ -14,7 +14,11 @@ COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc ./
 RUN pnpm fetch
 
 COPY frontend/package.json ./frontend/
+COPY packages/contracts/package.json ./packages/contracts/
 RUN pnpm install --frozen-lockfile --offline
+
+COPY packages/contracts/ ./packages/contracts/
+RUN pnpm --filter @web-scraping/contracts run build
 
 COPY frontend/ ./frontend/
 RUN pnpm --filter frontend run build

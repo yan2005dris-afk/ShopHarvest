@@ -1,0 +1,96 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - feat/bi-dashboard-analytics
+  pull_request:
+    branches:
+      - feat/bi-dashboard-analytics
+
+permissions:
+  contents: read
+
+jobs:
+  pipeline-consolidation-guardrails:
+    name: Pipeline consolidation guardrails
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Install ripgrep
+        run: sudo apt-get update && sudo apt-get install -y ripgrep
+
+      - name: Demo domain / runtime bridge guardrail
+        run: |
+          set -e
+          # Rule 1: no demo fallback in production code.
+          # legacy/ archive is exempt (historical evidence only).
+          if rg -n 'quotes\.toscrape\.com|books\.toscrape\.com' backend/src/; then
+            echo "::error::demo domain banned in backend/src/"
+            exit 1
+          fi
+          # Rule 2: no ts-node / eval('require') in backend
+          if rg -n "ts-node|eval\('require'\)" backend/src/; then
+            echo "::error::ts-node or eval('require') in backend"
+            exit 1
+          fi
+          # Rule 3: BrowserFactoryService must not leak into extension adapters
+          # (PR 5 enforcement; safe no-op in PR 1a/1b)
+          if [ -f backend/src/modules/pipeline/scraping/temu.ts ]; then
+            if rg -n 'BrowserFactoryService' \
+              backend/src/modules/pipeline/scraping/temu.ts \
+              backend/src/modules/pipeline/scraping/shein.ts; then
+              echo "::error::BrowserFactoryService in extension adapter"
+              exit 1
+            fi
+          fi
+
+  backend-build-smoke:
+    name: Backend build + boot smoke
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install pnpm
+        run: npm install -g pnpm@9
+
+      - name: pnpm install
+        run: pnpm install --frozen-lockfile
+
+      - name: pnpm build (backend)
+        run: pnpm --filter backend build
+
+  backend-tests:
+    name: Backend tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install pnpm
+        run: npm install -g pnpm@9
+
+      - name: pnpm install
+        run: pnpm install --frozen-lockfile
+
+      - name: pnpm test (backend)
+        run: pnpm --filter backend test

@@ -10,4 +10,12 @@ export const routes: Routes = [
   { path: '', component: VisualMapperComponent, canActivate: [authGuard] },
   { path: 'products', component: ProductsComponent, canActivate: [authGuard] },
   { path: 'setup', component: ExtensionSetupComponent, canActivate: [authGuard] },
+  // Public BI dashboard — no `authGuard`. The whole analytics API is
+  // `@Public()` on the backend so this route is reachable without a
+  // JWT, matching the dashboard's PLAN §2.3 decision row 1.
+  {
+    path: 'dashboard',
+    loadChildren: () =>
+      import('./pages/dashboard/dashboard.routes').then((m) => m.DASHBOARD_ROUTES),
+  },
 ];

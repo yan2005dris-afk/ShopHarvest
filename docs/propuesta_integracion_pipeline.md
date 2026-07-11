@@ -6,7 +6,7 @@
 
 ## 1. Introducción y Objetivo
 
-El objetivo de esta propuesta es migrar los scripts autónomos ubicados en la carpeta `pipeline/` para convertirlos en un servicio nativo de la aplicación web. Esto permitirá automatizar la ejecución del proceso ETL, registrar los resultados directamente en la base de datos relacional y ofrecer una interfaz gráfica de administración en el frontend para iniciar o monitorear el pipeline en tiempo real.
+El objetivo de esta propuesta es migrar los scripts autónomos ubicados en la carpeta `backend/pipeline/` para convertirlos en un servicio nativo de la aplicación web. Esto permitirá automatizar la ejecución del proceso ETL, registrar los resultados directamente en la base de datos relacional y ofrecer una interfaz gráfica de administración en el frontend para iniciar o monitorear el pipeline en tiempo real.
 
 ---
 

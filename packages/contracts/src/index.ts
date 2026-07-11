@@ -10,6 +10,8 @@
  *   import { CategoryResponseDto } from '@web-scraping/contracts/categories';
  *   import { BrandResponseDto } from '@web-scraping/contracts/brands';
  *   import { RawCaptureResponseDto } from '@web-scraping/contracts/raw-captures';
+ *   import { AllKpisResponseDto, LoadDwDto } from '@web-scraping/contracts/analytics';
+ *   import { IDwLoader, PipelineSource, DW_LOADER } from '@web-scraping/contracts/pipeline';
  */
 export * from './auth/index.js';
 export * from './domains/index.js';
@@ -19,3 +21,5 @@ export * from './sources/index.js';
 export * from './categories/index.js';
 export * from './brands/index.js';
 export * from './raw-captures/index.js';
+export * from './analytics/index.js';
+export * from './pipeline/index.js';
