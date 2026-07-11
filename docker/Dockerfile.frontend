@@ -25,7 +25,7 @@ COPY packages/contracts/ ./packages/contracts/
 RUN pnpm --filter @web-scraping/contracts run build
 
 COPY frontend/ ./frontend/
-RUN pnpm --filter frontend run build
+RUN pnpm --filter ./frontend run build
 
 # ─── Stage: Production (Nginx) ────────────────────────────────────────────────
 FROM nginx:1.27-alpine AS production
