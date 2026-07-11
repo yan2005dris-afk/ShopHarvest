@@ -48,53 +48,92 @@ model DomainRule {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  products        Product[]
+  // Cambio SDD: product-offer-split. Bridge to Fase1a's Source: the
+  // extension only ever sends `dto.domain`, so `ingestFromExtension`
+  // resolves/upserts a Source keyed by that domain and backfills this FK.
+  // Nullable because pre-existing dev rows have no Source yet and there is
+  // no migration-time backfill (greenfield, no production data).
+  sourceId        String?  @db.Uuid
+  source          Source?  @relation(fields: [sourceId], references: [id])
+
+  offers          Offer[]
   @@schema("public")
 }
 
-// Product — Datos normalizados extraídos
+// Product — canonical product identity only (product-offer-split).
+// Flat price/url/externalId/sku/rawData moved to Offer; price series moved
+// to PriceObservation (hung off Offer). categoryId/brandId are schema-only,
+// unpopulated FK columns (no auto-classification in this change).
 model Product {
-  id          String   @id @default(uuid()) @db.Uuid
-  domainRuleId String  @db.Uuid
-  domainRule  DomainRule @relation(fields: [domainRuleId], references: [id])
-
-  externalId  String?
+  id          String    @id @default(uuid()) @db.Uuid
   title       String
-  price       Decimal  @db.Decimal(12, 2)
-  currency    String   @default("USD")
-  imageUrl    String?
-  productUrl  String
-  sku         String?
   description String?
+  imageUrl    String?
 
-  rawData     Json?
-  extractedAt DateTime @default(now())
+  categoryId  String?   @db.Uuid
+  brandId     String?   @db.Uuid
+  category    Category? @relation(fields: [categoryId], references: [id])
+  brand       Brand?    @relation(fields: [brandId], references: [id])
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
-  priceHistory PriceHistory[]
+  offers      Offer[]
 
-  @@index([domainRuleId])
-  @@index([externalId])
-  @@index([productUrl])
+  @@index([categoryId])
+  @@index([brandId])
   @@schema("public")
 }
 
-// PriceHistory — Historial de precios
-model PriceHistory {
-  id        String   @id @default(uuid()) @db.Uuid
-  productId String   @db.Uuid
-  product   Product  @relation(fields: [productId], references: [id])
+// Offer — a Product listed at a specific Source (product-at-a-site).
+// 1 ingested item = 1 Offer; no cross-source dedup (product-offer-split).
+model Offer {
+  id           String      @id @default(uuid()) @db.Uuid
+  productId    String      @db.Uuid
+  product      Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
 
-  price     Decimal  @db.Decimal(12, 2)
-  currency  String   @default("USD")
-  capturedAt DateTime @default(now())
+  sourceId     String      @db.Uuid
+  source       Source      @relation(fields: [sourceId], references: [id])
 
-  createdAt DateTime @default(now())
+  domainRuleId String?     @db.Uuid
+  domainRule   DomainRule? @relation(fields: [domainRuleId], references: [id])
 
+  externalId   String?
+  url          String
+  sku          String?
+  currency     String      @default("USD")
+  price        Decimal     @db.Decimal(12, 2) // latest snapshot
+  rawData      Json?
+  extractedAt  DateTime    @default(now())
+
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  priceObservations PriceObservation[]
+  rawCaptures       RawCapture[]
+
+  @@unique([sourceId, url])
   @@index([productId])
-  @@index([capturedAt])
+  @@index([sourceId])
+  @@index([externalId])
+  @@schema("public")
+}
+
+// PriceObservation — price-over-time series, hung off Offer (replaces
+// PriceHistory, which hung off the old flat Product).
+model PriceObservation {
+  id         String   @id @default(uuid()) @db.Uuid
+  offerId    String   @db.Uuid
+  offer      Offer    @relation(fields: [offerId], references: [id], onDelete: Cascade)
+
+  price      Decimal  @db.Decimal(12, 2)
+  currency   String   @default("USD")
+  observedAt DateTime @default(now())
+
+  createdAt  DateTime @default(now())
+
+  @@index([offerId])
+  @@index([observedAt])
   @@schema("public")
 }
 
@@ -322,6 +361,11 @@ model Source {
   categories CategorySourceMapping[]
   rawCaptures RawCapture[]
 
+  // Cambio SDD: product-offer-split — bridge relations for the
+  // DomainRule → Source resolution (Decision 1) and Offer.sourceId FK.
+  domainRules DomainRule[]
+  offers      Offer[]
+
   @@schema("public")
   @@map("sources")
 }
@@ -337,6 +381,10 @@ model Category {
   parent     Category?              @relation("CategoryTree", fields: [parentId], references: [id])
   children   Category[]             @relation("CategoryTree")
   mappings   CategorySourceMapping[]
+
+  // Cambio SDD: product-offer-split — unpopulated back-relation for
+  // Product.categoryId (schema-only FK, no auto-classification).
+  products   Product[]
 
   @@index([parentId])
   @@index([path])
@@ -364,6 +412,10 @@ model Brand {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Cambio SDD: product-offer-split — unpopulated back-relation for
+  // Product.brandId (schema-only FK, no auto-classification).
+  products  Product[]
+
   @@index([aliases], type: Gin)
   @@schema("public")
   @@map("brands")
@@ -376,6 +428,10 @@ model RawCapture {
   capturedAt DateTime @default(now()) @db.Timestamp(6)
 
   source Source @relation(fields: [sourceId], references: [id])
+  // Cambio SDD: product-offer-split — real FK, closing the orphan-model
+  // gap flagged in exploration.md (offerId was previously a bare String
+  // with no referential integrity).
+  offer  Offer  @relation(fields: [offerId], references: [id], onDelete: Cascade)
 
   @@id([offerId, sourceId])
   @@index([capturedAt])

@@ -13,14 +13,17 @@ export class DomainsService {
   async findAll(host?: string) {
     return this.prisma.domainRule.findMany({
       where: host ? { domain: host } : undefined,
-      include: { products: true },
+      // Cambio SDD: product-offer-split — DomainRule.products[] renamed to
+      // DomainRule.offers[] (flat Product model no longer FKs DomainRule
+      // directly; Offer does).
+      include: { offers: true },
     });
   }
 
   async findOne(id: string) {
     return this.prisma.domainRule.findUnique({
       where: { id },
-      include: { products: true },
+      include: { offers: true },
     });
   }
 
