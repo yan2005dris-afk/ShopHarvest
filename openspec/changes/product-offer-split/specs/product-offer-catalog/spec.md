@@ -24,17 +24,17 @@ The system MUST represent a canonical product (`Product`) separately from a site
 
 ### Requirement: One Offer Per Ingested Item (No Dedup)
 
-The system MUST create a new `Product` and a new `Offer` for every newly ingested `(sourceId, externalId)` pair. Cross-source or cross-item identity matching MUST NOT occur.
+The system MUST create a new `Product` and a new `Offer` for every newly ingested `(sourceId, url)` pair — the `Offer`'s natural key (`@@unique([sourceId, url])`). Cross-source or cross-item identity matching MUST NOT occur.
 
 #### Scenario: Two distinct items create two products
 
-- GIVEN two items ingested from the same source with different externalIds
+- GIVEN two items ingested from the same source with different URLs
 - WHEN both are ingested
 - THEN two separate `Product` rows and two separate `Offer` rows are created
 
 #### Scenario: Re-ingesting the same pair updates, not duplicates
 
-- GIVEN an existing `Offer` for a `(sourceId, externalId)` pair
+- GIVEN an existing `Offer` for a `(sourceId, url)` pair
 - WHEN the same pair is ingested again with a new price
 - THEN the existing `Offer` is reused and a new `PriceObservation` is recorded, without creating a duplicate `Product`/`Offer`
 
@@ -102,7 +102,7 @@ The system MUST provide price history for a product sourced from `PriceObservati
 
 ### Requirement: Non-Goals Explicit
 
-The pipeline/DW ETL module (`backend/src/modules/pipeline/**`) MUST NOT be affected. No production-data migration transform is required (greenfield, no seeded `Product` data). Whether ingestion routes through `RawCapture` is a design-pending decision NOT settled by this specification.
+The pipeline/DW ETL module (`backend/src/modules/pipeline/**`) MUST NOT be affected. No production-data migration transform is required (greenfield, no seeded `Product` data).
 
 #### Scenario: Pipeline module is unaffected
 
@@ -110,8 +110,12 @@ The pipeline/DW ETL module (`backend/src/modules/pipeline/**`) MUST NOT be affec
 - WHEN the pipeline/DW ETL flow runs
 - THEN it continues writing to `dw.*` tables unchanged
 
-#### Scenario: RawCapture wiring left open
+### Requirement: RawCapture Referential Integrity
 
-- GIVEN this specification does not mandate RawCapture wiring
-- WHEN the design phase runs
-- THEN it decides whether ingestion routes through `RawCapture`, and this capability's requirements hold regardless of that decision
+`RawCapture.offerId` MUST reference `Offer.id` through a real foreign key and MUST be populated transactionally as part of the same ingestion transaction that creates/upserts the `Offer` — not as a loosely-typed UUID with no referential guarantee.
+
+#### Scenario: RawCapture is written inside the ingest transaction
+
+- GIVEN an item is ingested via `POST /products/ingest`
+- WHEN the ingest transaction commits
+- THEN the resulting `RawCapture` row's `offerId` references a real, existing `Offer` row via foreign key

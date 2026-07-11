@@ -1,13 +1,14 @@
 ```yaml
 schema: gentle-ai.verify-result/v1
 evidence_revision: sha256:e0e5eff20d82df403195aa20450388b164aaccf9
-verdict: pass
+verdict: pass_with_warnings
 blockers: 0
 critical_findings: 0
 requirements: 8/8
 scenarios: 13/13
 test_command: "pnpm --filter contracts test && pnpm --filter backend test && pnpm --filter ./frontend test"
-test_exit_code: 0
+test_exit_code: 1
+test_exit_code_note: "Non-zero due to 2 known pre-existing/unrelated frontend failures (app.spec.ts — see Tests section); contracts (81/81) and backend (249/249) exit 0. Do not treat this run as fully green without reading the Tests section."
 test_output_hash: sha256:42c3fef8b50d16119fc76ec80f8c389822e7c20701f7011e5f66c09b60b206ba
 build_command: "pnpm --filter backend build && pnpm --filter ./frontend build"
 build_exit_code: 0
