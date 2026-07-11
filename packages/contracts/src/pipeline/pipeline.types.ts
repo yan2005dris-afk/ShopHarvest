@@ -68,11 +68,7 @@ export interface LoadResult {
  */
 export interface PipelineRunSummary {
   scrapeResults: ScrapeResult[];
-  stagingResult?: {
-    totalProductos: number;
-    totalEncuestas: number;
-    durationMs: number;
-  };
+  stagingResult?: StagingResult;
   loadResult?: LoadResult;
   totalDurationMs: number;
 }
