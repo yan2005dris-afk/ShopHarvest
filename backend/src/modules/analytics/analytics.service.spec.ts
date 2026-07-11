@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { AnalyticsService } from './analytics.service';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { AnalyticsPrismaService } from '../../common/prisma/analytics-prisma.service';
 import {
   serializeKpiRows,
   serializeKpiRow,
@@ -15,7 +15,7 @@ import {
  *   1. getAllKpis()  → fans out 5 raw queries in parallel.
  *   2. getKpi(name)  → whitelist + per-KPI single fetch + NotFoundException.
  *
- * The PrismaService is mocked with a `$queryRawUnsafe` stub that returns
+ * The AnalyticsPrismaService is mocked with a `$queryRawUnsafe` stub that returns
  * canned rows. We assert:
  *   - The five expected SQL statements are passed through verbatim.
  *   - BigInt counts and Decimal prices are coerced to JS numbers on the wire.
@@ -111,7 +111,7 @@ describe('AnalyticsService', () => {
       providers: [
         AnalyticsService,
         {
-          provide: PrismaService,
+          provide: AnalyticsPrismaService,
           useValue: {
             $queryRawUnsafe: queryRawUnsafeMock,
             $executeRawUnsafe: executeRawUnsafeMock,

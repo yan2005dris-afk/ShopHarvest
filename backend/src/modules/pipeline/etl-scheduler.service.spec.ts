@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { EtlSchedulerService } from './etl-scheduler.service';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { OperationalPrismaService } from '../../common/prisma/operational-prisma.service';
 import { SchedulerRegistry } from '@nestjs/schedule';
 import { PipelineService } from './pipeline.service';
 import { PipelineSource } from '@web-scraping/contracts/pipeline';
@@ -45,14 +45,14 @@ describe('EtlSchedulerService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         EtlSchedulerService,
-        { provide: PrismaService, useValue: mockPrismaService },
+        { provide: OperationalPrismaService, useValue: mockPrismaService },
         { provide: SchedulerRegistry, useValue: mockSchedulerRegistry },
         { provide: PipelineService, useValue: mockPipelineService },
       ],
     }).compile();
 
     service = module.get<EtlSchedulerService>(EtlSchedulerService);
-    prisma = module.get(PrismaService);
+    prisma = module.get(OperationalPrismaService);
     schedulerRegistry = module.get(SchedulerRegistry);
     pipelineService = module.get(PipelineService);
   });

@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { AnalyticsPrismaService } from '../../common/prisma/analytics-prisma.service';
 import {
   PreguntaPrincipalRowDto,
   RankedProductRowDto,
@@ -32,7 +32,7 @@ export class AnalyticsQueryService {
   private readonly logger = new Logger(AnalyticsQueryService.name);
 
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly prisma: AnalyticsPrismaService,
     private readonly analyticsService: AnalyticsService,
   ) {}
 

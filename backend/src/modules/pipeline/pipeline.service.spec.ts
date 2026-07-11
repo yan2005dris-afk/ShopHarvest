@@ -27,7 +27,7 @@ import {
 } from './adapters/data-sources';
 import { DwLoaderAdapter } from './adapters/dw-loader.adapter';
 import { StagingProcessorAdapter } from './adapters/staging-processor.adapter';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { AnalyticsPrismaService } from '../../common/prisma/analytics-prisma.service';
 import { BrowserFactoryService } from './scraping/browser-factory.service';
 import { DwLoaderService } from './etl/dw-loader.service';
 import { StagingProcessorService } from './etl/staging-processor.service';
@@ -248,12 +248,12 @@ describe('PipelineModule DI wiring', () => {
     // adapters (no bridge calls so the test is hermetic). We assert
     // that each token resolves to its expected type. Adapter bodies
     // are NOT invoked (the bridge path uses runtime require, which is
-    // exercised only at runtime in Dev). PrismaService is mocked here
-    // so DwLoaderAdapter resolves.
+    // exercised only at runtime in Dev). AnalyticsPrismaService is
+    // mocked here so DwLoaderAdapter resolves.
     const moduleRef = await Test.createTestingModule({
       providers: [
         {
-          provide: PrismaService,
+          provide: AnalyticsPrismaService,
           useValue: {
             $executeRawUnsafe: jest.fn(),
             $queryRawUnsafe: jest.fn(),

@@ -1,7 +1,7 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { SchedulerRegistry } from '@nestjs/schedule';
 import { CronJob } from 'cron';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { OperationalPrismaService } from '../../common/prisma/operational-prisma.service';
 import { PipelineService } from './pipeline.service';
 
 /**
@@ -19,7 +19,7 @@ export class EtlSchedulerService implements OnModuleInit {
   private readonly logger = new Logger(EtlSchedulerService.name);
 
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly prisma: OperationalPrismaService,
     private readonly schedulerRegistry: SchedulerRegistry,
     private readonly pipelineService: PipelineService,
   ) {}
