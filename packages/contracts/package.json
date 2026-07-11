@@ -37,6 +37,30 @@
       "import": "./dist/errors/index.js",
       "require": "./dist-cjs/errors/index.js",
       "default": "./dist/errors/index.js"
+    },
+    "./sources": {
+      "types": "./dist/sources/index.d.ts",
+      "import": "./dist/sources/index.js",
+      "require": "./dist-cjs/sources/index.js",
+      "default": "./dist/sources/index.js"
+    },
+    "./categories": {
+      "types": "./dist/categories/index.d.ts",
+      "import": "./dist/categories/index.js",
+      "require": "./dist-cjs/categories/index.js",
+      "default": "./dist/categories/index.js"
+    },
+    "./brands": {
+      "types": "./dist/brands/index.d.ts",
+      "import": "./dist/brands/index.js",
+      "require": "./dist-cjs/brands/index.js",
+      "default": "./dist/brands/index.js"
+    },
+    "./raw-captures": {
+      "types": "./dist/raw-captures/index.d.ts",
+      "import": "./dist/raw-captures/index.js",
+      "require": "./dist-cjs/raw-captures/index.js",
+      "default": "./dist/raw-captures/index.js"
     }
   },
   "files": ["dist", "dist-cjs", "README.md"],
