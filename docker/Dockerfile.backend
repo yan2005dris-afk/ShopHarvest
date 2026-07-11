@@ -38,6 +38,9 @@ RUN pnpm rebuild @nestjs/core @parcel/watcher @prisma/engines better-sqlite3 esb
 # ─── Stage: Builder ───────────────────────────────────────────────────────────
 FROM installer AS builder
 
+COPY packages/contracts/ ./packages/contracts/
+RUN pnpm --filter @web-scraping/contracts run build
+
 COPY backend/ ./backend/
 COPY packages/contracts/ ./packages/contracts/
 

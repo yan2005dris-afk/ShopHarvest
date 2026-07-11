@@ -2,7 +2,6 @@ packages:
   - 'backend'
   - 'frontend'
   - 'extension'
-  - 'worker'
   - 'packages/contracts'
 
 allowBuilds:
@@ -20,4 +19,4 @@ allowBuilds:
   bcrypt: true
   'class-transformer': true
   'class-validator': true
-  '@scarf/scarf': true
+  '@scarf/scarf': false
