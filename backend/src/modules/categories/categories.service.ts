@@ -5,6 +5,7 @@ import {
   NotFoundException,
   ConflictException,
 } from '@nestjs/common';
+import { Prisma } from '../../generated/operational';
 import { OperationalPrismaService } from '../../common/prisma/operational-prisma.service';
 import {
   CreateCategoryDto,
@@ -242,15 +243,7 @@ export class CategoriesService {
    * Finds all direct children and recursively updates their path + children.
    */
   private async updateDescendantPaths(
-    tx: Omit<
-      typeof this.prisma,
-      | '$connect'
-      | '$disconnect'
-      | '$on'
-      | '$transaction'
-      | '$use'
-      | '$extends'
-    >,
+    tx: Prisma.TransactionClient,
     parentId: string,
     newParentPath: string,
   ) {

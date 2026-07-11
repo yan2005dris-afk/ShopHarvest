@@ -322,6 +322,7 @@ enum SourceStatus {
   active
   error
 
+  @@schema("public")
   @@map("source_status")
 }
 
@@ -338,6 +339,7 @@ model Source {
   categories CategorySourceMapping[]
   rawCaptures RawCapture[]
 
+  @@schema("public")
   @@map("sources")
 }
 
@@ -355,6 +357,7 @@ model Category {
 
   @@index([parentId])
   @@index([path])
+  @@schema("public")
   @@map("categories")
 }
 
@@ -367,6 +370,7 @@ model CategorySourceMapping {
   source   Source   @relation(fields: [sourceId], references: [id], onDelete: Cascade)
 
   @@id([categoryId, sourceId])
+  @@schema("public")
   @@map("category_source_mappings")
 }
 
@@ -378,6 +382,7 @@ model Brand {
   updatedAt DateTime @updatedAt
 
   @@index([aliases], type: Gin)
+  @@schema("public")
   @@map("brands")
 }
 
@@ -391,5 +396,6 @@ model RawCapture {
 
   @@id([offerId, sourceId])
   @@index([capturedAt])
+  @@schema("public")
   @@map("raw_captures")
 }
