@@ -9,6 +9,9 @@ import { DomainsModule } from './modules/domains/domains.module';
 import { ProductsModule } from './modules/products/products.module';
 import { SourcesModule } from './modules/sources/sources.module';
 import { CategoriesModule } from './modules/categories/categories.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { PipelineModule } from './modules/pipeline/pipeline.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 // ScrapingJobsModule and SchedulesModule were removed in review batch 4. They
 // modelled a headless-worker pipeline that no longer exists (the worker was
@@ -23,6 +26,16 @@ import { CategoriesModule } from './modules/categories/categories.module';
 // Slice 3: HttpExceptionFilter is registered via APP_FILTER so every
 // uncaught failure becomes an RFC 7807 problem-details envelope without
 // per-controller decoration.
+//
+// Cambio SDD: bi-dashboard-analytics. AnalyticsModule expone los 12
+// endpoints REST bajo /api/analytics/*. Toda la superficie es @Public()
+// para que el dashboard Vercel pueda consumirla sin JWT (requisito
+// "URL pública" del Entregable 5).
+//
+// Cambio SDD: pipeline-consolidation. PipelineModule was implemented
+// across PRs 1-4 but never imported here — the controller and ETL
+// cron were dead code at runtime until this line. Wired in once the
+// MELI/AliExpress adapters had real (non-stub) implementations.
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -30,11 +43,14 @@ import { CategoriesModule } from './modules/categories/categories.module';
       envFilePath: '../.env',
     }),
     PrismaModule,
+    ScheduleModule.forRoot(),
     AuthModule,
     DomainsModule,
     ProductsModule,
     SourcesModule,
     CategoriesModule,
+    AnalyticsModule,
+    PipelineModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

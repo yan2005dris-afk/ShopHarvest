@@ -1,16 +1,47 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
+/**
+ * --smoke-run: boot the app, resolve every provider (DI graph +
+ * lifecycle hooks), then exit 0 without opening a real port or
+ * triggering the ETL cron tick. Used by CI to catch DI wiring
+ * regressions without a live listener.
+ *
+ * NestJS 11 doesn't emit a built-in "bootstrapped" log line (older
+ * versions did) — logging our own confirmation line instead.
+ */
+const SMOKE_RUN = process.argv.includes('--smoke-run');
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Global route prefix `/api`. The legacy controllers (auth, products,
+  // domains) ship without `/api/` baked into the `@Controller('…')`
+  // decorator, so this single `setGlobalPrefix` call lifts every route
+  // to `/api/*`. Documented in docs/PLAN_Entregable5_Dashboard_Reporte.md §2.2
+  // (the analytics surface was always advertised as `/api/analytics/*`).
+  app.setGlobalPrefix('api');
+
+  // CORS whitelist: local dev origins + the production frontend.
+  //
+  // Cambio SDD: bi-dashboard-analytics. Production frontend lives on
+  // Vercel (`https://upse-bi-dashboard.vercel.app`). The origin is
+  // sourced from `FRONTEND_ORIGIN` so a future domain swap doesn't
+  // require a code change — only an env-var update on Render.
+  const defaultFrontendOrigin = 'http://localhost:4200';
+  const frontendOrigins = (process.env.FRONTEND_ORIGIN ?? defaultFrontendOrigin)
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
 
   app.enableCors({
     origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
       const allowed = [
         'http://localhost:8080',
         'http://localhost:4200',
+        ...frontendOrigins,
       ];
       if (!origin || allowed.includes(origin) || /^(moz|chrome)-extension:\/\//.test(origin)) {
         callback(null, true);
@@ -42,9 +73,23 @@ async function bootstrap() {
       .addTag('Auth', 'User registration and login')
       .addTag('Domains', 'Per-domain scraping rules')
       .addTag('Products', 'Extracted product catalog and price history')
+      .addTag(
+        'Analytics',
+        'BI dashboard endpoints backed by dw.v_kpi_* views and analytical queries (public).',
+      )
       .build();
     const document = SwaggerModule.createDocument(app, config);
     SwaggerModule.setup('api/docs', app, document);
+  }
+
+  if (SMOKE_RUN) {
+    await app.init();
+    new Logger('Bootstrap').log(
+      'Nest application successfully bootstrapped (smoke-run)',
+    );
+    await app.close();
+    process.exit(0);
+    return;
   }
 
   await app.listen(process.env.PORT ?? 3000);

@@ -17,6 +17,10 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  // Cambio SDD: bi-dashboard-analytics. Multi-schema para que Prisma
+  // mapee modelos marcados con @@schema("dw") al esquema analitico del DW.
+  // El default (sin @@schema) sigue siendo el esquema "public" operacional.
+  schemas  = ["public", "dw"]
 }
 
 // ─── Models ──────────────────────────────────────────────────────────────
@@ -45,6 +49,7 @@ model DomainRule {
   updatedAt       DateTime @updatedAt
 
   products        Product[]
+  @@schema("public")
 }
 
 // Product — Datos normalizados extraídos
@@ -73,6 +78,7 @@ model Product {
   @@index([domainRuleId])
   @@index([externalId])
   @@index([productUrl])
+  @@schema("public")
 }
 
 // PriceHistory — Historial de precios
@@ -89,6 +95,7 @@ model PriceHistory {
 
   @@index([productId])
   @@index([capturedAt])
+  @@schema("public")
 }
 
 // ScrapingJob and ScrapingSchedule models were removed in review batch 4. The
@@ -104,6 +111,7 @@ model User {
   passwordHash String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  @@schema("public")
 }
 
 // ─── ETL integration (change: etl-integration-strategy, PR 1) ──────────────
@@ -115,6 +123,7 @@ enum EtlRunStatus {
   RUNNING
   SUCCESS
   FAILED
+  @@schema("public")
 }
 
 model EtlRun {
@@ -130,6 +139,7 @@ model EtlRun {
   qualityMetric QualityMetric?
 
   @@index([status, startedAt(sort: Desc)])
+  @@schema("public")
 }
 
 model EtlProduct {
@@ -148,6 +158,7 @@ model EtlProduct {
   @@unique([source, sourceId])
   @@index([etlRunId])
   @@index([sourceId])
+  @@schema("public")
 }
 
 model QualityMetric {
@@ -157,6 +168,149 @@ model QualityMetric {
   completenessPct   Decimal  @db.Decimal(5, 2)
   duplicatesRemoved Int      @default(0)
   checks            Json
+  @@schema("public")
+}
+
+// ─── DW (Data Warehouse) schema ──────────────────────────────────
+// ─── Cambio SDD: bi-dashboard-analytics. Plan: docs/PLAN_Entregable5_Dashboard_Reporte.md
+//
+// Modelos del esquema "dw" de Postgres. Mapean las tablas/vistas
+// que ya existen (cargadas en el E4 desde backend/pipeline/scripts/dw/).
+// Prisma los genera como tipos TypeScript manteniendo un solo cliente
+// para los esquemas "public" (operacional) y "dw" (analitico).
+//
+// IMPORTANTE: NO usar prisma migrate dev contra estas tablas — ya existen
+// y tienen datos. Para cambios futuros: prisma migrate dev --create-only
+// para generar SQL y aplicarlo manualmente.
+
+model DimProducto {
+  id_producto     Int      @id @default(autoincrement()) @map("id_producto")
+  titulo_oferta   String   @db.VarChar(500)
+  url_producto    String?  @db.Text
+  disponibilidad  String?  @db.VarChar(20)
+
+  factProductos   FactProducto[]
+
+  @@map("dim_producto")
+  @@schema("dw")
+}
+
+model DimFuente {
+  id_fuente      Int      @id @default(autoincrement()) @map("id_fuente")
+  nombre_fuente  String   @unique @db.VarChar(50)
+  tipo_fuente    String?  @db.VarChar(30)
+  descripcion    String?  @db.VarChar(200)
+
+  factProductos        FactProducto[]
+  factEncuestaConsumo  FactEncuestaConsumo[]
+
+  @@map("dim_fuente")
+  @@schema("dw")
+}
+
+model DimCategoria {
+  id_categoria     Int      @id @default(autoincrement()) @map("id_categoria")
+  nombre_categoria String   @unique @db.VarChar(50)
+  descripcion      String?  @db.VarChar(200)
+
+  factProductos     FactProducto[]
+
+  @@map("dim_categoria")
+  @@schema("dw")
+}
+
+model DimTiempo {
+  id_tiempo     Int      @id @default(autoincrement()) @map("id_tiempo")
+  fecha_completa DateTime @unique @db.Date
+  anio          Int
+  mes           Int
+  dia           Int
+  trimestre     Int
+  nombre_mes    String   @db.VarChar(20)
+
+  factProductos  FactProducto[]
+
+  @@map("dim_tiempo")
+  @@schema("dw")
+}
+
+model DimMoneda {
+  id_moneda     Int     @id @default(autoincrement()) @map("id_moneda")
+  codigo_moneda String  @unique @db.Char(3)
+  nombre_moneda String? @db.VarChar(50)
+  simbolo       String? @db.VarChar(5)
+
+  factProductos  FactProducto[]
+
+  @@map("dim_moneda")
+  @@schema("dw")
+}
+
+model DimCalificacion {
+  id_calificacion Int    @id @default(autoincrement()) @map("id_calificacion")
+  nivel           String @unique @db.VarChar(10)
+  valor_numerico  Int
+
+  factProductos    FactProducto[]
+
+  @@map("dim_calificacion")
+  @@schema("dw")
+}
+
+model DimGenero {
+  id_genero     Int     @id @default(autoincrement()) @map("id_genero")
+  nombre_genero String  @unique @db.VarChar(20)
+  abreviatura   String? @db.Char(1)
+
+  factEncuestaConsumo  FactEncuestaConsumo[]
+
+  @@map("dim_genero")
+  @@schema("dw")
+}
+
+model FactProducto {
+  id_hecho        Int      @id @default(autoincrement()) @map("id_hecho")
+  id_producto     Int      @map("id_producto")
+  id_fuente       Int      @map("id_fuente")
+  id_categoria    Int      @map("id_categoria")
+  id_tiempo       Int      @map("id_tiempo")
+  id_moneda       Int      @map("id_moneda")
+  id_calificacion Int?     @map("id_calificacion")
+  precio_usd      Decimal? @db.Decimal(12, 2)
+  precio_raw      String?  @db.VarChar(50)
+  disponibilidad  String?  @db.VarChar(20)
+
+  producto      DimProducto      @relation(fields: [id_producto], references: [id_producto])
+  fuente        DimFuente        @relation(fields: [id_fuente], references: [id_fuente])
+  categoria     DimCategoria     @relation(fields: [id_categoria], references: [id_categoria])
+  tiempo        DimTiempo        @relation(fields: [id_tiempo], references: [id_tiempo])
+  moneda        DimMoneda        @relation(fields: [id_moneda], references: [id_moneda])
+  calificacion  DimCalificacion? @relation(fields: [id_calificacion], references: [id_calificacion])
+
+  @@index([id_fuente])
+  @@index([id_categoria])
+  @@index([id_tiempo])
+  @@index([precio_usd])
+  @@map("fact_productos")
+  @@schema("dw")
+}
+
+model FactEncuestaConsumo {
+  id_hecho              Int     @id @default(autoincrement()) @map("id_hecho")
+  id_genero             Int     @map("id_genero")
+  id_sitio_preferido    Int     @map("id_sitio_preferido")
+  edad                  Int?
+  frecuencia_compra     String? @db.VarChar(20)
+  gasto_promedio_mensual String? @db.VarChar(20)
+  motivo_compra         String? @db.VarChar(200)
+
+  genero     DimGenero @relation(fields: [id_genero], references: [id_genero])
+  sitioPref  DimFuente @relation(fields: [id_sitio_preferido], references: [id_fuente])
+
+  @@index([id_genero])
+  @@index([id_sitio_preferido])
+  @@map("fact_encuesta_consumo")
+  @@schema("dw")
 }
 
 // ─── Fase 1a — Modelo Operacional ──────────────────────────────────────────
@@ -168,6 +322,7 @@ enum SourceStatus {
   active
   error
 
+  @@schema("public")
   @@map("source_status")
 }
 
@@ -184,6 +339,7 @@ model Source {
   categories CategorySourceMapping[]
   rawCaptures RawCapture[]
 
+  @@schema("public")
   @@map("sources")
 }
 
@@ -201,6 +357,7 @@ model Category {
 
   @@index([parentId])
   @@index([path])
+  @@schema("public")
   @@map("categories")
 }
 
@@ -213,6 +370,7 @@ model CategorySourceMapping {
   source   Source   @relation(fields: [sourceId], references: [id], onDelete: Cascade)
 
   @@id([categoryId, sourceId])
+  @@schema("public")
   @@map("category_source_mappings")
 }
 
@@ -224,6 +382,7 @@ model Brand {
   updatedAt DateTime @updatedAt
 
   @@index([aliases], type: Gin)
+  @@schema("public")
   @@map("brands")
 }
 
@@ -237,5 +396,6 @@ model RawCapture {
 
   @@id([offerId, sourceId])
   @@index([capturedAt])
+  @@schema("public")
   @@map("raw_captures")
 }

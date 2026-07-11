@@ -18,13 +18,17 @@
     "@angular/platform-browser": "^22.0.0",
     "@angular/router": "^22.0.0",
     "@web-scraping/contracts": "workspace:*",
+    "apexcharts": "^5.16.0",
+    "ng-apexcharts": "^2.4.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },
   "devDependencies": {
+    "@analogjs/vite-plugin-angular": "^2.6.2",
     "@angular/build": "^22.0.1",
     "@angular/cli": "^22.0.1",
     "@angular/compiler-cli": "^22.0.0",
+    "@angular/localize": "^22.0.5",
     "@types/chrome": "^0.0.260",
     "@types/node": "^24.13.2",
     "jsdom": "^28.0.0",

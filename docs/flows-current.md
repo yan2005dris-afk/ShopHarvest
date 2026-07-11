@@ -4,7 +4,7 @@ Estado después de los PRs mergeados/aplicados:
 - ✅ **PR #2 merged** (cleanup batch 4-6: JWT auth global, scraping-jobs removal, popup launcher refactor, scraping-jobs migrated, JWT stragegy, etc.)
 - ⏳ **PR #3, #4, #6** abiertos (ETL worker integration, stacked-to-develop)
 - ✅ **PR #5 merged** (CodeRabbit fixes al cleanup)
-- 🔌 **Pipeline legacy** en `/pipeline/` sigue standalone (no conectado al ETL worker — decisión explícita)
+- 🔌 **Pipeline legacy** en `/backend/pipeline/` sigue standalone (no conectado al ETL worker — decisión explícita)
 
 Leyenda: `✅ listo` · `⏳ pendiente merge` · `🔌 standalone` · `🛠 planificado`
 
@@ -44,7 +44,7 @@ flowchart TB
         EtlTbl[("EtlRun<br/>EtlProduct<br/>QualityMetric")]
     end
 
-    subgraph Legacy["🔌 pipeline/ (standalone, separate)"]
+    subgraph Legacy["🔌 backend/pipeline/ (standalone, separate)"]
         PipelineSc["📜 4 scrapers + quality<br/>(npm run pipeline)"]
         StagingFs[("staging/*.json")]
     end
@@ -159,7 +159,7 @@ CodeRabbit fixes aplicados en este flujo:
    ↓
 📖 worker/src/jobs/aliexpress.job.ts → scrapeBooks()
    ↓ cross-package import
-📜 pipeline/scripts/scraping/aliexpress.ts (Playwright, books.toscrape.com)
+📜 backend/pipeline/scripts/scraping/aliexpress.ts (Playwright, books.toscrape.com)
    ↓ returns ScrapedProduct[]
 🛠 worker/src/jobs/run-pipeline.ts
    ↓ $transaction {
@@ -209,18 +209,18 @@ CodeRabbit fixes aplicados en este flujo:
 ### 6. 🔌 Pipeline legacy (standalone, sin conexión al ETL worker)
 
 ```
-📜 pipeline/scripts/scraping/{mercadolibre,aliexpress,temu,shein}.ts
+📜 backend/pipeline/scripts/scraping/{mercadolibre,aliexpress,temu,shein}.ts
    ↓ (Playwright, 4 sitios)
-📜 pipeline/scripts/quality/quality_checks.ts
+📜 backend/pipeline/scripts/quality/quality_checks.ts
    ↓ 7 quality controls
-📜 pipeline/scripts/staging/run_all.ts
+📜 backend/pipeline/scripts/staging/run_all.ts
    ↓ writes JSON
-📂 pipeline/staging/{all_products,stg_encuesta,all_products_clean,stg_encuesta_clean,quality_report}.json
+📂 backend/pipeline/staging/{all_products,stg_encuesta,all_products_clean,stg_encuesta_clean,quality_report}.json
    ↓ (NO automatic connection)
 🛠 import script (TODO: follow-up PR per design)
 ```
 
-**Decisión**: el ETL worker (flujo 3) usa SOLO aliexpress → books.toscrape.com para v1 MVP. Los otros 3 scrapers siguen corriendo standalone en `pipeline/` como hasta ahora. Decisión registrada en `sdd/etl-integration-strategy/proposal`.
+**Decisión**: el ETL worker (flujo 3) usa SOLO aliexpress → books.toscrape.com para v1 MVP. Los otros 3 scrapers siguen corriendo standalone en `backend/pipeline/` como hasta ahora. Decisión registrada en `sdd/etl-integration-strategy/proposal`.
 
 ---
 
@@ -242,7 +242,7 @@ CodeRabbit fixes aplicados en este flujo:
 - 🛠 Los 7 quality controls completos (v1 solo tiene completion + uniqueness check)
 - 🛠 Angular admin panel con badge estado + botón "Sincronizar Ahora" + métricas + bitácora
 - 🛠 Manual trigger desde la UI
-- 🛠 Import script del JSON histórico de `pipeline/staging/*.json`
+- 🛠 Import script del JSON histórico de `backend/pipeline/staging/*.json`
 - 🛠 Stronger healthcheck (heartbeat file en lugar de `node -e "console.log('ok')"`)
 - 🛠 Persistir `durationMs` en DB o actualizar spec NFR-04
 - 🛠 Fix pre-existente: `frontend/theme.service.ts:16` accede a `localStorage` sin mock en test env
