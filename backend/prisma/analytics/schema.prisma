@@ -1,13 +1,17 @@
 // ─── Prisma Schema — ANALYTICS (DW) database ──────────────────────────────
 // Split from the original single-database schema (Fase 0, docs/PLAN-Fase0-split-bases.md):
-// this is a physically separate Postgres instance (scraper-postgres-dw) that
-// only holds the star-schema models. No multiSchema needed — this database's
-// default `public` schema IS the DW; @@map keeps the original snake_case table
-// names from the manual E4 SQL load.
+// this is a physically separate Postgres instance (scraper-postgres-dw).
 //
-// IMPORTANT: for the tables that already have data loaded manually (E4), do
-// NOT run `prisma migrate dev` destructively — baseline first (see
-// docs/PLAN-Fase0-split-bases.md, Paso 5).
+// Cambio SDD: fix-analytics-db-wiring. The analytics DB now physically owns
+// a `dw` schema namespace (not `public`) so it mirrors the `dw.`-prefixed
+// raw SQL that analytics.service.ts / analytics-query.service.ts already
+// use via $queryRawUnsafe. Every model carries an explicit @@schema("dw") —
+// Prisma multiSchema GA requires no model live in an implicit default
+// schema once `schemas` is set. @@map keeps the original snake_case table
+// names from the E4 DDL.
+//
+// This database starts EMPTY — no data-copy from the old operational `dw`
+// snapshot (product decision, see openspec/changes/fix-analytics-db-wiring).
 
 generator client {
   provider = "prisma-client-js"
@@ -16,6 +20,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  schemas  = ["dw"]
 }
 
 model DimProducto {
@@ -27,6 +32,7 @@ model DimProducto {
   factProductos   FactProducto[]
 
   @@map("dim_producto")
+  @@schema("dw")
 }
 
 model DimFuente {
@@ -39,6 +45,7 @@ model DimFuente {
   factEncuestaConsumo  FactEncuestaConsumo[]
 
   @@map("dim_fuente")
+  @@schema("dw")
 }
 
 model DimCategoria {
@@ -49,6 +56,7 @@ model DimCategoria {
   factProductos     FactProducto[]
 
   @@map("dim_categoria")
+  @@schema("dw")
 }
 
 model DimTiempo {
@@ -63,6 +71,7 @@ model DimTiempo {
   factProductos  FactProducto[]
 
   @@map("dim_tiempo")
+  @@schema("dw")
 }
 
 model DimMoneda {
@@ -74,6 +83,7 @@ model DimMoneda {
   factProductos  FactProducto[]
 
   @@map("dim_moneda")
+  @@schema("dw")
 }
 
 model DimCalificacion {
@@ -84,6 +94,7 @@ model DimCalificacion {
   factProductos    FactProducto[]
 
   @@map("dim_calificacion")
+  @@schema("dw")
 }
 
 model DimGenero {
@@ -94,6 +105,7 @@ model DimGenero {
   factEncuestaConsumo  FactEncuestaConsumo[]
 
   @@map("dim_genero")
+  @@schema("dw")
 }
 
 model FactProducto {
@@ -120,6 +132,7 @@ model FactProducto {
   @@index([id_tiempo])
   @@index([precio_usd])
   @@map("fact_productos")
+  @@schema("dw")
 }
 
 model FactEncuestaConsumo {
@@ -137,4 +150,5 @@ model FactEncuestaConsumo {
   @@index([id_genero])
   @@index([id_sitio_preferido])
   @@map("fact_encuesta_consumo")
+  @@schema("dw")
 }
