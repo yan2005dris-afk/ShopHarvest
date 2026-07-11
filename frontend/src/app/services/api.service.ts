@@ -2,7 +2,8 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import type { Observable } from 'rxjs';
 import type {
-  PriceHistoryResponseDto,
+  OfferResponseDto,
+  PriceObservationResponseDto,
   ProductResponseDto,
 } from '@web-scraping/contracts/products';
 import type {
@@ -13,11 +14,16 @@ import type {
 
 // ─── Aliases — keep the existing call-site names so consumers don't
 // have to change. The wire shape is owned by `@web-scraping/contracts`.
+//
+// `product-offer-split`: `Product` shrinks to canonical fields + `offers[]`
+// (price/url/externalId moved onto `Offer`). `PriceHistory` is replaced by
+// `PriceObservation`, keyed by `offerId` instead of `productId`.
 
 export type DomainRule = DomainResponseDto;
 export type FieldMapping = FieldMappingDto;
 export type Product = ProductResponseDto;
-export type PriceHistory = PriceHistoryResponseDto;
+export type Offer = OfferResponseDto;
+export type PriceObservation = PriceObservationResponseDto;
 
 // ─── ApiService ─────────────────────────────────────────────
 
@@ -64,11 +70,11 @@ export class ApiService {
     return this.http.get<Product>(`${this.baseUrl}/products/${id}`);
   }
 
-  getPriceHistory(productId: string, from?: string, to?: string): Observable<PriceHistory[]> {
+  getPriceHistory(productId: string, from?: string, to?: string): Observable<PriceObservation[]> {
     const params: Record<string, string> = {};
     if (from) params['from'] = from;
     if (to) params['to'] = to;
-    return this.http.get<PriceHistory[]>(`${this.baseUrl}/products/${productId}/history`, {
+    return this.http.get<PriceObservation[]>(`${this.baseUrl}/products/${productId}/history`, {
       params,
     });
   }

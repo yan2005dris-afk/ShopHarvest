@@ -80,10 +80,15 @@
             }
             <div class="prd-info">
               <h3 class="prd-title">{{ product.title }}</h3>
-              <div class="prd-meta">
-                <span class="prd-price">{{ product.currency }} {{ product.price }}</span>
-              </div>
-              <p class="prd-date">{{ product.extractedAt | date:'MMM d, y' }}</p>
+              @if (primaryOffer(product); as offer) {
+                <div class="prd-meta">
+                  <span class="prd-price">{{ offer.currency }} {{ offer.price }}</span>
+                  @if (product.offers.length > 1) {
+                    <span class="prd-offer-count">+{{ product.offers.length - 1 }} more offer(s)</span>
+                  }
+                </div>
+                <p class="prd-date">{{ offer.extractedAt | date:'MMM d, y' }}</p>
+              }
             </div>
             <div class="prd-chevron" [class.prd-chevron--open]="selectedProduct?.id === product.id">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -95,6 +100,26 @@
           <!-- Expanded detail -->
           @if (selectedProduct?.id === product.id) {
             <div class="prd-detail">
+              <h4 class="prd-detail-title">Offers</h4>
+              <table class="history-table">
+                <thead>
+                  <tr>
+                    <th>Source</th>
+                    <th>Price</th>
+                    <th>URL</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (offer of product.offers; track offer.id) {
+                    <tr class="prd-offer-row">
+                      <td>{{ offer.sourceId }}</td>
+                      <td class="price-cell">{{ offer.price | currency:offer.currency:'symbol':'1.2-2' }}</td>
+                      <td><a [href]="offer.url" target="_blank" rel="noopener">{{ offer.url }}</a></td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+
               <h4 class="prd-detail-title">Price History</h4>
 
               @if (priceHistory.length > 0) {
@@ -102,24 +127,31 @@
                   <canvas id="price-chart" width="600" height="240"></canvas>
                 </div>
 
-                <table class="history-table">
-                  <thead>
-                    <tr>
-                      <th>Date</th>
-                      <th>Price</th>
-                      <th>Currency</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (entry of priceHistory; track entry.id) {
-                      <tr>
-                        <td>{{ entry.capturedAt | date:'medium' }}</td>
-                        <td class="price-cell">{{ entry.price | currency:entry.currency:'symbol':'1.2-2' }}</td>
-                        <td>{{ entry.currency }}</td>
-                      </tr>
-                    }
-                  </tbody>
-                </table>
+                @for (offer of product.offers; track offer.id) {
+                  @if (historyForOffer(offer.id).length > 0) {
+                    <div class="prd-history-group">
+                      <p class="prd-history-offer-label">{{ offer.url }}</p>
+                      <table class="history-table">
+                        <thead>
+                          <tr>
+                            <th>Date</th>
+                            <th>Price</th>
+                            <th>Currency</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          @for (entry of historyForOffer(offer.id); track entry.id) {
+                            <tr>
+                              <td>{{ entry.observedAt | date:'medium' }}</td>
+                              <td class="price-cell">{{ entry.price | currency:entry.currency:'symbol':'1.2-2' }}</td>
+                              <td>{{ entry.currency }}</td>
+                            </tr>
+                          }
+                        </tbody>
+                      </table>
+                    </div>
+                  }
+                }
               } @else {
                 <p class="no-history">No price history available yet.</p>
               }
