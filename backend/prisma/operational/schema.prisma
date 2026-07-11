@@ -115,9 +115,12 @@ model User {
 }
 
 // ─── ETL integration (change: etl-integration-strategy, PR 1) ──────────────
-// The ETL worker process writes run history, scraped products, and quality
-// metrics here. Idempotency is enforced by the @@unique([source, sourceId])
-// constraint on EtlProduct — re-running the scraper upserts by composite key.
+// EtlRun tracks run history for the pipeline; QualityMetric its quality
+// checks. EtlProduct (the standalone `worker/` package's per-row scrape
+// persistence) was removed in `chore/remove-etl-product`: the `worker/`
+// package that wrote to it was deleted in PR #11 (bi-dashboard-analytics)
+// in favor of RawCapture + staging + PipelineModule, leaving EtlProduct with
+// zero code references.
 
 enum EtlRunStatus {
   RUNNING
@@ -135,29 +138,9 @@ model EtlRun {
   rowsScraped   Int           @default(0)
   rowsPersisted Int           @default(0)
   errorSummary  String?
-  etlProducts   EtlProduct[]
   qualityMetric QualityMetric?
 
   @@index([status, startedAt(sort: Desc)])
-  @@schema("public")
-}
-
-model EtlProduct {
-  id           String   @id @default(uuid()) @db.Uuid
-  etlRunId     String   @db.Uuid
-  etlRun       EtlRun   @relation(fields: [etlRunId], references: [id])
-  source       String
-  sourceId     String
-  title        String
-  price        Decimal? @db.Decimal(12, 2)
-  currency     String   @default("GBP")
-  availability String?
-  rawJson      Json
-  scrapedAt    DateTime
-
-  @@unique([source, sourceId])
-  @@index([etlRunId])
-  @@index([sourceId])
   @@schema("public")
 }
 
