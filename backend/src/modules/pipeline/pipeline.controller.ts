@@ -22,19 +22,21 @@ import { PipelineService } from './pipeline.service';
 /**
  * PipelineController — REST surface for the ETL orchestrator.
  *
- * All endpoints are `@Public()`: the BI dashboard needs to trigger
- * refreshes and individual scrapes without a JWT (matches the
- * analytics surface's "URL pública" decision in PLAN §2.3).
+ * Only `GET /sources` is `@Public()`. The mutation/execute endpoints
+ * (`scrape/:source`, `staging`, `load-dw`, `run-all`) are destructive
+ * or resource-intensive (e.g. `load-dw` with `truncateFirst: true`
+ * wipes `dw.*`; `run-all` fans out every scraper) and are never
+ * called by the dashboard frontend — they require the existing JWT
+ * auth (CodeRabbit finding, PR #11).
  *
  * Routes (under `/api/pipeline/`):
- *   - GET  /sources         → list available PipelineSource enum values
- *   - POST /scrape/:source  → run one scraper (body: SourceConfig)
- *   - POST /staging         → run staging
- *   - POST /load-dw         → run DW loader
- *   - POST /run-all         → full pipeline orchestration
+ *   - GET  /sources         → list available PipelineSource enum values (public)
+ *   - POST /scrape/:source  → run one scraper (body: SourceConfig) (auth required)
+ *   - POST /staging         → run staging (auth required)
+ *   - POST /load-dw         → run DW loader (auth required)
+ *   - POST /run-all         → full pipeline orchestration (auth required)
  */
 @ApiTags('Pipeline')
-@Public()
 @Controller('pipeline')
 export class PipelineController {
   constructor(private readonly pipelineService: PipelineService) {}
@@ -44,6 +46,7 @@ export class PipelineController {
       'Lista las 7 fuentes disponibles para el pipeline ETL (PipelineSource enum).',
   })
   @ApiResponse({ status: 200, type: String, isArray: true })
+  @Public()
   @Get('sources')
   getSources(): PipelineSource[] {
     return this.pipelineService.getAvailableSources();

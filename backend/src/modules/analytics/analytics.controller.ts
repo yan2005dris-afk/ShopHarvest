@@ -1,16 +1,5 @@
-import {
-  Controller,
-  Get,
-  Param,
-  Post,
-  Body,
-  HttpCode,
-} from '@nestjs/common';
-import {
-  ApiOperation,
-  ApiResponse,
-  ApiTags,
-} from '@nestjs/swagger';
+import { Controller, Get, Param, Post, Body, HttpCode } from '@nestjs/common';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ErrorResponseDto } from '@web-scraping/contracts/errors';
 import {
   AllKpisResponseDto,
@@ -32,12 +21,13 @@ import { DwLoaderService } from './dw-loader.service';
 /**
  * AnalyticsController — read-only BI surface.
  *
- * 12 endpoints under `/api/analytics/*`. ALL marked `@Public()` because
- * the dashboard is required to be reachable without a JWT (PLAN §2.3
- * decision row 1). Mutations (load + refresh-mv) are also `@Public()`
- * for now — they expose no PII, the loader writes to the `dw` schema
- * which is segregated from `public.*`, and the refresh endpoint only
- * re-aggregates a materialized view.
+ * The 10 GET endpoints are individually `@Public()` because the
+ * dashboard is required to be reachable without a JWT (PLAN §2.3
+ * decision row 1). The 2 mutation endpoints (`refresh-mv`, `load`)
+ * are NOT public — `load` in particular accepts `truncate_first`,
+ * which wipes `dw.fact_*`, and neither is ever called by the
+ * dashboard frontend (confirmed: no reference in frontend/src) — they
+ * require the existing JWT auth (CodeRabbit finding, PR #11).
  *
  * Pipe: each handler returns a JSON-serializable object directly.
  * BigInt/Decimal coercion happens in the service layer
@@ -45,7 +35,6 @@ import { DwLoaderService } from './dw-loader.service';
  */
 @ApiTags('Analytics')
 @Controller('analytics')
-@Public()
 export class AnalyticsController {
   constructor(
     private readonly analyticsService: AnalyticsService,
@@ -61,6 +50,7 @@ export class AnalyticsController {
   })
   @ApiResponse({ status: 200, type: AllKpisResponseDto })
   @ApiResponse({ status: 400, type: ErrorResponseDto })
+  @Public()
   @Get('kpis')
   async getAllKpis(): Promise<AllKpisResponseDto> {
     return this.analyticsService.getAllKpis();
@@ -68,7 +58,12 @@ export class AnalyticsController {
 
   @ApiOperation({ summary: 'Return one KPI view by URL slug.' })
   @ApiResponse({ status: 200, type: Object, isArray: true })
-  @ApiResponse({ status: 404, type: ErrorResponseDto, description: 'Unknown KPI name.' })
+  @ApiResponse({
+    status: 404,
+    type: ErrorResponseDto,
+    description: 'Unknown KPI name.',
+  })
+  @Public()
   @Get('kpis/:name')
   async getKpi(@Param('name') name: string): Promise<unknown[]> {
     return this.analyticsService.getKpi(name);
@@ -77,27 +72,33 @@ export class AnalyticsController {
   // ─── Analytical queries ─────────────────────────────────────
 
   @ApiOperation({
-    summary: 'Pregunta principal: comportamiento de precios por fuente × categoría (E4 §1.1).',
+    summary:
+      'Pregunta principal: comportamiento de precios por fuente × categoría (E4 §1.1).',
   })
   @ApiResponse({ status: 200, type: PreguntaPrincipalRowDto, isArray: true })
+  @Public()
   @Get('queries/main')
   async runPreguntaPrincipal(): Promise<PreguntaPrincipalRowDto[]> {
     return this.queryService.runPreguntaPrincipal();
   }
 
   @ApiOperation({
-    summary: 'Ranked products: MÁS ECONÓMICO + MÁS COSTOSO por fuente (E4 §1.2).',
+    summary:
+      'Ranked products: MÁS ECONÓMICO + MÁS COSTOSO por fuente (E4 §1.2).',
   })
   @ApiResponse({ status: 200, type: RankedProductRowDto, isArray: true })
+  @Public()
   @Get('queries/ranked-products')
   async runRankedProducts(): Promise<RankedProductRowDto[]> {
     return this.queryService.runRankedProducts();
   }
 
   @ApiOperation({
-    summary: 'Distribución por categoría (DENSE_RANK) — heatmap fuente × categoría (E4 §1.3).',
+    summary:
+      'Distribución por categoría (DENSE_RANK) — heatmap fuente × categoría (E4 §1.3).',
   })
   @ApiResponse({ status: 200, type: CategoryDistributionRowDto, isArray: true })
+  @Public()
   @Get('queries/category-distribution')
   async runCategoryDistribution(): Promise<CategoryDistributionRowDto[]> {
     return this.queryService.runCategoryDistribution();
@@ -107,6 +108,7 @@ export class AnalyticsController {
     summary: 'Percentiles p25/p50/p75/p90 de precio por fuente (E4 §2.1).',
   })
   @ApiResponse({ status: 200, type: PercentileRowDto, isArray: true })
+  @Public()
   @Get('queries/percentiles')
   async runPercentiles(): Promise<PercentileRowDto[]> {
     return this.queryService.runPercentileAnalysis();
@@ -116,15 +118,18 @@ export class AnalyticsController {
     summary: 'Detección de outliers por IQR (E4 §2.2).',
   })
   @ApiResponse({ status: 200, type: OutlierRowDto, isArray: true })
+  @Public()
   @Get('queries/outliers')
   async runOutliers(): Promise<OutlierRowDto[]> {
     return this.queryService.runOutlierDetection();
   }
 
   @ApiOperation({
-    summary: 'Encuesta de consumo: género × sitio preferido × frecuencia (E4 §1.4).',
+    summary:
+      'Encuesta de consumo: género × sitio preferido × frecuencia (E4 §1.4).',
   })
   @ApiResponse({ status: 200, type: EncuestaRowDto, isArray: true })
+  @Public()
   @Get('queries/encuesta')
   async runEncuesta(): Promise<EncuestaRowDto[]> {
     return this.queryService.runEncuestaAnalysis();
@@ -135,6 +140,7 @@ export class AnalyticsController {
       'Serie temporal limitada: precio promedio/min/max por trimestre × fuente, con snapshot banner (DimTiempo).',
   })
   @ApiResponse({ status: 200, type: TimeSeriesByQuarterResponseDto })
+  @Public()
   @Get('queries/time-series')
   async runTimeSeries(): Promise<TimeSeriesByQuarterResponseDto> {
     return this.queryService.runTimeSeriesByQuarter();
@@ -147,6 +153,7 @@ export class AnalyticsController {
       'Conteos por tabla (9) + snapshot banner (MIN/MAX fecha_completa en dw.dim_tiempo).',
   })
   @ApiResponse({ status: 200, type: DwSummaryResponseDto })
+  @Public()
   @Get('summary')
   async getSummary(): Promise<DwSummaryResponseDto> {
     return this.queryService.runDwSummary();
@@ -170,10 +177,13 @@ export class AnalyticsController {
   @ApiResponse({ status: 201, type: Object })
   @ApiResponse({ status: 400, type: ErrorResponseDto })
   @Post('load')
-  async load(
-    @Body() dto: LoadDwDto,
-  ): Promise<
-    | { productos_cargados: number; encuestas_cargadas: number; estado: 'completado'; tiempo_ms: number }
+  async load(@Body() dto: LoadDwDto): Promise<
+    | {
+        productos_cargados: number;
+        encuestas_cargadas: number;
+        estado: 'completado';
+        tiempo_ms: number;
+      }
     | { error: string; estado: 'fallido' }
   > {
     return this.dwLoader.run({ truncate_first: dto.truncate_first ?? false });
