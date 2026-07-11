@@ -4,17 +4,14 @@ import { ProductsController } from './products.controller';
 import { ProductsService } from './products.service';
 
 /**
- * Verifies that the products controller exposes the right routes after
- * Batch 2's C1 fix (rename `domain/:id` → `by-domain/:id` to avoid the
- * collision with `:id`).
+ * Verifies that the products controller exposes the right routes.
  *
- * We assert at three levels:
- *   1. The decorator metadata on the controller class lists both routes.
- *   2. The old `domain/:id` route handler is no longer present.
- *   3. The new `by-domain/:id` handler delegates to the service.
- *
- * Decorator-based route assertion catches the regression even without
- * spinning up the full Nest HTTP pipeline.
+ * `product-offer-split`:
+ *   - `POST /products/upsert` (dead, zero callers) is removed.
+ *   - `POST /products` (legacy admin `create`) is removed along with
+ *     `ProductsService.create()`.
+ *   - `/products/:id/history` now returns `PriceObservationResponseDto[]`
+ *     sourced across the product's `Offer`(s).
  */
 import 'reflect-metadata';
 import { PATH_METADATA, METHOD_METADATA } from '@nestjs/common/constants';
@@ -64,36 +61,33 @@ function getControllerRoutes(controller: object): RouteEntry[] {
   });
 }
 
-describe('ProductsController routes (Batch 2 / C1)', () => {
+function buildServiceMock() {
+  return {
+    findAllByDomain: jest.fn().mockResolvedValue([]),
+    findAll: jest.fn().mockResolvedValue([]),
+    findOne: jest.fn(),
+    getPriceHistory: jest.fn(),
+    ingestFromExtension: jest.fn(),
+    remove: jest.fn(),
+  };
+}
+
+describe('ProductsController routes', () => {
   let controllerInstance: ProductsController;
-  let serviceMock: { findAllByDomain: jest.Mock };
+  let serviceMock: ReturnType<typeof buildServiceMock>;
 
   beforeEach(async () => {
-    serviceMock = { findAllByDomain: jest.fn().mockResolvedValue([]) };
+    serviceMock = buildServiceMock();
 
     const moduleRef: TestingModule = await Test.createTestingModule({
       controllers: [ProductsController],
-      providers: [
-        {
-          provide: ProductsService,
-          useValue: {
-            findAllByDomain: serviceMock.findAllByDomain,
-            findAll: jest.fn(),
-            findOne: jest.fn(),
-            getPriceHistory: jest.fn(),
-            ingestFromExtension: jest.fn(),
-            upsert: jest.fn(),
-            create: jest.fn(),
-            remove: jest.fn(),
-          },
-        },
-      ],
+      providers: [{ provide: ProductsService, useValue: serviceMock }],
     }).compile();
 
     controllerInstance = moduleRef.get(ProductsController);
   });
 
-  it('exposes the new by-domain route (renamed from domain/:id)', () => {
+  it('exposes the by-domain route', () => {
     const routes = getControllerRoutes(controllerInstance);
     const byDomain = routes.find((r) => r.path.startsWith('by-domain/'));
     expect(byDomain).toBeDefined();
@@ -101,17 +95,25 @@ describe('ProductsController routes (Batch 2 / C1)', () => {
     expect(byDomain!.handlerName).toBe('findByDomain');
   });
 
-  it('does NOT expose the unreachable /products/domain/:id route', () => {
-    const routes = getControllerRoutes(controllerInstance);
-    const stale = routes.find((r) => r.path.startsWith('domain/'));
-    expect(stale).toBeUndefined();
-  });
-
   it('still exposes /products/:id (the canonical product-by-id lookup)', () => {
     const routes = getControllerRoutes(controllerInstance);
     const byId = routes.find((r) => r.path === ':id');
     expect(byId).toBeDefined();
     expect(byId!.method).toBe('GET');
+  });
+
+  it('does NOT expose POST /products/upsert (dead endpoint, zero callers)', () => {
+    const routes = getControllerRoutes(controllerInstance);
+    const upsert = routes.find(
+      (r) => r.path === 'upsert' && r.method === 'POST',
+    );
+    expect(upsert).toBeUndefined();
+  });
+
+  it('does NOT expose POST /products (legacy admin create removed with it)', () => {
+    const routes = getControllerRoutes(controllerInstance);
+    const create = routes.find((r) => r.path === '' && r.method === 'POST');
+    expect(create).toBeUndefined();
   });
 
   it('findByDomain delegates to service.findAllByDomain', async () => {
@@ -122,46 +124,18 @@ describe('ProductsController routes (Batch 2 / C1)', () => {
 });
 
 /**
- * 4R HIGH #2: integration tests for the controller's response shaping.
- *
- * The route-level spec above mocks `findAllByDomain: jest.fn()` and
- * never exercises the actual `plainToInstance(...)` call. These tests
- * stub `findOne` to return a Prisma-shaped row with a LIVE
- * `Prisma.Decimal` (the in-process shape, not the JSON-stringified
- * shape), then call the controller method directly and assert:
- *   1. The call does not throw (BLOCKER regression guard).
- *   2. The response shape matches `ProductResponseDto` (price is a
- *      number, leak surfaces stripped).
- *
- * If anyone removes `{ excludeExtraneousValues: true }` from
- * `plainToInstance(...)` in `products.controller.ts`, these tests go
- * RED on the very first `await controllerInstance.findOne(...)`.
+ * Integration-style tests for the controller's offer-level response
+ * shaping. Stubs the service to return Prisma-shaped rows with a LIVE
+ * `Prisma.Decimal` on nested `offers[]` (the in-process shape, not the
+ * JSON-stringified shape), then calls the controller method directly.
  */
-describe('ProductsController response shaping (4R HIGH #2)', () => {
+describe('ProductsController response shaping (offer-level, product-offer-split)', () => {
   let controllerInstance: ProductsController;
-  let productsServiceMock: {
-    findAllByDomain: jest.Mock;
-    findAll: jest.Mock;
-    findOne: jest.Mock;
-    getPriceHistory: jest.Mock;
-    ingestFromExtension: jest.Mock;
-    upsert: jest.Mock;
-    create: jest.Mock;
-    remove: jest.Mock;
-  };
+  let productsServiceMock: ReturnType<typeof buildServiceMock>;
   const { Decimal } = Prisma;
 
   beforeEach(async () => {
-    productsServiceMock = {
-      findAllByDomain: jest.fn().mockResolvedValue([]),
-      findAll: jest.fn(),
-      findOne: jest.fn(),
-      getPriceHistory: jest.fn(),
-      ingestFromExtension: jest.fn(),
-      upsert: jest.fn(),
-      create: jest.fn(),
-      remove: jest.fn(),
-    };
+    productsServiceMock = buildServiceMock();
     const moduleRef: TestingModule = await Test.createTestingModule({
       controllers: [ProductsController],
       providers: [{ provide: ProductsService, useValue: productsServiceMock }],
@@ -170,122 +144,103 @@ describe('ProductsController response shaping (4R HIGH #2)', () => {
     controllerInstance = moduleRef.get(ProductsController);
   });
 
-  it('findOne shapes a Prisma row with live Decimal + nested relations into a ProductResponseDto (no throw, no leak)', async () => {
-    // Stub findOne to return a row shaped exactly like a real Prisma
-    // response: live Decimal price + populated priceHistory[] + a
-    // joined domainRule relation. This is the BLOCKER scenario.
+  it('findOne shapes a Prisma row with a live-Decimal offers[] into a ProductResponseDto (no throw, no leak)', async () => {
     productsServiceMock.findOne.mockResolvedValue({
       id: 'p-int-1',
-      domainRuleId: 'r-1',
       title: 'Integration',
-      price: new Decimal('19.99'),
-      currency: 'USD',
-      productUrl: 'https://temu.com/x',
-      extractedAt: new Date('2026-01-01T00:00:00.000Z'),
+      description: null,
+      imageUrl: null,
+      categoryId: null,
+      brandId: null,
       createdAt: new Date('2026-01-01T00:00:00.000Z'),
       updatedAt: new Date('2026-01-01T00:00:00.000Z'),
-      priceHistory: [
+      offers: [
         {
-          id: 'h-1',
+          id: 'o-1',
           productId: 'p-int-1',
-          price: new Decimal('29.50'),
+          sourceId: 's-1',
+          domainRuleId: 'r-1',
+          url: 'https://temu.com/x',
+          price: new Decimal('19.99'),
           currency: 'USD',
-          capturedAt: new Date('2026-01-02T00:00:00.000Z'),
-          createdAt: new Date('2026-01-02T00:00:00.000Z'),
+          extractedAt: new Date('2026-01-01T00:00:00.000Z'),
+          // Leak surfaces that must be stripped by OfferResponseDto's whitelist:
+          rawData: { some: 'blob' },
         },
       ],
-      domainRule: {
-        id: 'r-1',
-        domain: 'temu.com',
-        name: 'Temu',
-      },
     });
 
-    // Must not throw — that was the production 500 BLOCKER.
+    // Must not throw — that was the original production 500 BLOCKER (now
+    // guarded for the nested offers[] relation instead of priceHistory[]).
     const dto = await controllerInstance.findOne('p-int-1');
 
-    // Price must be a number (Spec 2 REQ-DT-1 contract).
-    expect(typeof dto.price).toBe('number');
-    expect(dto.price).toBe(19.99);
-
-    // Whitelist must have stripped nested relations (4R CRITICAL #1).
-    expect(
-      (dto as unknown as Record<string, unknown>).priceHistory,
-    ).toBeUndefined();
-    expect(
-      (dto as unknown as Record<string, unknown>).domainRule,
-    ).toBeUndefined();
-
-    // Whitelisted identity fields survived.
     expect(dto.id).toBe('p-int-1');
     expect(dto.title).toBe('Integration');
-    expect(dto.currency).toBe('USD');
-    expect(dto.productUrl).toBe('https://temu.com/x');
+    expect(dto.offers).toHaveLength(1);
+    expect(typeof dto.offers[0].price).toBe('number');
+    expect(dto.offers[0].price).toBe(19.99);
+    expect(dto.offers[0].url).toBe('https://temu.com/x');
+    expect(
+      (dto.offers[0] as unknown as Record<string, unknown>).rawData,
+    ).toBeUndefined();
   });
 
   it('findAll maps every Prisma row through plainToInstance (list endpoint wrap)', async () => {
     productsServiceMock.findAll.mockResolvedValue([
       {
         id: 'p-list-1',
-        domainRuleId: 'r-1',
         title: 'List item 1',
-        price: new Decimal('9.99'),
-        currency: 'USD',
-        productUrl: 'https://temu.com/a',
-        extractedAt: new Date('2026-01-01T00:00:00.000Z'),
+        description: null,
+        imageUrl: null,
+        categoryId: null,
+        brandId: null,
         createdAt: new Date('2026-01-01T00:00:00.000Z'),
         updatedAt: new Date('2026-01-01T00:00:00.000Z'),
-        priceHistory: [],
-      },
-      {
-        id: 'p-list-2',
-        domainRuleId: 'r-1',
-        title: 'List item 2',
-        price: new Decimal('14.50'),
-        currency: 'USD',
-        productUrl: 'https://temu.com/b',
-        extractedAt: new Date('2026-01-01T00:00:00.000Z'),
-        createdAt: new Date('2026-01-01T00:00:00.000Z'),
-        updatedAt: new Date('2026-01-01T00:00:00.000Z'),
-        priceHistory: [],
+        offers: [
+          {
+            id: 'o-list-1',
+            productId: 'p-list-1',
+            sourceId: 's-1',
+            url: 'https://temu.com/a',
+            price: new Decimal('9.99'),
+            currency: 'USD',
+            extractedAt: new Date('2026-01-01T00:00:00.000Z'),
+          },
+        ],
       },
     ]);
 
     const dtos = await controllerInstance.findAll({});
 
-    expect(dtos).toHaveLength(2);
-    expect(typeof dtos[0].price).toBe('number');
-    expect(dtos[0].price).toBe(9.99);
-    expect(typeof dtos[1].price).toBe('number');
-    expect(dtos[1].price).toBe(14.5);
+    expect(dtos).toHaveLength(1);
+    expect(dtos[0].offers).toHaveLength(1);
+    expect(typeof dtos[0].offers[0].price).toBe('number');
+    expect(dtos[0].offers[0].price).toBe(9.99);
   });
 
-  it('getPriceHistory maps every entry through plainToInstance (4R CRITICAL #3)', async () => {
+  it('getPriceHistory maps every PriceObservation entry through plainToInstance', async () => {
     productsServiceMock.findOne.mockResolvedValue({
       id: 'p-hist-int-1',
-      domainRuleId: 'r-1',
       title: 'With history',
-      price: new Decimal('19.99'),
-      currency: 'USD',
-      productUrl: 'https://temu.com/x',
-      extractedAt: new Date('2026-01-01T00:00:00.000Z'),
+      description: null,
+      imageUrl: null,
+      categoryId: null,
+      brandId: null,
       createdAt: new Date('2026-01-01T00:00:00.000Z'),
       updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+      offers: [],
     });
 
     productsServiceMock.getPriceHistory.mockResolvedValue([
       {
-        id: 'h-int-1',
-        productId: 'p-hist-int-1',
+        id: 'po-int-1',
+        offerId: 'o-1',
         price: new Decimal('29.50'),
         currency: 'USD',
-        capturedAt: new Date('2026-01-02T00:00:00.000Z'),
+        observedAt: new Date('2026-01-02T00:00:00.000Z'),
         createdAt: new Date('2026-01-02T00:00:00.000Z'),
-        // Leak surface — joined `product` relation. Must be stripped.
-        product: {
-          id: 'p-hist-int-1',
-          title: 'Should not leak',
-        },
+        // Leak surface — joined `offer` relation. Must be stripped.
+        offer: { id: 'o-1', url: 'Should not leak' },
       },
     ]);
 
@@ -295,8 +250,8 @@ describe('ProductsController response shaping (4R HIGH #2)', () => {
     expect(typeof history[0].price).toBe('number');
     expect(history[0].price).toBe(29.5);
     expect(
-      (history[0] as unknown as Record<string, unknown>).product,
+      (history[0] as unknown as Record<string, unknown>).offer,
     ).toBeUndefined();
-    expect(history[0].productId).toBe('p-hist-int-1');
+    expect(history[0].offerId).toBe('o-1');
   });
 });

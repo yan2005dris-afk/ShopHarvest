@@ -2,7 +2,7 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { DatePipe, CurrencyPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { ApiService, Product, PriceHistory } from '../../services/api.service';
+import { ApiService, Product, Offer, PriceObservation } from '../../services/api.service';
 
 @Component({
   selector: 'app-products',
@@ -15,7 +15,7 @@ export class ProductsComponent implements OnInit {
   filteredProducts: Product[] = [];
   searchTerm = '';
   selectedProduct: Product | null = null;
-  priceHistory: PriceHistory[] = [];
+  priceHistory: PriceObservation[] = [];
   isLoading = true;
   error = '';
 
@@ -53,6 +53,16 @@ export class ProductsComponent implements OnInit {
     );
   }
 
+  /**
+   * `product-offer-split`: price/url/extractedAt live on `Offer`, not the
+   * flat `Product`. Convenience accessor for the card summary — with no
+   * cross-source dedup, most products carry exactly one offer, but this
+   * degrades gracefully to the first offer when there are several.
+   */
+  primaryOffer(product: Product): Offer | undefined {
+    return product.offers[0];
+  }
+
   selectProduct(product: Product): void {
     if (this.selectedProduct?.id === product.id) {
       this.selectedProduct = null;
@@ -64,7 +74,19 @@ export class ProductsComponent implements OnInit {
     this.loadPriceHistory(product.id);
   }
 
+  /**
+   * Price observations for one specific `Offer` within the selected
+   * product (spec: "attributable per Offer, not merged into one
+   * undifferentiated series").
+   */
+  historyForOffer(offerId: string): PriceObservation[] {
+    return this.priceHistory.filter((h) => h.offerId === offerId);
+  }
+
   private loadPriceHistory(productId: string): void {
+    // Route is unchanged (still keyed by productId); the response now
+    // aggregates PriceObservation rows across all of the product's
+    // Offer(s), each carrying its own `offerId`.
     this.apiService.getPriceHistory(productId).subscribe({
       next: (history) => {
         this.priceHistory = history;
@@ -98,9 +120,13 @@ export class ProductsComponent implements OnInit {
     const chartW = width - padding.left - padding.right;
     const chartH = height - padding.top - padding.bottom;
 
-    // Sort by date ascending for chart
+    // Sort by date ascending for chart. Merges observations across every
+    // Offer of the selected product into one visual series — with no
+    // cross-source dedup this is normally a single offer's series; the
+    // per-offer breakdown is still available via `historyForOffer()` in
+    // the table below.
     const sorted = [...this.priceHistory].sort(
-      (a, b) => new Date(a.capturedAt).getTime() - new Date(b.capturedAt).getTime(),
+      (a, b) => new Date(a.observedAt).getTime() - new Date(b.observedAt).getTime(),
     );
 
     const prices = sorted.map((h) => Number(h.price));

@@ -26,6 +26,16 @@ function buildPrismaStub() {
         return null;
       }),
     },
+    // Cambio SDD: product-offer-split — RawCapture.offerId is now a real FK
+    // to Offer. Simulate: offer exists if its id starts with 'off_'.
+    offer: {
+      findUnique: jest.fn(({ where }: { where: { id: string } }) => {
+        if (where.id.startsWith('off_')) {
+          return { id: where.id };
+        }
+        return null;
+      }),
+    },
     rawCapture: {
       upsert: jest.fn(
         ({
@@ -188,6 +198,16 @@ describe('RawCapturesService', () => {
         service.upsert({
           offerId: 'off_001',
           sourceId: 'nonexistent',
+          payload: {},
+        }),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('throws NotFoundException when offer does not exist (real FK, product-offer-split)', async () => {
+      await expect(
+        service.upsert({
+          offerId: 'nonexistent',
+          sourceId: 'src_001',
           payload: {},
         }),
       ).rejects.toThrow(NotFoundException);
