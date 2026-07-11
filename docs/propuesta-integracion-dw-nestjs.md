@@ -66,7 +66,7 @@ El Data Warehouse diseñado para el E4 introduce un nuevo esquema `dw` con:
 | `mv_resumen_precios` | `dw` | Vista materializada analítica |
 | `v_kpi_*` (5 vistas) | `dw` | KPIs como vistas lógicas |
 
-**Problema:** Hoy las tablas del DW existen solo como scripts SQL sueltos (`pipeline/scripts/dw/dw_schema.sql`). No están integradas al ecosistema NestJS/Prisma, lo que significa:
+**Problema:** Hoy las tablas del DW existen solo como scripts SQL sueltos (`backend/pipeline/scripts/dw/dw_schema.sql`). No están integradas al ecosistema NestJS/Prisma, lo que significa:
 
 - ❌ Sin tipos TypeScript generados para DW
 - ❌ Sin migraciones versionadas para DW
@@ -122,7 +122,7 @@ Integrar el Data Warehouse al backend NestJS existente para que:
          │                          │
          ▼                          ▼
 ┌──────────────────┐    ┌──────────────────────────┐
-│  PostgreSQL 16   │    │  /pipeline/staging/      │
+│  PostgreSQL 16   │    │  /backend/pipeline/staging/      │
 │  ┌─ public       │    │  ├── all_products_clean   │
 │  │  (operational)│    │  ├── stg_encuesta_clean   │
 │  ├─ dw           │    │  └── quality_report.json  │
@@ -131,7 +131,7 @@ Integrar el Data Warehouse al backend NestJS existente para que:
 └──────────────────┘               │ (carga ETL)
          ▲                         ▼
          │              ┌──────────────────────┐
-         └──────────────│  pipeline/scripts/dw │
+         └──────────────│  backend/pipeline/scripts/dw │
                         │  dw_load_staging.ts  │
                         └──────────────────────┘
 ```
@@ -911,13 +911,13 @@ export class DwLoaderService {
 psql -h localhost -p 5433 -U scraper -d scraperdb -c "CREATE SCHEMA IF NOT EXISTS dw;"
 
 # 2. Aplicar el DDL base del DW (tablas, índices, vistas)
-psql -h localhost -p 5433 -U scraper -d scraperdb -f pipeline/scripts/dw/dw_schema.sql
+psql -h localhost -p 5433 -U scraper -d scraperdb -f backend/pipeline/scripts/dw/dw_schema.sql
 
 # 3. Cargar datos iniciales desde staging
 cd pipeline && npx ts-node scripts/dw/dw_load_staging.ts
 
 # 4. Crear vistas analíticas
-psql -h localhost -p 5433 -U scraper -d scraperdb -f pipeline/scripts/dw/dw_analytical_queries.sql
+psql -h localhost -p 5433 -U scraper -d scraperdb -f backend/pipeline/scripts/dw/dw_analytical_queries.sql
 
 # 5. Integrar modelos en Prisma (editar schema.prisma)
 # 6. Generar cliente
@@ -1006,9 +1006,9 @@ El esfuerzo estimado es de **~4 días** para la implementación completa (Fases 
 - [Prisma Docs: Raw SQL](https://www.prisma.io/docs/orm/prisma-client/using-raw-sql) — `$queryRawUnsafe` y `$executeRawUnsafe`
 - [NestJS Docs: Modules](https://docs.nestjs.com/modules) — Estructura de módulos
 - [NestJS Docs: Scheduled Tasks](https://docs.nestjs.com/techniques/task-scheduling) — `@nestjs/schedule`
-- `pipeline/scripts/dw/dw_schema.sql` — DDL del modelo estrella
-- `pipeline/scripts/dw/dw_load_staging.ts` — Script de carga ETL original
-- `pipeline/scripts/dw/dw_analytical_queries.sql` — Consultas analíticas y KPIs
+- `backend/pipeline/scripts/dw/dw_schema.sql` — DDL del modelo estrella
+- `backend/pipeline/scripts/dw/dw_load_staging.ts` — Script de carga ETL original
+- `backend/pipeline/scripts/dw/dw_analytical_queries.sql` — Consultas analíticas y KPIs
 - `docs/Entregable4_DataWarehouse_Analitica.md` — Documento completo del E4
 
 ---

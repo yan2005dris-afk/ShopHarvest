@@ -6,8 +6,12 @@
  *   import { CreateDomainDto } from '@web-scraping/contracts/domains';
  *   import { ProductResponseDto } from '@web-scraping/contracts/products';
  *   import { ErrorResponseDto } from '@web-scraping/contracts/errors';
+ *   import { AllKpisResponseDto, LoadDwDto } from '@web-scraping/contracts/analytics';
+ *   import { IDwLoader, PipelineSource, DW_LOADER } from '@web-scraping/contracts/pipeline';
  */
 export * from './auth/index.js';
 export * from './domains/index.js';
 export * from './products/index.js';
 export * from './errors/index.js';
+export * from './analytics/index.js';
+export * from './pipeline/index.js';

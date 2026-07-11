@@ -20,11 +20,15 @@ FROM base AS installer
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc ./
 COPY backend/package.json ./backend/
 COPY frontend/package.json ./frontend/
+COPY packages/contracts/package.json ./packages/contracts/
 
 RUN pnpm install --frozen-lockfile
 
 # ─── Stage: Builder ───────────────────────────────────────────────────────────
 FROM installer AS builder
+
+COPY packages/contracts/ ./packages/contracts/
+RUN pnpm --filter @web-scraping/contracts run build
 
 COPY backend/ ./backend/
 

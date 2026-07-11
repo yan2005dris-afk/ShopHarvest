@@ -37,15 +37,27 @@
       "import": "./dist/errors/index.js",
       "require": "./dist-cjs/errors/index.js",
       "default": "./dist/errors/index.js"
+    },
+    "./analytics": {
+      "types": "./dist/analytics/index.d.ts",
+      "import": "./dist/analytics/index.js",
+      "require": "./dist-cjs/analytics/index.js",
+      "default": "./dist/analytics/index.js"
+    },
+    "./pipeline": {
+      "types": "./dist/pipeline/index.d.ts",
+      "import": "./dist/pipeline/index.js",
+      "require": "./dist-cjs/pipeline/index.js",
+      "default": "./dist/pipeline/index.js"
     }
   },
   "files": ["dist", "dist-cjs", "README.md"],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json && tsc -p tsconfig.build.cjs.json",
+    "build": "tsc -p tsconfig.build.json && tsc -p tsconfig.build.cjs.json && node -e \"require('fs').writeFileSync('dist-cjs/package.json', JSON.stringify({ type: 'commonjs' }))\"",
     "lint": "tsc --noEmit",
     "clean": "rm -rf dist dist-cjs",
     "test": "jest",
-    "prepare": "tsc -p tsconfig.build.json && tsc -p tsconfig.build.cjs.json"
+    "prepare": "node -e \"if (require('fs').existsSync('tsconfig.build.json')) require('child_process').execSync('pnpm run build', { stdio: 'inherit' })\""
   },
   "peerDependencies": {
     "@nestjs/swagger": "^11.0.0",
