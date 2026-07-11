@@ -20,3 +20,4 @@ allowBuilds:
   bcrypt: true
   'class-transformer': true
   'class-validator': true
+  '@scarf/scarf': true

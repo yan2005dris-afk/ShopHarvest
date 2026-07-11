@@ -41,11 +41,11 @@
   },
   "files": ["dist", "dist-cjs", "README.md"],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json && tsc -p tsconfig.build.cjs.json",
+    "build": "tsc -p tsconfig.build.json && tsc -p tsconfig.build.cjs.json && echo '{\"type\":\"commonjs\"}' > dist-cjs/package.json",
     "lint": "tsc --noEmit",
     "clean": "rm -rf dist dist-cjs",
     "test": "jest",
-    "prepare": "tsc -p tsconfig.build.json && tsc -p tsconfig.build.cjs.json"
+    "prepare": "tsc -p tsconfig.build.json && tsc -p tsconfig.build.cjs.json && echo '{\"type\":\"commonjs\"}' > dist-cjs/package.json"
   },
   "peerDependencies": {
     "@nestjs/swagger": "^11.0.0",

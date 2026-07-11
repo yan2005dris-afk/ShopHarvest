@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { Prisma } from '../../generated/operational';
+import { OperationalPrismaService } from '../../common/prisma/operational-prisma.service';
 import type {
   UpsertProductDto,
   IngestProductsDto,
@@ -11,7 +11,7 @@ import type { FieldMappingDto } from '@web-scraping/contracts/domains';
 export class ProductsService {
   private readonly logger = new Logger(ProductsService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: OperationalPrismaService) {}
 
   async findAll(includeHistory = true) {
     return this.prisma.product.findMany({

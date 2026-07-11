@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { plainToInstance } from 'class-transformer';
-import { Prisma } from '@prisma/client';
+import { Prisma } from '../../../generated/operational';
 import { ProductResponseDto } from '@web-scraping/contracts/products';
 import { PriceHistoryResponseDto } from '@web-scraping/contracts/products';
 

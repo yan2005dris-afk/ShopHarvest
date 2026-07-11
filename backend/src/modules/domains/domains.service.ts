@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma } from '../../generated/operational';
 import {
   CreateDomainDto,
   UpdateDomainDto,
 } from '@web-scraping/contracts/domains';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { OperationalPrismaService } from '../../common/prisma/operational-prisma.service';
 
 @Injectable()
 export class DomainsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: OperationalPrismaService) {}
 
   async findAll(host?: string) {
     return this.prisma.domainRule.findMany({

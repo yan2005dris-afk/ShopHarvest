@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { Logger } from '@nestjs/common';
 import { ProductsService } from './products.service';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { OperationalPrismaService } from '../../common/prisma/operational-prisma.service';
 
 /**
  * In-memory mock for the Prisma surface this service touches.
@@ -165,7 +165,7 @@ describe('ProductsService.ingestFromExtension', () => {
     const moduleRef: TestingModule = await Test.createTestingModule({
       providers: [
         ProductsService,
-        { provide: PrismaService, useValue: prisma },
+        { provide: OperationalPrismaService, useValue: prisma },
       ],
     }).compile();
 

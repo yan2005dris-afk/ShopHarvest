@@ -1,13 +1,18 @@
-// ─── Prisma Schema ───────────────────────────────────────────────────────
-// Single source of truth. Edit this file directly; do NOT split it across
-// multiple files (a previous attempt at a `schema/models/` directory was
-// removed in batch 2 — it was never wired into a generator and produced
-// drift between source and generated client types).
+// ─── Prisma Schema — OPERATIONAL database ─────────────────────────────────
+// Single source of truth for the operational (OLTP) database. Edit this file
+// directly; do NOT split it across multiple files (a previous attempt at a
+// `schema/models/` directory was removed in batch 2 — it was never wired into
+// a generator and produced drift between source and generated client types).
+//
+// Split from the original single-database schema (Fase 0, docs/PLAN-Fase0-split-bases.md):
+// this database only holds the `public` models. The `dw` (analytics/DW) models
+// moved to ../analytics/schema.prisma, a physically separate Postgres instance.
 
 // Generator & Datasource
 generator client {
   provider        = "prisma-client-js"
   previewFeatures = ["fullTextSearchPostgres"]
+  output          = "../../src/generated/operational"
 }
 
 datasource db {
