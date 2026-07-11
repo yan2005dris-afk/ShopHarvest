@@ -2,13 +2,16 @@ import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import * as bcrypt from 'bcryptjs';
 
-const connectionString = process.env.DATABASE_URL!;
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) {
+  throw new Error('DATABASE_URL is required for seeding');
+}
 const adapter = new PrismaPg({ connectionString });
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  const email = 'admin@example.com';
-  const password = 'adminpassword';
+  const email = process.env.SEED_ADMIN_EMAIL ?? 'admin@example.com';
+  const password = process.env.SEED_ADMIN_PASSWORD ?? 'adminpassword';
   const passwordHash = await bcrypt.hash(password, 10);
 
   await prisma.user.upsert({
@@ -21,9 +24,6 @@ async function main() {
   });
 
   console.log(`Default user seeded successfully.`);
-  console.log(`Credentials:`);
-  console.log(`  Email: ${email}`);
-  console.log(`  Password: ${password}`);
 }
 
 main()
