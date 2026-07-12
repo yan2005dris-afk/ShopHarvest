@@ -52,40 +52,46 @@ export class StagingProcessorService implements IStagingProcessor {
     private readonly operationalPrisma: OperationalPrismaService,
   ) {}
 
-  async extractRawPayloads() {
-    return this.operationalPrisma.rawCapture.findMany({
-      where: {
-        status: {
-          in: [RawCaptureStatus.UNPROCESSED, RawCaptureStatus.FAILED],
-        },
-        attempts: {
-          lt: 3,
-        },
+  async extractRawPayloads(source?: string) {
+    const where: any = {
+      status: {
+        in: [RawCaptureStatus.UNPROCESSED, RawCaptureStatus.FAILED],
       },
+      attempts: {
+        lt: 3,
+      },
+    };
+    if (source && source !== 'all') {
+      where.source = {
+        code: source,
+      };
+    }
+    return this.operationalPrisma.rawCapture.findMany({
+      where,
       include: {
         source: true,
       },
     });
   }
 
-  async run(opts?: StagingOptions): Promise<StagingResult> {
+  async run(opts?: StagingOptions & { source?: string }): Promise<StagingResult> {
     const start = Date.now();
     const rawDir = this.resolveDir(
       opts?.inputDir,
       'PIPELINE_RAW_DIR',
-      'pipeline/raw',
+      'backend/pipeline/raw',
     );
     const stagingDir = this.resolveDir(
       opts?.outputDir,
       'PIPELINE_STAGING_DIR',
-      'pipeline/staging',
+      'backend/pipeline/staging',
     );
     await fs.mkdir(stagingDir, { recursive: true });
 
     const rates = loadRates(rawDir);
 
     const allRecords: Record<string, unknown>[] = [];
-    const rawCaptures = await this.extractRawPayloads();
+    const rawCaptures = await this.extractRawPayloads(opts?.source);
 
     for (const rawCapture of rawCaptures) {
       const sourceCode = (rawCapture.source?.code || PipelineSource.MERCADOLIBRE) as PipelineSource;

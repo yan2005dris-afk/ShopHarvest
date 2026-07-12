@@ -113,7 +113,7 @@ export class DwLoaderService implements IDwLoader {
     try {
       const stagingDir =
         this.configService.get<string>('PIPELINE_STAGING_DIR') ??
-        'pipeline/staging';
+        'backend/pipeline/staging';
       const productos = await this.readJsonArray<ProductRow>(
         path.join(stagingDir, 'all_products.json'),
       );

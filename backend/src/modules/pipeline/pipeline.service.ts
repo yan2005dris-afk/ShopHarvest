@@ -90,6 +90,7 @@ export class PipelineService {
   async runStaging(opts?: {
     inputDir?: string;
     outputDir?: string;
+    source?: string;
   }): Promise<StagingResult> {
     return this.staging.run(opts);
   }

@@ -86,8 +86,8 @@ export class EtlSchedulerService implements OnModuleInit {
 
       if (action === 'local') {
         // Run only Staging & DW Load (process pending operational captures)
-        this.logger.log(`ETL run ${run.id}: running Staging...`);
-        const stagingResult = await this.pipelineService.runStaging();
+        this.logger.log(`ETL run ${run.id}: running Staging for source ${sourceParam}...`);
+        const stagingResult = await this.pipelineService.runStaging({ source: sourceParam });
         this.logger.log(`ETL run ${run.id}: running DW Loader...`);
         loadResult = await this.pipelineService.loadDw();
       } else {

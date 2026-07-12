@@ -22,18 +22,18 @@ import { Component, input, output, signal, HostListener } from '@angular/core';
               </select>
             </div>
 
-            @if (action() === 'full') {
-              <div class="form-group animate-fade-in">
-                <label for="modal-source">Fuente a Scraping</label>
-                <select id="modal-source" [value]="source()" (change)="onSourceChange($event)">
-                  <option value="all">Todas las fuentes</option>
-                  <option value="mercadolibre">MercadoLibre</option>
-                  <option value="aliexpress">AliExpress</option>
-                  <option value="temu">Temu</option>
-                  <option value="shein">SHEIN</option>
-                </select>
-              </div>
-            }
+            <div class="form-group animate-fade-in">
+              <label for="modal-source">
+                {{ action() === 'full' ? 'Fuente a Scraping' : 'Fuente a Procesar' }}
+              </label>
+              <select id="modal-source" [value]="source()" (change)="onSourceChange($event)">
+                <option value="all">Todas las fuentes</option>
+                <option value="mercadolibre">MercadoLibre</option>
+                <option value="aliexpress">AliExpress</option>
+                <option value="temu">Temu</option>
+                <option value="shein">SHEIN</option>
+              </select>
+            </div>
           </div>
           <div class="modal-footer">
             <button class="btn btn-secondary" (click)="onCancel()">{{ cancelText() }}</button>
