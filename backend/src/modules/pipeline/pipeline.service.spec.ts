@@ -28,6 +28,7 @@ import {
 import { DwLoaderAdapter } from './adapters/dw-loader.adapter';
 import { StagingProcessorAdapter } from './adapters/staging-processor.adapter';
 import { AnalyticsPrismaService } from '../../common/prisma/analytics-prisma.service';
+import { OperationalPrismaService } from '../../common/prisma/operational-prisma.service';
 import { BrowserFactoryService } from './scraping/browser-factory.service';
 import { DwLoaderService } from './etl/dw-loader.service';
 import { StagingProcessorService } from './etl/staging-processor.service';
@@ -257,6 +258,15 @@ describe('PipelineModule DI wiring', () => {
           useValue: {
             $executeRawUnsafe: jest.fn(),
             $queryRawUnsafe: jest.fn(),
+          },
+        },
+        {
+          provide: OperationalPrismaService,
+          useValue: {
+            rawCapture: {
+              findMany: jest.fn(),
+              update: jest.fn(),
+            },
           },
         },
         {
