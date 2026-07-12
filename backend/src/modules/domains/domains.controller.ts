@@ -7,19 +7,37 @@ import {
   Patch,
   Delete,
   Query,
+  NotFoundException,
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { plainToInstance } from 'class-transformer';
 import { ErrorResponseDto } from '@web-scraping/contracts/errors';
 import { DomainsService } from './domains.service';
 import {
   CreateDomainDto,
   UpdateDomainDto,
+  DomainResponseDto,
 } from '@web-scraping/contracts/domains';
 
 @ApiTags('Domains')
 @Controller('domains')
 export class DomainsController {
   constructor(private readonly domainsService: DomainsService) {}
+
+  private toDto<T extends object>(row: unknown): T {
+    return plainToInstance(DomainResponseDto, row, {
+      excludeExtraneousValues: true,
+    }) as T;
+  }
+
+  private mapCategory(row: Record<string, unknown>): Record<string, unknown> {
+    const category = row.category as { id: string; name: string } | null;
+    if (category) {
+      row['categoryName'] = category.name;
+    }
+    delete row.category;
+    return row;
+  }
 
   // `host` lets the extension look up the saved rule for the current page
   // (used by the batch-5 auto-replay scheduler).
@@ -33,7 +51,8 @@ export class DomainsController {
   })
   @Get()
   async findAll(@Query('host') host?: string) {
-    return this.domainsService.findAll(host);
+    const rows = await this.domainsService.findAll(host);
+    return rows.map((r) => this.toDto(this.mapCategory(r as unknown as Record<string, unknown>)));
   }
 
   @ApiOperation({ summary: 'Get a single domain rule by id' })
@@ -49,7 +68,9 @@ export class DomainsController {
   })
   @Get(':id')
   async findOne(@Param('id') id: string) {
-    return this.domainsService.findOne(id);
+    const row = await this.domainsService.findOne(id);
+    if (!row) throw new NotFoundException(`Domain rule with id ${id} not found`);
+    return this.toDto(this.mapCategory(row as unknown as Record<string, unknown>));
   }
 
   @ApiOperation({ summary: 'Create a new domain rule' })
@@ -65,7 +86,8 @@ export class DomainsController {
   })
   @Post()
   async create(@Body() dto: CreateDomainDto) {
-    return this.domainsService.create(dto);
+    const row = await this.domainsService.create(dto);
+    return this.toDto(row);
   }
 
   @ApiOperation({ summary: 'Update an existing domain rule' })
@@ -81,7 +103,8 @@ export class DomainsController {
   })
   @Patch(':id')
   async update(@Param('id') id: string, @Body() dto: UpdateDomainDto) {
-    return this.domainsService.update(id, dto);
+    const row = await this.domainsService.update(id, dto);
+    return this.toDto(row);
   }
 
   @ApiOperation({ summary: 'Delete a domain rule' })

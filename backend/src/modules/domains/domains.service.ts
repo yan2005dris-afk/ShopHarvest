@@ -13,17 +13,20 @@ export class DomainsService {
   async findAll(host?: string) {
     return this.prisma.domainRule.findMany({
       where: host ? { domain: host } : undefined,
-      // Cambio SDD: product-offer-split — DomainRule.products[] renamed to
-      // DomainRule.offers[] (flat Product model no longer FKs DomainRule
-      // directly; Offer does).
-      include: { offers: true },
+      include: {
+        offers: true,
+        category: { select: { id: true, name: true } },
+      },
     });
   }
 
   async findOne(id: string) {
     return this.prisma.domainRule.findUnique({
       where: { id },
-      include: { offers: true },
+      include: {
+        offers: true,
+        category: { select: { id: true, name: true } },
+      },
     });
   }
 
@@ -31,6 +34,7 @@ export class DomainsService {
     const data: Prisma.DomainRuleUncheckedCreateInput = {
       domain: dto.domain,
       name: dto.name,
+      ...(dto.categoryId !== undefined && { categoryId: dto.categoryId }),
       fieldMappings: dto.fieldMappings as unknown as Prisma.InputJsonValue,
       ...(dto.containerSelector !== undefined && {
         containerSelector: dto.containerSelector,
@@ -46,6 +50,7 @@ export class DomainsService {
     const data: Prisma.DomainRuleUncheckedUpdateInput = {
       ...(dto.domain !== undefined && { domain: dto.domain }),
       ...(dto.name !== undefined && { name: dto.name }),
+      ...(dto.categoryId !== undefined && { categoryId: dto.categoryId }),
       ...(dto.fieldMappings !== undefined && {
         fieldMappings: dto.fieldMappings as unknown as Prisma.InputJsonValue,
       }),

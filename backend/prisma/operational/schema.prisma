@@ -30,6 +30,9 @@ model DomainRule {
   domain          String   @unique
   name            String
 
+  categoryId      String?  @db.Uuid
+  category        Category? @relation(fields: [categoryId], references: [id])
+
   // Single source of truth for extraction rules. The visual mapper writes
   // here; the ingest endpoint reads from here. Legacy `selectorTitle/Price/
   // Image/Sku/Type` columns were dropped in batch 2.
@@ -220,7 +223,11 @@ model Source {
 
 model Category {
   id        String   @id @default(uuid()) @db.Uuid
-  name      String
+  name      String   @unique
+  description String?
+  defaultFieldMappings Json?
+
+  // Legacy tree fields kept for backward compat with CategorySourceMapping
   parentId  String?  @db.Uuid
   path      String   @default("")
   createdAt DateTime @default(now())
@@ -230,9 +237,8 @@ model Category {
   children   Category[]             @relation("CategoryTree")
   mappings   CategorySourceMapping[]
 
-  // Cambio SDD: product-offer-split — unpopulated back-relation for
-  // Product.categoryId (schema-only FK, no auto-classification).
   products   Product[]
+  domainRules DomainRule[]
 
   @@index([parentId])
   @@index([path])

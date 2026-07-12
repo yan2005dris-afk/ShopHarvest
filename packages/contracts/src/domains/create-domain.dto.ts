@@ -49,6 +49,15 @@ export class CreateDomainDto {
   @MaxLength(120)
   name!: string;
 
+  @ApiProperty({
+    required: false,
+    format: 'uuid',
+    description: 'Category UUID for organizing this domain.',
+  })
+  @IsOptional()
+  @IsString()
+  categoryId?: string;
+
   @ApiProperty({ type: [FieldMappingDto] })
   @IsArray()
   @ArrayNotEmpty({ message: 'fieldMappings must contain at least one mapping' })

@@ -125,6 +125,7 @@ export class ProductsService {
           data: {
             domain: dto.domain,
             name: dto.domain,
+            categoryId: dto.categoryId ?? null,
             fieldMappings: fieldMappings as unknown as Prisma.InputJsonValue,
             sourceId: source.id,
           },
@@ -142,8 +143,10 @@ export class ProductsService {
           incomingMappings !== null &&
           incomingMappings.length > 0;
         const needsSourceBackfill = domainRule.sourceId == null;
+        const needsCategoryBackfill =
+          dto.categoryId != null && domainRule.categoryId == null;
 
-        if (needsMappingsBackfill || needsSourceBackfill) {
+        if (needsMappingsBackfill || needsSourceBackfill || needsCategoryBackfill) {
           domainRule = await tx.domainRule.update({
             where: { id: domainRule.id },
             data: {
@@ -152,6 +155,7 @@ export class ProductsService {
                   incomingMappings as unknown as Prisma.InputJsonValue,
               }),
               ...(needsSourceBackfill && { sourceId: source.id }),
+              ...(needsCategoryBackfill && { categoryId: dto.categoryId }),
             },
           });
         }

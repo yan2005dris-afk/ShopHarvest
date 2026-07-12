@@ -40,6 +40,15 @@ export class UpdateDomainDto {
   @MaxLength(120)
   name?: string;
 
+  @ApiProperty({
+    required: false,
+    format: 'uuid',
+    description: 'Category UUID for organizing this domain.',
+  })
+  @IsOptional()
+  @IsString()
+  categoryId?: string;
+
   @ApiProperty({ required: false, type: [FieldMappingDto] })
   @IsOptional()
   @IsArray()
