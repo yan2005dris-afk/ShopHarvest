@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { VisualMapperComponent } from './pages/visual-mapper/visual-mapper.component';
+import { VisualMapperPage } from './pages/visual-mapper/visual-mapper.page';
 import { ProductsComponent } from './pages/products/products.component';
 import { ExtensionSetupComponent } from './pages/extension-setup/extension-setup.component';
 import { LoginComponent } from './pages/login/login.component';
@@ -7,7 +7,7 @@ import { authGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
-  { path: '', component: VisualMapperComponent, canActivate: [authGuard] },
+  { path: '', component: VisualMapperPage, canActivate: [authGuard] },
   { path: 'products', component: ProductsComponent, canActivate: [authGuard] },
   { path: 'setup', component: ExtensionSetupComponent, canActivate: [authGuard] },
   // Public BI dashboard — no `authGuard`. The whole analytics API is

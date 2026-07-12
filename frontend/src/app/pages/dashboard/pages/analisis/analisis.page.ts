@@ -2,56 +2,24 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  effect,
   inject,
-  signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import type {
-  ApexAxisChartSeries,
-  ApexNonAxisChartSeries,
-  ApexXAxis,
-} from 'ng-apexcharts';
-import { DashboardService } from '../../core/dashboard.service';
-import { KpiFiltersService } from '../../core/kpi-filters.service';
-import type {
-  OutlierRow,
-  PreguntaPrincipalRow,
-  Summary,
-  TimeSeriesRow,
-} from '../../core/dashboard.types';
-import { ChartHostComponent } from '../../shared/chart-host/chart-host.component';
-
-/** Linear-interpolation quantile over a pre-sorted numeric array. */
-function quantile(sorted: number[], q: number): number {
-  const pos = (sorted.length - 1) * q;
-  const base = Math.floor(pos);
-  const rest = pos - base;
-  return sorted[base + 1] !== undefined
-    ? sorted[base] + rest * (sorted[base + 1] - sorted[base])
-    : sorted[base];
-}
-
-/** ApexCharts boxPlot five-number summary: [min, Q1, median, Q3, max]. */
-function fiveNumberSummary(precios: number[]): [number, number, number, number, number] {
-  const sorted = [...precios].sort((a, b) => a - b);
-  return [
-    sorted[0],
-    quantile(sorted, 0.25),
-    quantile(sorted, 0.5),
-    quantile(sorted, 0.75),
-    sorted[sorted.length - 1],
-  ];
-}
+import { DashboardStore } from '../../core/dashboard.store';
+import { PrecioPromedioFuenteCategoriaChartComponent } from '../../shared/charts/precio-promedio-fuente-categoria.chart';
+import { SerieTemporalPreciosChartComponent } from '../../shared/charts/serie-temporal-precios.chart';
+import { DispersionOutliersChartComponent } from '../../shared/charts/dispersion-outliers.chart';
+import { BoxPlotPorFuenteChartComponent } from '../../shared/charts/boxplot-por-fuente.chart';
 
 /**
- * Analisis page — 3 chart families + reactive filter sidebar.
+ * Analisis page — 4 chart families + reactive filter sidebar.
  *
  * Family 1: grouped bar of AVG(precio_usd) by fuente × categoria
  *           (driven by `getPreguntaPrincipal`).
  * Family 2: line chart of precio promedio por trimestre × fuente with
  *           a prominent "snapshot de UN SOLO DÍA" banner.
- * Family 3: scatter + boxPlot using `getOutliers`.
+ * Family 3: scatter using `getOutliers`.
+ * Family 4: box plot por fuente.
  *
  * The filter inputs drive a `computed()` derivation that recomputes
  * every chart's series array whenever any filter changes. Because the
@@ -64,22 +32,28 @@ function fiveNumberSummary(precios: number[]): [number, number, number, number, 
   selector: 'app-analisis-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, ChartHostComponent],
+  imports: [
+    FormsModule,
+    PrecioPromedioFuenteCategoriaChartComponent,
+    SerieTemporalPreciosChartComponent,
+    DispersionOutliersChartComponent,
+    BoxPlotPorFuenteChartComponent,
+  ],
   template: `
     <header class="page-header">
       <h1>Análisis de precios</h1>
       <p class="page-sub">
-        3 familias de gráficos con filtros reactivos. Cambiá un filtro y los
+        4 familias de gráficos con filtros reactivos. Cambiá un filtro y los
         gráficos se recalculan automáticamente.
       </p>
     </header>
 
-    @if (showSnapshotBanner()) {
+    @if (store.isSnapshot()) {
       <div class="snapshot-banner" role="status">
         <span class="snapshot-banner__icon" aria-hidden="true">⚠️</span>
         <span>
           Serie temporal con <strong>UN SOLO DÍA</strong> de datos
-          ({{ snapshotDate() }}). La línea es representativa del snapshot, no de
+          ({{ store.snapshotDate() }}). La línea es representativa del snapshot, no de
           una tendencia temporal real.
         </span>
       </div>
@@ -148,22 +122,22 @@ function fiveNumberSummary(precios: number[]): [number, number, number, number, 
           <label class="filter-check">
             <input
               type="checkbox"
-              [ngModel]="filters.soloConDisponibilidad()"
-              (ngModelChange)="filters.soloConDisponibilidad.set($event)"
+              [ngModel]="store.filtros().soloConDisponibilidad"
+              (ngModelChange)="store.setSoloConDisponibilidad($event)"
             />
             <span>Solo con disponibilidad</span>
           </label>
           <label class="filter-check">
             <input
               type="checkbox"
-              [ngModel]="filters.soloConCalificacion()"
-              (ngModelChange)="filters.soloConCalificacion.set($event)"
+              [ngModel]="store.filtros().soloConCalificacion"
+              (ngModelChange)="store.setSoloConCalificacion($event)"
             />
             <span>Solo con calificación</span>
           </label>
         </fieldset>
 
-        <button type="button" class="reset-btn" (click)="filters.reset()">
+        <button type="button" class="reset-btn" (click)="store.resetFilters()">
           Limpiar filtros
         </button>
       </aside>
@@ -174,10 +148,8 @@ function fiveNumberSummary(precios: number[]): [number, number, number, number, 
             <h2>1 · Barras correlacionales</h2>
             <p>Precio promedio por fuente × categoría</p>
           </header>
-          <app-chart-host
-            [type]="'bar'"
-            [series]="mainSeries()"
-            [xaxis]="mainXaxis()"
+          <app-precio-promedio-fuente-categoria-chart
+            [rows]="store.filteredPreguntaPrincipal()"
             [colors]="palette"
           />
         </article>
@@ -187,11 +159,11 @@ function fiveNumberSummary(precios: number[]): [number, number, number, number, 
             <h2>2 · Serie temporal</h2>
             <p>Precio promedio por trimestre (snapshot)</p>
           </header>
-          <app-chart-host
-            [type]="'line'"
-            [series]="timeSeriesSeries()"
-            [xaxis]="timeSeriesXaxis()"
+          <app-serie-temporal-precios-chart
+            [rows]="store.filteredTimeSeries()"
             [colors]="palette"
+            [isSnapshot]="store.isSnapshot()"
+            [snapshotDate]="store.snapshotDate()"
           />
         </article>
 
@@ -200,10 +172,8 @@ function fiveNumberSummary(precios: number[]): [number, number, number, number, 
             <h2>3 · Dispersión de outliers (IQR)</h2>
             <p>Precio por producto coloreado por clasificación</p>
           </header>
-          <app-chart-host
-            [type]="'scatter'"
-            [series]="outlierSeries()"
-            [xaxis]="outlierXaxis()"
+          <app-dispersion-outliers-chart
+            [rows]="store.filteredOutliers()"
             [colors]="['#10b981', '#ef4444', '#f59e0b']"
           />
         </article>
@@ -213,10 +183,8 @@ function fiveNumberSummary(precios: number[]): [number, number, number, number, 
             <h2>4 · Box plot por fuente</h2>
             <p>Distribución del rango de precios detectado como outlier</p>
           </header>
-          <app-chart-host
-            [type]="'boxPlot'"
-            [series]="boxPlotSeries()"
-            [xaxis]="boxPlotXaxis()"
+          <app-boxplot-por-fuente-chart
+            [rows]="store.filteredOutliers()"
             [colors]="palette"
           />
         </article>
@@ -353,243 +321,46 @@ function fiveNumberSummary(precios: number[]): [number, number, number, number, 
   ],
 })
 export class AnalisisPage {
-  private readonly dashboardService = inject(DashboardService);
-  readonly filters = inject(KpiFiltersService);
+  readonly store = inject(DashboardStore);
 
   /** Distinct palette to keep chart 1 / 2 / 4 visually consistent. */
   readonly palette = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
-  // ─── Data signals ─────────────────────────────────────────
-
-  readonly preguntaPrincipal = signal<PreguntaPrincipalRow[]>([]);
-  readonly outliers = signal<OutlierRow[]>([]);
-  readonly timeSeries = signal<TimeSeriesRow[]>([]);
-  readonly summary = signal<Summary | null>(null);
-
-  // ─── Filtered derivations ─────────────────────────────────
-
-  /**
-   * Apply the active fuente/categoria/price range filters to the
-   * pregunta-principal rows. If `categoriaSeleccionada` is empty we
-   * show all categories.
-   */
-  readonly filteredPreguntaPrincipal = computed<PreguntaPrincipalRow[]>(() => {
-    const rows = this.preguntaPrincipal();
-    const fuentes = new Set(this.filters.fuenteSeleccionada());
-    const cats = new Set(this.filters.categoriaSeleccionada());
-    const [min, max] = this.filters.rangoPrecio();
-    return rows.filter((r) => {
-      if (fuentes.size && !fuentes.has(r.fuente)) return false;
-      if (cats.size && !cats.has(r.categoria)) return false;
-      if (r.precio_promedio_usd < min || r.precio_promedio_usd > max) return false;
-      return true;
-    });
-  });
-
-  readonly filteredOutliers = computed<OutlierRow[]>(() => {
-    const rows = this.outliers();
-    const fuentes = new Set(this.filters.fuenteSeleccionada());
-    const [min, max] = this.filters.rangoPrecio();
-    return rows.filter((r) => {
-      if (fuentes.size && !fuentes.has(r.fuente)) return false;
-      if (r.precio_usd < min || r.precio_usd > max) return false;
-      return true;
-    });
-  });
-
-  readonly filteredTimeSeries = computed<TimeSeriesRow[]>(() => {
-    const rows = this.timeSeries();
-    const fuentes = new Set(this.filters.fuenteSeleccionada());
-    return rows.filter((r) => !fuentes.size || fuentes.has(r.fuente));
-  });
-
-  // ─── Chart 1: Grouped bar (fuente × categoria) ─────────────
-
-  readonly mainSeries = computed<any[]>(() => {
-    const rows = this.filteredPreguntaPrincipal();
-    const categorias = Array.from(new Set(rows.map((r) => r.categoria))).sort();
-    const fuentes = Array.from(new Set(rows.map((r) => r.fuente))).sort();
-    return fuentes.map((fuente) => ({
-      name: fuente,
-      data: categorias.map(
-        (cat) =>
-          rows.find((r) => r.fuente === fuente && r.categoria === cat)?.precio_promedio_usd ?? 0,
-      ),
-    }));
-  });
-
-  readonly mainXaxis = computed<any>(() => {
-    const rows = this.filteredPreguntaPrincipal();
-    const categorias = Array.from(new Set(rows.map((r) => r.categoria))).sort();
-    return { categories: categorias };
-  });
-
-  // ─── Chart 2: Line (trimestre × fuente) ───────────────────
-
-  /**
-   * Ordered (anio, trimestre) quarter keys, deduped in first-seen
-   * order. `timeSeriesSeries` and `timeSeriesXaxis` both iterate this
-   * exact array so a fuente missing a quarter gets `null` at that
-   * position instead of shifting its later points onto the wrong
-   * x-axis label (CodeRabbit finding, PR #11).
-   */
-  private readonly timeSeriesQuarterKeys = computed<string[]>(() => {
-    const rows = this.filteredTimeSeries();
-    const seen = new Set<string>();
-    const keys: string[] = [];
-    for (const r of rows) {
-      const key = `${r.anio}-Q${r.trimestre}`;
-      if (!seen.has(key)) {
-        seen.add(key);
-        keys.push(key);
-      }
-    }
-    return keys;
-  });
-
-  readonly timeSeriesSeries = computed<any[]>(() => {
-    const rows = this.filteredTimeSeries();
-    const fuentes = Array.from(new Set(rows.map((r) => r.fuente))).sort();
-    const keys = this.timeSeriesQuarterKeys();
-    return fuentes.map((fuente) => ({
-      name: fuente,
-      data: keys.map((key) => {
-        const row = rows.find(
-          (r) => r.fuente === fuente && `${r.anio}-Q${r.trimestre}` === key,
-        );
-        return row ? row.precio_promedio : null;
-      }),
-    }));
-  });
-
-  readonly timeSeriesXaxis = computed<any>(() => {
-    const rows = this.filteredTimeSeries();
-    const keys = this.timeSeriesQuarterKeys();
-    const labels = new Map<string, string>();
-    for (const r of rows) {
-      const key = `${r.anio}-Q${r.trimestre}`;
-      if (!labels.has(key)) labels.set(key, `Q${r.trimestre} ${r.anio}`);
-    }
-    return { categories: keys.map((key) => labels.get(key)!) };
-  });
-
-  // ─── Chart 3: Scatter (precio vs id_hecho) ─────────────────
-
-  readonly outlierSeries = computed<any[]>(() => {
-    const rows = this.filteredOutliers();
-    const groups = new Map<string, { x: number; y: number }[]>();
-    rows.forEach((r, i) => {
-      const key = r.clasificacion || 'NORMAL';
-      if (!groups.has(key)) groups.set(key, []);
-      groups.get(key)!.push({ x: i, y: r.precio_usd });
-    });
-    return Array.from(groups.entries()).map(([name, data]) => ({ name, data }));
-  });
-
-  readonly outlierXaxis = computed<any>(() => ({
-    type: 'numeric',
-    title: { text: 'Producto (índice)' },
-    labels: { rotate: 0 },
-  }));
-
-  // ─── Chart 4: BoxPlot por fuente ──────────────────────────
-
-  readonly boxPlotSeries = computed<any[]>(() => {
-    const rows = this.filteredOutliers();
-    const fuentes = Array.from(new Set(rows.map((r) => r.fuente))).sort();
-    const data = fuentes.map((fuente) => {
-      const precios = rows.filter((r) => r.fuente === fuente).map((r) => r.precio_usd);
-      return {
-        x: fuente,
-        y: precios.length ? fiveNumberSummary(precios) : [0, 0, 0, 0, 0],
-      };
-    });
-    // ApexCharts boxPlot expects series: [{ data: [{x,y}, ...] }] — a
-    // flat array of points (the pre-fix shape here) is not a valid
-    // series array.
-    return [{ data }];
-  });
-
-  readonly boxPlotXaxis = computed<any>(() => ({
-    type: 'category',
-    categories: Array.from(
-      new Set(this.filteredOutliers().map((r) => r.fuente)),
-    ).sort(),
-  }));
-
   // ─── Sidebar filter helpers ───────────────────────────────
 
   readonly availableFuentes = computed<string[]>(() => {
-    const fromMain = this.preguntaPrincipal().map((r) => r.fuente);
-    const fromOutliers = this.outliers().map((r) => r.fuente);
-    const fromTs = this.timeSeries().map((r) => r.fuente);
+    const fromMain = this.store.preguntaPrincipal().map((r) => r.fuente);
+    const fromOutliers = this.store.outliers().map((r) => r.fuente);
+    const fromTs = this.store.timeSeries().map((r) => r.fuente);
     return Array.from(new Set([...fromMain, ...fromOutliers, ...fromTs])).sort();
   });
 
   readonly availableCategorias = computed<string[]>(() => {
-    const fromMain = this.preguntaPrincipal().map((r) => r.categoria);
+    const fromMain = this.store.preguntaPrincipal().map((r) => r.categoria);
     return Array.from(new Set(fromMain)).sort();
   });
 
-  readonly rangoMin = computed(() => this.filters.rangoPrecio()[0]);
-  readonly rangoMax = computed(() => this.filters.rangoPrecio()[1]);
+  readonly rangoMin = computed(() => this.store.filtros().rangoPrecio[0]);
+  readonly rangoMax = computed(() => this.store.filtros().rangoPrecio[1]);
 
   isFuenteSelected(value: string): boolean {
-    return this.filters.fuenteSeleccionada().includes(value);
+    return this.store.filtros().fuentes.includes(value);
   }
   isCategoriaSelected(value: string): boolean {
-    return this.filters.categoriaSeleccionada().includes(value);
+    return this.store.filtros().categorias.includes(value);
   }
   toggleFuente(value: string): void {
-    this.filters.toggleFuente(value);
+    this.store.toggleFuente(value);
   }
   toggleCategoria(value: string): void {
-    this.filters.toggleCategoria(value);
+    this.store.toggleCategoria(value);
   }
   setRangoMin(value: number): void {
-    const [, max] = this.filters.rangoPrecio();
-    this.filters.rangoPrecio.set([Number(value) || 0, max]);
+    const [, max] = this.store.filtros().rangoPrecio;
+    this.store.setRangoPrecio(Number(value) || 0, max);
   }
   setRangoMax(value: number): void {
-    const [min] = this.filters.rangoPrecio();
-    this.filters.rangoPrecio.set([min, Number(value) || 0]);
-  }
-
-  // ─── Snapshot banner ──────────────────────────────────────
-
-  readonly showSnapshotBanner = computed<boolean>(() => {
-    const s = this.summary();
-    if (!s) return false;
-    return s.snapshot?.fechas_distintas === 1 && !!s.snapshot?.fecha_min;
-  });
-
-  readonly snapshotDate = computed<string>(() => this.summary()?.snapshot?.fecha_min ?? '');
-
-  constructor() {
-    // Keep `filters.fuentes` synced with what the API exposes so
-    // child pages (or future filters that need the master list)
-    // can rely on it. Defensive — `availableFuentes()` already
-    // computes from the loaded payloads.
-    effect(() => {
-      const fuentes = this.availableFuentes();
-      if (fuentes.length) this.filters.fuentes.set(fuentes);
-    });
-    effect(() => {
-      const cats = this.availableCategorias();
-      if (cats.length) this.filters.categorias.set(cats);
-    });
-
-    this.dashboardService.getPreguntaPrincipal().subscribe({
-      next: (rows) => this.preguntaPrincipal.set(rows ?? []),
-    });
-    this.dashboardService.getOutliers().subscribe({
-      next: (rows) => this.outliers.set(rows ?? []),
-    });
-    this.dashboardService.getTimeSeries().subscribe({
-      next: (resp) => this.timeSeries.set(resp?.series ?? []),
-    });
-    this.dashboardService.getSummary().subscribe({
-      next: (s) => this.summary.set(s),
-    });
+    const [min] = this.store.filtros().rangoPrecio;
+    this.store.setRangoPrecio(min, Number(value) || 0);
   }
 }

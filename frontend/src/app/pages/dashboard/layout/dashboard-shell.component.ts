@@ -1,7 +1,6 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { DashboardService } from '../core/dashboard.service';
-import type { Summary } from '../core/dashboard.types';
+import { DashboardStore } from '../core/dashboard.store';
 
 /**
  * Dashboard shell — sidebar nav + content outlet for the 3 dashboard
@@ -178,28 +177,18 @@ import type { Summary } from '../core/dashboard.types';
   ],
 })
 export class DashboardShellComponent {
-  private readonly dashboardService = inject(DashboardService);
+  private readonly store = inject(DashboardStore);
 
   /** DW summary signal — drives the sidebar snapshot banner. */
-  readonly summary = signal<Summary | null>(null);
-
-  /**
-   * Convenience signal that turns the loaded summary into a one-liner
-   * suitable for the sidebar footer. Falls back to '…' while loading
-   * and to '—' if the summary is unreachable so the user still sees
-   * a hint that data could not be loaded.
-   */
   readonly snapshot = computed<string>(() => {
-    const summary = this.summary();
+    const summary = this.store.summary();
     if (!summary) return '…';
     const fecha = summary.snapshot?.fecha_min;
     return fecha ?? '—';
   });
 
   constructor() {
-    this.dashboardService.getSummary().subscribe({
-      next: (s) => this.summary.set(s),
-      error: () => this.summary.set(null),
-    });
+    // Initialize the dashboard store on first mount of the shell
+    this.store.initialize();
   }
 }
