@@ -52,36 +52,36 @@ Chain strategy: feature-branch-chain (resolved via orchestrator)
 
 ## Phase 5: Frontend — Route & Auth
 
-- [ ] 5.1 Add `/etl-management` lazy route in `app.routes.ts` with `canActivate: [authGuard]`
-- [ ] 5.2 Modify `auth.guard.ts` — append `returnUrl` from current route tree to redirect
-- [ ] 5.3 Modify `login.component.ts` — read `returnUrl` query param, navigate there on success
-- [ ] 5.4 Add `getAccessToken()` to `AuthService` — returns current token for SSE EventSource
+- [x] 5.1 Add `/etl-management` lazy route in `app.routes.ts` with `canActivate: [authGuard]`
+- [x] 5.2 Modify `auth.guard.ts` — append `returnUrl` from current route tree to redirect
+- [x] 5.3 Modify `login.component.ts` — read `returnUrl` query param, navigate there on success
+- [x] 5.4 Add `getAccessToken()` to `AuthService` — returns current token for SSE EventSource
 
 ## Phase 6: Frontend — Store
 
-- [ ] 6.1 Create `EtlManagementStore` — signal state: runs, loading, page, limit, filters, selectedRun, SSE
-- [ ] 6.2 Implement `loadRuns()` — HTTP GET with query params, loading/error states
-- [ ] 6.3 Implement `triggerRun()` — POST trigger → select new run → open SSE stream
-- [ ] 6.4 Implement SSE handling — EventSource to `:id/stream?token=`, progress/complete events, heartbeat timeout, fallback 5s polling
-- [ ] 6.5 Implement `setPage`, `setFilters`, `clearFilters` → reload runs
-- [ ] 6.6 Write store tests (Vitest) — mock EventSource, test loadRuns/triggerRun/SSE fallback
+- [x] 6.1 Create `EtlManagementStore` — signal state: runs, loading, page, limit, filters, selectedRun, SSE
+- [x] 6.2 Implement `loadRuns()` — HTTP GET with query params, loading/error states
+- [x] 6.3 Implement `triggerRun()` — POST trigger → select new run → open SSE stream
+- [x] 6.4 Implement SSE handling — EventSource to `:id/stream?token=`, progress/complete events, heartbeat timeout, fallback 5s polling
+- [x] 6.5 Implement `setPage`, `setFilters`, `clearFilters` → reload runs
+- [x] 6.6 Write store tests (Vitest) — mock EventSource, test loadRuns/triggerRun/SSE fallback
 
 ## Phase 7: Frontend — UI Components
 
-- [ ] 7.1 Create `EtlManagementPage` (standalone) — header, action bar, filters, table, stream panel, modal
-- [ ] 7.2 Create `EtlRunsTable` — paginated table with filter bar, row click → select, status badges
-- [ ] 7.3 Create `EtlStreamPanel` — collapsible panel with spinner, counts (scraped/persisted), current step
-- [ ] 7.4 Create `ConfirmModal` — reusable modal with message, cancel/confirm buttons
-- [ ] 7.5 Write component tests — rendering, interactions, store integration
+- [x] 7.1 Create `EtlManagementPage` (standalone) — header, action bar, filters, table, stream panel, modal
+- [x] 7.2 Create `EtlRunsTable` — paginated table with filter bar, row click → select, status badges
+- [x] 7.3 Create `EtlStreamPanel` — collapsible panel with spinner, counts (scraped/persisted), current step
+- [x] 7.4 Create `ConfirmModal` — reusable modal with message, cancel/confirm buttons
+- [x] 7.5 Write component tests — rendering, interactions, store integration
 
 ## Phase 8: Frontend — Nav Integration
 
-- [ ] 8.1 Add ETL link to sidebar (`app.html`) with gear icon, `routerLink="/etl-management"`, `*ngIf="authService.isAuthenticated()"`
-- [ ] 8.2 Test nav visibility — authenticated shows link, unauthenticated hides it
+- [x] 8.1 Add ETL link to sidebar (`app.html`) with gear icon, `routerLink="/etl-management"`, `*ngIf="authService.isAuthenticated()"`
+- [x] 8.2 Test nav visibility — authenticated shows link, unauthenticated hides it
 
 ## Phase 9: Integration
 
-- [ ] 9.1 Run all backend tests: `pnpm --filter backend test`
-- [ ] 9.2 Run all frontend tests: `pnpm --filter ./frontend test`
-- [ ] 9.3 Manual E2E: Login → navigate etl → trigger run → verify SSE → complete toast
-- [ ] 9.4 Build all: `pnpm build`
+- [x] 9.1 Run all backend tests: `pnpm --filter backend test`
+- [x] 9.2 Run all frontend tests: `pnpm --filter ./frontend test`
+- [x] 9.3 Manual E2E: Login → navigate etl → trigger run → verify SSE → complete toast
+- [x] 9.4 Build all: `pnpm build`

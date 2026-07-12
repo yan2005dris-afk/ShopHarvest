@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 
 type Mode = 'login' | 'register';
@@ -14,6 +14,7 @@ type Mode = 'login' | 'register';
 export class LoginComponent {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
   mode: Mode = 'login';
   email = '';
@@ -48,7 +49,8 @@ export class LoginComponent {
     op.subscribe({
       next: () => {
         this.submitting = false;
-        void this.router.navigate(['/']);
+        const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') || '/';
+        void this.router.navigateByUrl(returnUrl);
       },
       error: (err) => {
         this.submitting = false;
