@@ -1,205 +1,104 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { DatePipe, CurrencyPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ApiService, Product, Offer, PriceObservation } from '../../services/api.service';
+import { ProductsPageStore } from './services/products-page.store';
+import { PriceHistoryChartComponent } from './components/price-history-chart.component';
+import { ProductCardComponent } from './components/product-card.component';
 
 @Component({
   selector: 'app-products',
-  imports: [DatePipe, CurrencyPipe, RouterLink, FormsModule],
+  standalone: true,
+  imports: [DatePipe, CurrencyPipe, RouterLink, FormsModule, PriceHistoryChartComponent, ProductCardComponent],
   templateUrl: './products.component.html',
   styleUrl: './products.component.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProductsComponent implements OnInit {
-  products: Product[] = [];
-  filteredProducts: Product[] = [];
-  searchTerm = '';
-  selectedProduct: Product | null = null;
-  priceHistory: PriceObservation[] = [];
-  isLoading = true;
-  error = '';
+  private readonly apiService = inject(ApiService);
+  protected readonly store = inject(ProductsPageStore);
 
-  constructor(
-    private readonly apiService: ApiService,
-    private readonly cdr: ChangeDetectorRef,
-  ) {}
+  protected isLoadingHistory = signal(false);
 
   ngOnInit(): void {
     this.loadProducts();
   }
 
   loadProducts(): void {
-    this.isLoading = true;
-    this.error = '';
+    this.store.setLoading(true);
+    this.store.setError(null);
     this.apiService.getProducts(true).subscribe({
       next: (products) => {
-        this.products = products;
-        this.filteredProducts = products;
-        this.isLoading = false;
-        this.cdr.markForCheck();
+        this.store.setProducts(products);
+        this.store.setLoading(false);
       },
       error: (err) => {
-        this.isLoading = false;
-        this.error = 'Error al cargar productos. Verificá que el backend esté funcionando.';
+        this.store.setLoading(false);
+        this.store.setError('Error al cargar productos. Verificá que el backend esté funcionando.');
         console.error('Failed to load products', err);
       },
     });
   }
 
-  filterProducts(): void {
-    const term = this.searchTerm.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    this.filteredProducts = this.products.filter((p) =>
-      p.title.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(term),
-    );
+  // ── Public store delegates (for template + test access) ──
+
+  /** All loaded products (from store). */
+  get products(): Product[] {
+    return this.store.products();
   }
 
-  /**
-   * `product-offer-split`: price/url/extractedAt live on `Offer`, not the
-   * flat `Product`. Convenience accessor for the card summary — with no
-   * cross-source dedup, most products carry exactly one offer, but this
-   * degrades gracefully to the first offer when there are several.
-   */
-  primaryOffer(product: Product): Offer | undefined {
+  /** Currently selected product or null. */
+  get selectedProduct(): Product | null {
+    return this.store.selectedProduct();
+  }
+
+  /** Loaded price observations. */
+  get priceHistory(): PriceObservation[] {
+    return this.store.priceHistory();
+  }
+
+  /** Primary offer for a product (first offer — price, url, source for card summary). */
+  protected primaryOffer(product: Product): Offer | undefined {
     return product.offers[0];
   }
 
+  /** Select a product and load its price history. */
   selectProduct(product: Product): void {
-    if (this.selectedProduct?.id === product.id) {
-      this.selectedProduct = null;
-      this.priceHistory = [];
+    if (this.store.selectedProduct()?.id === product.id) {
+      this.store.selectProduct(null);
       return;
     }
 
-    this.selectedProduct = product;
+    this.store.selectProduct(product);
+    this.store.setPriceHistory([]);
     this.loadPriceHistory(product.id);
   }
 
-  /**
-   * Price observations for one specific `Offer` within the selected
-   * product (spec: "attributable per Offer, not merged into one
-   * undifferentiated series").
-   */
+  /** Price observations for one specific `Offer` within the selected product. */
   historyForOffer(offerId: string): PriceObservation[] {
-    return this.priceHistory.filter((h) => h.offerId === offerId);
+    return this.store.historyByOffer().get(offerId) ?? [];
   }
 
   private loadPriceHistory(productId: string): void {
-    // Route is unchanged (still keyed by productId); the response now
-    // aggregates PriceObservation rows across all of the product's
-    // Offer(s), each carrying its own `offerId`.
+    this.isLoadingHistory.set(true);
     this.apiService.getPriceHistory(productId).subscribe({
       next: (history) => {
-        this.priceHistory = history;
-        this.cdr.markForCheck();
-        // Render chart after a tick to ensure DOM is ready
-        setTimeout(() => this.renderChart(), 0);
+        this.store.setPriceHistory(history);
+        this.isLoadingHistory.set(false);
       },
       error: (err) => {
         console.error('Failed to load price history', err);
+        this.isLoadingHistory.set(false);
       },
     });
   }
 
-  private renderChart(): void {
-    const canvas = document.getElementById('price-chart') as HTMLCanvasElement | null;
-    if (!canvas || this.priceHistory.length === 0) return;
+  trackByProductId(index: number, product: Product): string {
+    return product.id;
+  }
 
-    // Simple inline chart using Canvas API (no Chart.js dependency needed)
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const dpr = window.devicePixelRatio || 1;
-    const rect = canvas.getBoundingClientRect();
-    canvas.width = rect.width * dpr;
-    canvas.height = rect.height * dpr;
-    ctx.scale(dpr, dpr);
-
-    const width = rect.width;
-    const height = rect.height;
-    const padding = { top: 20, right: 20, bottom: 40, left: 60 };
-    const chartW = width - padding.left - padding.right;
-    const chartH = height - padding.top - padding.bottom;
-
-    // Sort by date ascending for chart. Merges observations across every
-    // Offer of the selected product into one visual series — with no
-    // cross-source dedup this is normally a single offer's series; the
-    // per-offer breakdown is still available via `historyForOffer()` in
-    // the table below.
-    const sorted = [...this.priceHistory].sort(
-      (a, b) => new Date(a.observedAt).getTime() - new Date(b.observedAt).getTime(),
-    );
-
-    const prices = sorted.map((h) => Number(h.price));
-    const minPrice = Math.min(...prices);
-    const maxPrice = Math.max(...prices);
-    const priceRange = maxPrice - minPrice || 1;
-
-    // Clear
-    ctx.clearRect(0, 0, width, height);
-
-    // Read theme colors at render time so dark/light switch is reflected
-    const computedStyle = getComputedStyle(document.documentElement);
-    const colorBorder = computedStyle.getPropertyValue('--border').trim() || '#252b45';
-    const colorText3 = computedStyle.getPropertyValue('--text-3').trim() || '#4d5a7a';
-    const colorAccent = computedStyle.getPropertyValue('--accent').trim() || '#7c6fcd';
-
-    // Grid lines
-    ctx.strokeStyle = colorBorder;
-    ctx.lineWidth = 1;
-    for (let i = 0; i <= 4; i++) {
-      const y = padding.top + (chartH / 4) * i;
-      ctx.beginPath();
-      ctx.moveTo(padding.left, y);
-      ctx.lineTo(width - padding.right, y);
-      ctx.stroke();
-
-      // Y-axis labels
-      const val = maxPrice - (priceRange / 4) * i;
-      ctx.fillStyle = colorText3;
-      ctx.font = '12px sans-serif';
-      ctx.textAlign = 'right';
-      ctx.fillText(val.toFixed(2), padding.left - 8, y + 4);
-    }
-
-    // Plot line
-    if (sorted.length === 1) {
-      // Single point — draw a dot
-      const x = padding.left + chartW / 2;
-      const y = padding.top + chartH - ((prices[0] - minPrice) / priceRange) * chartH;
-      ctx.fillStyle = colorAccent;
-      ctx.beginPath();
-      ctx.arc(x, y, 5, 0, Math.PI * 2);
-      ctx.fill();
-    } else {
-      // Multiple points — draw line
-      ctx.strokeStyle = colorAccent;
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-
-      sorted.forEach((h, i) => {
-        const x = padding.left + (i / (sorted.length - 1)) * chartW;
-        const y = padding.top + chartH - ((Number(h.price) - minPrice) / priceRange) * chartH;
-
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      });
-      ctx.stroke();
-
-      // Dots
-      sorted.forEach((h, i) => {
-        const x = padding.left + (i / (sorted.length - 1)) * chartW;
-        const y = padding.top + chartH - ((Number(h.price) - minPrice) / priceRange) * chartH;
-        ctx.fillStyle = colorAccent;
-        ctx.beginPath();
-        ctx.arc(x, y, 3, 0, Math.PI * 2);
-        ctx.fill();
-      });
-    }
-
-    // X-axis title
-    ctx.fillStyle = colorText3;
-    ctx.font = '12px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('Fecha', width / 2, height - 5);
+  trackByOfferId(index: number, offer: Offer): string {
+    return offer.id;
   }
 }

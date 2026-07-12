@@ -545,41 +545,6 @@ function generateSelector(el: Element): string {
 
 // ── Extraction helpers ────────────────────────────────────────────────────────
 
-function extractFieldsFrom(
-  root: Element,
-  mappings: FieldMapping[],
-): ExtractedProduct | null {
-  const product: ExtractedProduct = {};
-  for (const mapping of mappings) {
-    const el = root.querySelector(mapping.selector);
-    if (!el) continue;
-
-    if (mapping.type === 'text') {
-      product[mapping.canonicalField] = el.textContent?.trim() ?? null;
-    } else if (mapping.type === 'attribute') {
-      product[mapping.canonicalField] = el.getAttribute(mapping.attribute ?? '') ?? null;
-    } else if (mapping.type === 'html') {
-      product[mapping.canonicalField] = el.innerHTML?.trim() ?? null;
-    }
-
-    // Coerce to a number ONLY for price-like fields. Otherwise a title of
-    // "123" would become 123, and "4K TV" would collapse to 4 (review §S4).
-    if (
-      typeof product[mapping.canonicalField] === 'string' &&
-      /precio|price|amount|cost|costo/i.test(mapping.canonicalField)
-    ) {
-      const parsed = parseLocalizedPrice(
-        product[mapping.canonicalField] as string,
-      );
-      if (parsed !== null) {
-        product[mapping.canonicalField] = parsed;
-      }
-    }
-  }
-  const hasValue = Object.values(product).some((v) => v !== null && v !== undefined);
-  return hasValue ? product : null;
-}
-
 /**
  * Extract the leading price string from an arbitrary text and parse it into
  * a number, respecting the locale conventions most common in scraped
@@ -633,29 +598,189 @@ export function parseLocalizedPrice(raw: string): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+const IMAGE_FIELD_RE = /^image$|^img$|^foto$|^photo$|^picture$|^thumbnail$|^icon$|^imagen$/i;
+
+/** Search up to 3 levels above `el` for an <img> and return its src. */
+function findNearbyImageSrc(el: Element): string | null {
+  // First try inside the element itself
+  const ownImg = el.querySelector('img');
+  if (ownImg) return ownImg.getAttribute('src');
+
+  // Then walk up to 3 levels, checking each ancestor for an <img>
+  let current: Element | null = el;
+  for (let depth = 0; depth < 3 && current; depth++) {
+    const parent = current.parentElement;
+    if (!parent) break;
+    // Look for an img among the siblings of the current node
+    const siblingImg = Array.from(parent.children).find(
+      (sibling) => sibling !== current && sibling.tagName === 'IMG',
+    ) as HTMLImageElement | undefined;
+    if (siblingImg?.getAttribute('src')) {
+      return siblingImg.getAttribute('src');
+    }
+    // Also check the parent itself
+    const parentImg = parent.querySelector('img');
+    if (parentImg && parentImg !== ownImg) {
+      return parentImg.getAttribute('src');
+    }
+    current = parent;
+  }
+
+  return null;
+}
+
+function extractFieldsFromElement(
+  root: Element,
+  mappings: FieldMapping[],
+): ExtractedProduct | null {
+  const product: ExtractedProduct = {};
+  for (const mapping of mappings) {
+    const el = root.querySelector(mapping.selector);
+    if (!el) continue;
+
+    if (mapping.type === 'text') {
+      product[mapping.canonicalField] = el.textContent?.trim() ?? null;
+    } else if (mapping.type === 'attribute') {
+      product[mapping.canonicalField] = el.getAttribute(mapping.attribute ?? '') ?? null;
+    } else if (mapping.type === 'html') {
+      product[mapping.canonicalField] = el.innerHTML?.trim() ?? null;
+    }
+
+    // Heuristic: if the field looks like an image but we got text content
+    // (not a URL), try to find an <img> near the matched element and grab
+    // its src attribute. Searches up to 3 levels up (the image is often a
+    // sibling rather than a child of the clicked element).
+    if (mapping.type === 'text' && IMAGE_FIELD_RE.test(mapping.canonicalField)) {
+      const raw = product[mapping.canonicalField];
+      if (typeof raw === 'string' && raw && !raw.startsWith('http')) {
+        const src = findNearbyImageSrc(el);
+        if (src) product[mapping.canonicalField] = src;
+      }
+    }
+
+    coercePriceField(product, mapping);
+  }
+  const hasValue = Object.values(product).some((v) => v !== null && v !== undefined);
+  return hasValue ? product : null;
+}
+
+function coercePriceField(
+  product: ExtractedProduct,
+  mapping: FieldMapping,
+): void {
+  if (
+    typeof product[mapping.canonicalField] === 'string' &&
+    /precio|price|amount|cost|costo/i.test(mapping.canonicalField)
+  ) {
+    const parsed = parseLocalizedPrice(
+      product[mapping.canonicalField] as string,
+    );
+    if (parsed !== null) {
+      product[mapping.canonicalField] = parsed;
+    }
+  }
+}
+
+/**
+ * Extract fields from each matched group by index (global fallback).
+ * Queries each field selector from document and groups results by their
+ * DOM position — element[n] of every field becomes product[n].
+ */
+function extractProductsGlobal(mappings: FieldMapping[]): ExtractedProduct[] {
+  // Query every field globally
+  const fieldResults: Record<string, Element[]> = {};
+  let maxCount = 0;
+  for (const m of mappings) {
+    const nodes = Array.from(document.querySelectorAll(m.selector));
+    fieldResults[m.canonicalField] = nodes;
+    if (nodes.length > maxCount) maxCount = nodes.length;
+  }
+
+  if (maxCount === 0) return [];
+
+  // Use the median count to avoid a single field with extra matches
+  const counts = mappings.map((m) => fieldResults[m.canonicalField].length).sort((a, b) => a - b);
+  const target = counts[Math.floor(counts.length / 2)];
+
+  const products: ExtractedProduct[] = [];
+  for (let i = 0; i < target; i++) {
+    const product: ExtractedProduct = {};
+    for (const m of mappings) {
+      const el = fieldResults[m.canonicalField][i];
+      if (!el) continue;
+
+      if (m.type === 'text') {
+        product[m.canonicalField] = el.textContent?.trim() ?? null;
+      } else if (m.type === 'attribute') {
+        product[m.canonicalField] = el.getAttribute(m.attribute ?? '') ?? null;
+      } else if (m.type === 'html') {
+        product[m.canonicalField] = el.innerHTML?.trim() ?? null;
+      }
+
+      // Same image heuristic: if text content isn't a URL, try to find
+      // a nearby <img> (up to 3 levels up).
+      if (m.type === 'text' && IMAGE_FIELD_RE.test(m.canonicalField)) {
+        const raw = product[m.canonicalField];
+        if (typeof raw === 'string' && raw && !raw.startsWith('http')) {
+          const src = findNearbyImageSrc(el);
+          if (src) product[m.canonicalField] = src;
+        }
+      }
+
+      coercePriceField(product, m);
+    }
+    // Only include products that have a title-like field with a value.
+    // This filters out index slots where the title selector didn't match
+    // (common when title has fewer DOM matches than price/image).
+    const hasTitle = mappings.some(
+      (m) =>
+        /^title$|^nombre$|^name$|^titulo$/i.test(m.canonicalField) &&
+        product[m.canonicalField] != null &&
+        product[m.canonicalField] !== '',
+    );
+    if (hasTitle) products.push(product);
+  }
+  return products;
+}
+
 function extractProducts(rule: DomainRule): ExtractedProduct[] {
-  const containers = document.querySelectorAll(rule.containerSelector);
   const products: ExtractedProduct[] = [];
 
-  containers.forEach(container => {
-    // If the container has children that themselves have children, treat each
-    // child as a product item (list-wrapper pattern, e.g. a grid of cards).
+  // ── 1. Container-child iteration ────────────────────────────────
+  // Try extracting fields relative to each child of the container.
+  // Works well when selectors are relative paths within each card.
+  const containers = document.querySelectorAll(rule.containerSelector);
+  containers.forEach((container) => {
     const items = Array.from(container.children).filter(
       (child) => child.children.length > 0,
     );
 
     if (items.length > 0) {
       for (const item of items) {
-        const p = extractFieldsFrom(item, rule.fieldMappings);
+        const p = extractFieldsFromElement(item, rule.fieldMappings);
         if (p) products.push(p);
       }
     } else {
       // Direct product pattern — the container IS the product
-      const p = extractFieldsFrom(container, rule.fieldMappings);
+      const p = extractFieldsFromElement(container, rule.fieldMappings);
       if (p) products.push(p);
     }
   });
 
+  // ── 2. Global index grouping ────────────────────────────────────
+  // The extension generates absolute CSS selectors (from document root).
+  // When queried relative to a child element they rarely match, so we
+  // fall back to querying each selector globally and grouping results
+  // by DOM position: element[N] of every field → product[N].
+  //
+  // Run this ALWAYS (not only when step 1 yields 0) because global
+  // queries handle the real multi-product extraction while step 1 may
+  // accidentally grab a single product via the container itself.
+  const globals = extractProductsGlobal(rule.fieldMappings);
+
+  // Merge: prefer global results (they capture all products), but keep
+  // container results as a fallback when global returns nothing.
+  if (globals.length > 0) return globals;
   return products;
 }
 

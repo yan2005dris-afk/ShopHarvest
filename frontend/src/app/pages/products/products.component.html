@@ -2,163 +2,174 @@
   <div class="products-header">
     <div class="products-header-left">
       <h1>Products</h1>
-      @if (!isLoading) {
-        <span class="products-count">{{ products.length }}</span>
+      @if (!store.isLoading()) {
+        <span class="products-count">{{ store.products().length }}</span>
       }
     </div>
     <div class="products-search">
       <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        <circle cx="11" cy="11" r="8"/>
+        <path d="m21 21-4.35-4.35"/>
       </svg>
       <input
         type="text"
         class="search-input"
         placeholder="Search products…"
-        [(ngModel)]="searchTerm"
-        (ngModelChange)="filterProducts()"
+        [ngModel]="store.searchTerm()"
+        (ngModelChange)="store.searchTerm.set($event)"
       />
     </div>
   </div>
 
-  <!-- Loading -->
-  @if (isLoading) {
+  @if (store.isLoading()) {
     <div class="products-state">
       <div class="prd-spinner"></div>
       <p>Loading products…</p>
     </div>
   }
 
-  <!-- Error -->
-  @if (error) {
+  @if (store.error()) {
     <div class="products-state">
       <div class="error-icon">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
         </svg>
       </div>
-      <p class="error-text">{{ error }}</p>
+      <p class="error-text">{{ store.error() }}</p>
       <button class="btn-outline" (click)="loadProducts()">Retry</button>
     </div>
   }
 
-  <!-- Empty: no products -->
-  @if (!isLoading && !error && products.length === 0) {
+  @if (!store.isLoading() && !store.error() && store.products().length === 0) {
     <div class="products-state">
       <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-3)">
-        <rect x="2" y="3" width="6" height="6" rx="1"/><rect x="9" y="3" width="6" height="6" rx="1"/><rect x="16" y="3" width="6" height="6" rx="1"/>
-        <rect x="2" y="10" width="6" height="6" rx="1"/><rect x="9" y="10" width="6" height="6" rx="1"/>
+        <rect x="2" y="3" width="6" height="6" rx="1"/>
+        <rect x="9" y="3" width="6" height="6" rx="1"/>
+        <rect x="16" y="3" width="6" height="6" rx="1"/>
+        <rect x="2" y="10" width="6" height="6" rx="1"/>
+        <rect x="9" y="10" width="6" height="6" rx="1"/>
       </svg>
       <p>No products tracked yet.</p>
-      <a routerLink="/" class="btn-accent-link">Scrape a URL to get started →</a>
+      <a routerLink="/" class="btn-accent-link">Scrape a URL to get started &rarr;</a>
     </div>
   }
 
-  <!-- Empty: no search results -->
-  @if (!isLoading && !error && products.length > 0 && filteredProducts.length === 0 && searchTerm) {
+  @if (!store.isLoading() && !store.error() && store.products().length > 0 && store.filteredProducts().length === 0 && store.searchTerm()) {
     <div class="products-state">
-      <p style="color: var(--text-2)">No results for "{{ searchTerm }}"</p>
+      <p style="color: var(--text-2)">No results for "{{ store.searchTerm() }}"</p>
     </div>
   }
 
-  <!-- Product grid -->
-  @if (!isLoading && !error && filteredProducts.length > 0) {
+  @if (!store.isLoading() && !store.error() && store.filteredProducts().length > 0) {
     <div class="products-grid">
-      @for (product of filteredProducts; track product.id) {
-        <div class="prd-card" [class.prd-card--selected]="selectedProduct?.id === product.id" (click)="selectProduct(product)">
-          <div class="prd-card-main">
-            @if (product.imageUrl) {
+      @for (product of store.filteredProducts(); track product.id) {
+        <app-product-card
+          [product]="product"
+          [isSelected]="store.selectedProduct()?.id === product.id"
+          (click)="selectProduct(product)"
+        />
+      }
+    </div>
+  }
+
+  @if (store.selectedProduct(); as selectedProduct) {
+    <div class="prd-detail-overlay" (click)="store.selectProduct(null)">
+      <div class="prd-detail" (click)="$event.stopPropagation()">
+        <div class="prd-detail-header">
+          <h2 class="prd-detail-title">Product Details</h2>
+          <button class="btn-ghost btn-sm" (click)="store.selectProduct(null)">Close</button>
+        </div>
+        <div class="prd-detail-body">
+          <div class="prd-detail-main">
+            @if (selectedProduct.imageUrl) {
               <div class="prd-img-wrap">
-                <img [src]="product.imageUrl" alt="" class="prd-img" />
+                <img [src]="selectedProduct.imageUrl" alt="" class="prd-img" />
               </div>
             } @else {
               <div class="prd-img-placeholder">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/>
+                  <circle cx="8.5" cy="8.5" r="1.5"/>
                   <polyline points="21 15 16 10 5 21"/>
                 </svg>
               </div>
             }
             <div class="prd-info">
-              <h3 class="prd-title">{{ product.title }}</h3>
-              @if (primaryOffer(product); as offer) {
+              <h3 class="prd-title">{{ selectedProduct.title }}</h3>
+              @if (primaryOffer(selectedProduct); as offer) {
                 <div class="prd-meta">
                   <span class="prd-price">{{ offer.currency }} {{ offer.price }}</span>
-                  @if (product.offers.length > 1) {
-                    <span class="prd-offer-count">+{{ product.offers.length - 1 }} more offer(s)</span>
+                  @if (selectedProduct.offers.length > 1) {
+                    <span class="prd-offer-count">+{{ selectedProduct.offers.length - 1 }} more offer(s)</span>
                   }
                 </div>
                 <p class="prd-date">{{ offer.extractedAt | date:'MMM d, y' }}</p>
               }
             </div>
-            <div class="prd-chevron" [class.prd-chevron--open]="selectedProduct?.id === product.id">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="6 9 12 15 18 9"/>
-              </svg>
-            </div>
           </div>
-
-          <!-- Expanded detail -->
-          @if (selectedProduct?.id === product.id) {
-            <div class="prd-detail">
-              <h4 class="prd-detail-title">Offers</h4>
-              <table class="history-table">
-                <thead>
-                  <tr>
-                    <th>Source</th>
-                    <th>Price</th>
-                    <th>URL</th>
+          <div class="prd-detail-sidebar">
+            <h4 class="prd-detail-section-title">Offers</h4>
+            <table class="history-table">
+              <thead>
+                <tr>
+                  <th>Source</th>
+                  <th>Price</th>
+                  <th>URL</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (offer of selectedProduct.offers; track offer.id) {
+                  <tr class="prd-offer-row">
+                    <td>{{ offer.sourceId }}</td>
+                    <td class="price-cell">{{ offer.price | currency:offer.currency:'symbol':'1.2-2' }}</td>
+                    <td><a [href]="offer.url" target="_blank" rel="noopener" class="prd-offer-link">Visit Link ↗</a></td>
                   </tr>
-                </thead>
-                <tbody>
-                  @for (offer of product.offers; track offer.id) {
-                    <tr class="prd-offer-row">
-                      <td>{{ offer.sourceId }}</td>
-                      <td class="price-cell">{{ offer.price | currency:offer.currency:'symbol':'1.2-2' }}</td>
-                      <td><a [href]="offer.url" target="_blank" rel="noopener">{{ offer.url }}</a></td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-
-              <h4 class="prd-detail-title">Price History</h4>
-
-              @if (priceHistory.length > 0) {
-                <div class="chart-wrap">
-                  <canvas id="price-chart" width="600" height="240"></canvas>
-                </div>
-
-                @for (offer of product.offers; track offer.id) {
-                  @if (historyForOffer(offer.id).length > 0) {
-                    <div class="prd-history-group">
-                      <p class="prd-history-offer-label">{{ offer.url }}</p>
-                      <table class="history-table">
-                        <thead>
-                          <tr>
-                            <th>Date</th>
-                            <th>Price</th>
-                            <th>Currency</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          @for (entry of historyForOffer(offer.id); track entry.id) {
-                            <tr>
-                              <td>{{ entry.observedAt | date:'medium' }}</td>
-                              <td class="price-cell">{{ entry.price | currency:entry.currency:'symbol':'1.2-2' }}</td>
-                              <td>{{ entry.currency }}</td>
-                            </tr>
-                          }
-                        </tbody>
-                      </table>
-                    </div>
-                  }
                 }
-              } @else {
-                <p class="no-history">No price history available yet.</p>
+              </tbody>
+            </table>
+            <h4 class="prd-detail-section-title">Price History</h4>
+            @if (store.priceHistory().length > 0) {
+              <div class="chart-wrap">
+                <app-price-history-chart [observations]="store.priceHistory()" />
+              </div>
+              @for (offer of selectedProduct.offers; track offer.id) {
+                @if (store.historyByOffer().get(offer.id)?.length) {
+                  <div class="prd-history-group">
+                    <p class="prd-history-offer-label">{{ offer.url }}</p>
+                    <table class="history-table">
+                      <thead>
+                        <tr>
+                          <th>Date</th>
+                          <th>Price</th>
+                          <th>Currency</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (entry of store.historyByOffer().get(offer.id)!; track entry.id) {
+                          <tr>
+                            <td>{{ entry.observedAt | date:'medium' }}</td>
+                            <td class="price-cell">{{ entry.price | currency:entry.currency:'symbol':'1.2-2' }}</td>
+                            <td>{{ entry.currency }}</td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                }
               }
-            </div>
-          }
+            } @else if (isLoadingHistory()) {
+              <div class="products-state">
+                <div class="prd-spinner"></div>
+                <p>Loading price history...</p>
+              </div>
+            } @else {
+              <p class="no-history">No price history available yet.</p>
+            }
+          </div>
         </div>
-      }
+      </div>
     </div>
   }
 </div>

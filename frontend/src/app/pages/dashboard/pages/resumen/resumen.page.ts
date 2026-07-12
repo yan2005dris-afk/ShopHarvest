@@ -1,6 +1,5 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { DashboardService } from '../../core/dashboard.service';
-import type { AllKpis, PreguntaPrincipalRow, Summary } from '../../core/dashboard.types';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { DashboardStore } from '../../core/dashboard.store';
 import { KpiCardComponent } from '../../shared/kpi-card/kpi-card.component';
 
 /**
@@ -32,11 +31,11 @@ import { KpiCardComponent } from '../../shared/kpi-card/kpi-card.component';
       </p>
     </header>
 
-    @if (showSnapshotBanner()) {
+    @if (store.isSnapshot()) {
       <div class="snapshot-banner" role="status">
         <span class="snapshot-banner__icon" aria-hidden="true">ℹ️</span>
         <span>
-          Snapshot del <strong>{{ snapshotDate() }}</strong>. Los datos representan un único
+          Snapshot del <strong>{{ store.snapshotDate() }}</strong>. Los datos representan un único
           día de extracción.
         </span>
       </div>
@@ -47,14 +46,14 @@ import { KpiCardComponent } from '../../shared/kpi-card/kpi-card.component';
         label="Total productos en DW"
         [value]="totalProductos()"
         icon="📦"
-        [loading]="loading()"
+        [loading]="store.loading()"
       />
 
       <app-kpi-card
         label="Total encuestas en DW"
         [value]="totalEncuestas()"
         icon="📋"
-        [loading]="loading()"
+        [loading]="store.loading()"
       />
 
       <app-kpi-card
@@ -62,21 +61,21 @@ import { KpiCardComponent } from '../../shared/kpi-card/kpi-card.component';
         [value]="precioPromedio()"
         delta="USD"
         icon="💰"
-        [loading]="loading()"
+        [loading]="store.loading()"
       />
 
       <app-kpi-card
         label="Fuentes scrapeadas"
         [value]="fuentesScrapeadas()"
         icon="🌐"
-        [loading]="loading()"
+        [loading]="store.loading()"
       />
 
       <app-kpi-card
         label="Categorías únicas"
         [value]="categoriasUnicas()"
         icon="🏷️"
-        [loading]="loading()"
+        [loading]="store.loading()"
       />
 
       <app-kpi-card
@@ -84,7 +83,7 @@ import { KpiCardComponent } from '../../shared/kpi-card/kpi-card.component';
         [value]="completitudGeneral()"
         delta="ficha completa"
         icon="✅"
-        [loading]="loading()"
+        [loading]="store.loading()"
       />
 
       <app-kpi-card
@@ -92,13 +91,13 @@ import { KpiCardComponent } from '../../shared/kpi-card/kpi-card.component';
         [value]="preferenciaTop()"
         [delta]="preferenciaPct()"
         icon="🏆"
-        [loading]="loading()"
+        [loading]="store.loading()"
       />
     </section>
 
-    @if (errorMessage()) {
+    @if (store.error()) {
       <div class="error-banner" role="alert">
-        <strong>Error al cargar el resumen:</strong> {{ errorMessage() }}
+        <strong>Error al cargar el resumen:</strong> {{ store.error() }}
       </div>
     }
   `,
@@ -146,60 +145,13 @@ import { KpiCardComponent } from '../../shared/kpi-card/kpi-card.component';
   ],
 })
 export class ResumenPage {
-  private readonly dashboardService = inject(DashboardService);
-
-  readonly loading = signal(true);
-  readonly errorMessage = signal<string>('');
-
-  readonly summary = signal<Summary | null>(null);
-  readonly kpis = signal<AllKpis | null>(null);
-  readonly preguntaPrincipal = signal<PreguntaPrincipalRow[] | null>(null);
-
-  constructor() {
-    // The resumen page cannot render without the aggregated KPIs and
-    // the summary, so we subscribe to both and toggle the loading
-    // state once both have settled (or one has errored).
-    let pending = 2;
-    const settle = () => {
-      pending -= 1;
-      if (pending <= 0) this.loading.set(false);
-    };
-
-    this.dashboardService.getSummary().subscribe({
-      next: (s) => {
-        this.summary.set(s);
-        settle();
-      },
-      error: (err: Error) => {
-        this.errorMessage.set(err.message ?? 'No se pudo cargar el resumen del DW');
-        settle();
-      },
-    });
-
-    this.dashboardService.getAllKpis().subscribe({
-      next: (k) => {
-        this.kpis.set(k);
-        settle();
-      },
-      error: (err: Error) => {
-        this.errorMessage.set(err.message ?? 'No se pudieron cargar los KPIs');
-        settle();
-      },
-    });
-
-    // Used only to surface card #3 (precio promedio general). Soft
-    // error is allowed because cards 1, 2, 4, 5 (summary) and 6, 7
-    // (kpis) cover most of the page on their own.
-    this.dashboardService.getPreguntaPrincipal().subscribe({
-      next: (rows) => this.preguntaPrincipal.set(rows),
-    });
-  }
+  readonly store = inject(DashboardStore);
 
   // ─── Card derivations ─────────────────────────────────────
 
   /** Total productos en DW (fact_productos row count). */
   readonly totalProductos = computed<string | number>(() => {
-    const s = this.summary();
+    const s = this.store.summary();
     if (!s) return '—';
     const row = s.tablas.find((t) => t.tabla === 'fact_productos');
     return row?.registros ?? '—';
@@ -207,7 +159,7 @@ export class ResumenPage {
 
   /** Total encuestas en DW (fact_encuesta_consumo row count). */
   readonly totalEncuestas = computed<string | number>(() => {
-    const s = this.summary();
+    const s = this.store.summary();
     if (!s) return '—';
     const row = s.tablas.find((t) => t.tabla === 'fact_encuesta_consumo');
     return row?.registros ?? '—';
@@ -215,8 +167,8 @@ export class ResumenPage {
 
   /** Precio promedio general (AVG over pregunta principal rows). */
   readonly precioPromedio = computed<string>(() => {
-    const rows = this.preguntaPrincipal();
-    if (!rows || rows.length === 0) return '—';
+    const rows = this.store.preguntaPrincipal();
+    if (!rows.length) return '—';
     const total = rows.reduce((acc, r) => acc + r.precio_promedio_usd, 0);
     const avg = total / rows.length;
     return `$${avg.toFixed(2)}`;
@@ -224,7 +176,7 @@ export class ResumenPage {
 
   /** Number of distinct fuentes. */
   readonly fuentesScrapeadas = computed<string | number>(() => {
-    const s = this.summary();
+    const s = this.store.summary();
     if (!s) return '—';
     const row = s.tablas.find((t) => t.tabla === 'dim_fuente');
     return row?.registros ?? '—';
@@ -232,7 +184,7 @@ export class ResumenPage {
 
   /** Number of distinct categorias. */
   readonly categoriasUnicas = computed<string | number>(() => {
-    const s = this.summary();
+    const s = this.store.summary();
     if (!s) return '—';
     const row = s.tablas.find((t) => t.tabla === 'dim_categoria');
     return row?.registros ?? '—';
@@ -240,7 +192,7 @@ export class ResumenPage {
 
   /** Completitud general — single-row view, take the first. */
   readonly completitudGeneral = computed<string>(() => {
-    const k = this.kpis();
+    const k = this.store.kpis();
     const first = k?.completitud?.[0];
     if (!first) return '—';
     return `${first.pct_ficha_completa.toFixed(1)}%`;
@@ -248,7 +200,7 @@ export class ResumenPage {
 
   /** Top-preferred plataforma (highest pct_preferencia). */
   readonly preferenciaTop = computed<string>(() => {
-    const k = this.kpis();
+    const k = this.store.kpis();
     if (!k?.preferencia?.length) return '—';
     const sorted = [...k.preferencia].sort(
       (a, b) => b.pct_preferencia - a.pct_preferencia,
@@ -258,21 +210,11 @@ export class ResumenPage {
 
   /** % share of the top-preferred plataforma. */
   readonly preferenciaPct = computed<string>(() => {
-    const k = this.kpis();
+    const k = this.store.kpis();
     if (!k?.preferencia?.length) return '';
     const sorted = [...k.preferencia].sort(
       (a, b) => b.pct_preferencia - a.pct_preferencia,
     );
     return `${sorted[0].pct_preferencia.toFixed(1)}% de preferencia`;
   });
-
-  // ─── Snapshot banner ──────────────────────────────────────
-
-  readonly showSnapshotBanner = computed<boolean>(() => {
-    const s = this.summary();
-    if (!s) return false;
-    return s.snapshot?.fechas_distintas === 1 && !!s.snapshot?.fecha_min;
-  });
-
-  readonly snapshotDate = computed<string>(() => this.summary()?.snapshot?.fecha_min ?? '');
 }

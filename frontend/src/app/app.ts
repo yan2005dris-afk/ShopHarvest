@@ -15,6 +15,7 @@ import { ToastService } from './core/services/toast.service';
 export class App implements OnInit, OnDestroy {
   extensionAvailable = false;
   isDark = true;
+  private readonly toastService = inject(ToastService);
   private subs: Subscription[] = [];
 
   constructor(
@@ -24,7 +25,7 @@ export class App implements OnInit, OnDestroy {
     // Tear down the toast service when the root component dies. The
     // service is `providedIn: 'root'`, so this hook catches hot-reload
     // and test-harness teardown where the injector is recreated.
-    inject(DestroyRef).onDestroy(() => inject(ToastService).dispose());
+    inject(DestroyRef).onDestroy(() => this.toastService.dispose());
   }
 
   ngOnInit(): void {

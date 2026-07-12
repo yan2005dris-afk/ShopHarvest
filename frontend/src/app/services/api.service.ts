@@ -11,6 +11,8 @@ import type {
   FieldMappingDto,
   UpdateDomainDto,
 } from '@web-scraping/contracts/domains';
+import type { ScrapeResult } from '@web-scraping/contracts/pipeline';
+import type { ExtensionFieldMapping } from './extension.service';
 
 // ─── Aliases — keep the existing call-site names so consumers don't
 // have to change. The wire shape is owned by `@web-scraping/contracts`.
@@ -48,15 +50,29 @@ export class ApiService {
     return this.http.patch<DomainRule>(`${this.baseUrl}/domains/${id}`, data);
   }
 
+  // Pipeline
+  getSources(): Observable<string[]> {
+    return this.http.get<string[]>(`${this.baseUrl}/pipeline/sources`);
+  }
+
+  scrapeSource(source: string, outputDir: string): Observable<ScrapeResult> {
+    return this.http.post<ScrapeResult>(`${this.baseUrl}/pipeline/scrape/${source}`, { outputDir });
+  }
+
   // Products
   ingestProducts(
     domain: string,
     pageUrl: string,
     products: Record<string, unknown>[],
+    fieldMappings?: ExtensionFieldMapping[],
   ): Observable<{ ingested: number; domainRuleId: string }> {
+    const body: Record<string, unknown> = { domain, pageUrl, products };
+    if (fieldMappings && fieldMappings.length > 0) {
+      body['fieldMappings'] = fieldMappings;
+    }
     return this.http.post<{ ingested: number; domainRuleId: string }>(
       `${this.baseUrl}/products/ingest`,
-      { domain, pageUrl, products },
+      body,
     );
   }
 

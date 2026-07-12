@@ -25,12 +25,12 @@ import { PipelineSource } from '@web-scraping/contracts/pipeline';
 import { BrowserFactoryService } from './browser-factory.service';
 
 const DEFAULT_ACCEPT_LANGUAGE = 'es-EC,es;q=0.9';
-const DEFAULT_MAX_RETRIES = 2; // 3 total attempts
+const DEFAULT_MAX_RETRIES = 3; // 4 total attempts
 const DEFAULT_RETRY_BASE_MS = 2000;
 const MAX_BACKOFF_MS = 30000;
 const NAV_TIMEOUT_MS = 30000;
 const SCROLL_PAUSE_MS = 1500;
-const SETTLE_PAUSE_MS = 3000;
+const SETTLE_PAUSE_MS = 5000;
 const MAX_ITEMS_PER_CATEGORY = 50;
 
 const CATEGORIES: ReadonlyArray<{ url: string; label: string }> = [
@@ -42,10 +42,10 @@ const CATEGORIES: ReadonlyArray<{ url: string; label: string }> = [
 ];
 
 const ITEM_SELECTORS = [
-  '.ui-search-result__content',
+  'ol.ui-search-layout li.ui-search-layout__item',
+  '.poly-card.poly-card--list',
   '.poly-card',
-  '[data-id]',
-  '.item__info',
+  '[class*="ui-search-result"]',
 ];
 
 export interface ScrapeMercadoLibreOptions {
@@ -198,6 +198,14 @@ async function scrapeCategoryWithRetry(
       await page.mouse.move(200, 300);
       await page.evaluate(() => window.scrollBy(0, 600));
       await page.waitForTimeout(scrollPauseMs);
+      // Check for verification/block pages
+      // NOTE: only actual blocking signals (account-verification, captcha)
+      // indicate a blocked page. The `ui-search` class is absent on the ML
+      // home page (a valid page), so checking for it causes false positives.
+      const pageContent = await page.content();
+      if (pageContent.includes('account-verification') || pageContent.includes('captcha')) {
+        throw new Error(`Blocked by anti-bot: redirected to verification page`);
+      }
       const items = await extractItems(page, maxItems);
       const enriched = items.map((item) => ({
         ...item,
@@ -242,16 +250,14 @@ async function extractItems(
         if (cards.length > 0) {
           return cards.slice(0, cap).map((card) => {
             const el = card as HTMLElement;
-            const anchor = el.querySelector('a');
-            const titleEl = el.querySelector('[class*="title"]');
-            const priceEl = el.querySelector(
-              '[class*="price"], .andes-money-amount__fraction',
-            );
+            const titleEl = el.querySelector('.poly-component__title, .ui-search-item__title, h2 a, [class*="poly-title"]');
+            const priceEl = el.querySelector('.andes-money-amount__fraction, .poly-price__current .andes-money-amount__fraction');
+            const urlEl = el.querySelector('.poly-component__title a, a.ui-search-item__group__element') as HTMLAnchorElement | null;
             return {
               titulo: titleEl?.textContent?.trim() ?? null,
               precio: priceEl?.textContent?.trim() ?? null,
               moneda: 'USD',
-              url_producto: anchor?.href ?? null,
+              url_producto: urlEl?.href ?? null,
             };
           });
         }

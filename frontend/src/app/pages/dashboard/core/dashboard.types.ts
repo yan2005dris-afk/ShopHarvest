@@ -70,3 +70,21 @@ export type Categoria = string;
  * contract on purpose.
  */
 export type FilterOption = { value: string; label: string };
+
+/** Shape of the global filter state for the entire dashboard. */
+export interface DashboardFiltros {
+  /** Selected source codes (empty = all). */
+  fuentes: string[];
+  /** Selected category names (empty = all). */
+  categorias: string[];
+  /** [min, max] price range in USD. */
+  rangoPrecio: [number, number];
+  /** Only show products with availability flag. */
+  soloConDisponibilidad: boolean;
+  /** Only show products with a rating. */
+  soloConCalificacion: boolean;
+  /** Optional start date filter (ISO string). */
+  fechaDesde: string | null;
+  /** Optional end date filter (ISO string). */
+  fechaHasta: string | null;
+}
