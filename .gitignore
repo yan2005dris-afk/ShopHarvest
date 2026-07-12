@@ -47,3 +47,4 @@ coverage/
 /.junie
 # Local Pi runtime state
 .atl/
+/.codegraph

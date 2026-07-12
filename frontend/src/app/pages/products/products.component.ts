@@ -71,6 +71,7 @@ export class ProductsComponent implements OnInit {
     }
 
     this.store.selectProduct(product);
+    this.store.setPriceHistory([]);
     this.loadPriceHistory(product.id);
   }
 

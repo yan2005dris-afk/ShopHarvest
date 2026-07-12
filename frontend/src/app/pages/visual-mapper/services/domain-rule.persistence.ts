@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService, DomainRule } from '../../../services/api.service';
 import type { ExtensionFieldMapping } from '../../../services/extension.service';
@@ -23,7 +23,7 @@ export interface SaveProductsParams {
  */
 @Injectable({ providedIn: 'root' })
 export class DomainRulePersistenceService {
-  constructor(private readonly apiService: ApiService) {}
+  private readonly apiService = inject(ApiService);
 
   /** Create or update a domain rule based on existing domains list. */
   saveDomainRule(
@@ -31,12 +31,12 @@ export class DomainRulePersistenceService {
     existingDomains: DomainRule[],
   ): Observable<DomainRule> {
     const existing = existingDomains.find((d) => d.domain === params.hostname);
-    const payload = {
-      fieldMappings: params.fieldMappings,
-      containerSelector: params.containerSelector ?? undefined,
-    };
 
     if (existing) {
+      const payload = {
+        fieldMappings: params.fieldMappings,
+        containerSelector: params.containerSelector ?? undefined,
+      };
       return this.apiService.updateDomain(existing.id, payload);
     }
     return this.apiService.createDomain({

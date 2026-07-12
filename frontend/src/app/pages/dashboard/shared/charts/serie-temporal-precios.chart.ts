@@ -90,7 +90,7 @@ export class SerieTemporalPreciosChartComponent {
         keys.push(key);
       }
     }
-    return keys;
+    return keys.sort();
   });
 
   readonly chart = computed<ApexChart>(() => ({

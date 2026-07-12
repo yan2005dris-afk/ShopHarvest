@@ -54,7 +54,7 @@ import { MappingSessionService } from '../services/mapping-session.service';
   styles: [`
     :host { display: flex; flex-direction: column; gap: 1rem; }
     .vm-sidebar-title { margin: 0; font-size: 1rem; font-weight: 700; color: var(--text-1); }
-    .vm-page_label { margin: 0; font-size: 0.8125rem; color: var(--text-2); }
+    .vm-page-label { margin: 0; font-size: 0.8125rem; color: var(--text-2); }
     .vm-progress-bar-track { height: 4px; background: var(--border); border-radius: 2px; margin: 0.5rem 0; overflow: hidden; }
     .vm-progress-bar-fill { height: 100%; background: var(--accent); transition: width 0.2s ease; }
     .vm-progress-text { margin: 0; font-size: 0.75rem; color: var(--text-2); }

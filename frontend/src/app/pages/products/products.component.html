@@ -15,8 +15,8 @@
         type="text"
         class="search-input"
         placeholder="Search products…"
-        [(ngModel)]="store.searchTerm"
-        (ngModelChange)="store.filterProducts()"
+        [ngModel]="store.searchTerm()"
+        (ngModelChange)="store.searchTerm.set($event)"
       />
     </div>
   </div>
@@ -110,7 +110,7 @@
             </div>
           </div>
           <div class="prd-detail-sidebar">
-            <h4 class="prd-detail-title">Offers</h4>
+            <h4 class="prd-detail-section-title">Offers</h4>
             <table class="history-table">
               <thead>
                 <tr>
@@ -129,7 +129,7 @@
                 }
               </tbody>
             </table>
-            <h4 class="prd-detail-title">Price History</h4>
+            <h4 class="prd-detail-section-title">Price History</h4>
             @if (store.priceHistory().length > 0) {
               <div class="chart-wrap">
                 <app-price-history-chart [observations]="store.priceHistory()" />

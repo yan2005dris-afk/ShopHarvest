@@ -74,16 +74,14 @@ export class EncuestaHeatmapChartComponent {
     const rows = this.rows();
     const sitios = Array.from(new Set(rows.map((r) => r.sitio_preferido))).sort();
     const gastos = Array.from(new Set(rows.map((r) => r.gasto_promedio))).sort();
-    const data: { x: string; y: number }[] = [];
-    for (const sitio of sitios) {
-      for (const gasto of gastos) {
-        data.push({
-          x: gasto,
-          y: rows.filter((r) => r.sitio_preferido === sitio && r.gasto_promedio === gasto).length,
-        });
-      }
-    }
-    return [{ name: this.sitioLabelFallback(sitios), data }];
+
+    return sitios.map((sitio) => ({
+      name: sitio,
+      data: gastos.map((gasto) => ({
+        x: gasto,
+        y: rows.filter((r) => r.sitio_preferido === sitio && r.gasto_promedio === gasto).length,
+      })),
+    }));
   });
 
   readonly xaxis = computed<ApexXAxis>(() => {

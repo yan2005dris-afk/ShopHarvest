@@ -307,10 +307,10 @@
   justify-content: center;
   padding: 2rem;
   z-index: 100;
-  animation: fadeIn 0.15s ease-out;
+  animation: fade-in 0.15s ease-out;
 }
 
-@keyframes fadeIn {
+@keyframes fade-in {
   from { opacity: 0; }
   to { opacity: 1; }
 }
@@ -325,10 +325,10 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  animation: slideUp 0.2s ease-out;
+  animation: slide-up 0.2s ease-out;
 }
 
-@keyframes slideUp {
+@keyframes slide-up {
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
 }
@@ -396,7 +396,7 @@
   overflow-y: auto;
 }
 
-.prd-detail-title {
+.prd-detail-section-title {
   margin: 0 0 1rem;
   font-size: 0.875rem;
   font-weight: 700;

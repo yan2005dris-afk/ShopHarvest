@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, model, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
@@ -115,8 +115,8 @@ export class DoneStateComponent {
   readonly url = input.required<string>();
   readonly savedDomain = input.required<string | null>();
   readonly extensionAvailable = input.required<boolean>();
-  readonly scheduleIntervalHours = input.required<number>();
-  readonly scheduleEnabled = input.required<boolean>();
+  readonly scheduleIntervalHours = model.required<number>();
+  readonly scheduleEnabled = model.required<boolean>();
   readonly scheduleSaved = input.required<boolean>();
   readonly scheduleError = input.required<string>();
   readonly savingSchedule = input.required<boolean>();

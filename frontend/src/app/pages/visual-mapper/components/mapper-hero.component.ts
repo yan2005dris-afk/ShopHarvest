@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, model, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { MappingSessionService } from '../services/mapping-session.service';
@@ -83,7 +83,7 @@ export class MapperHeroComponent {
   readonly session = input.required<MappingSessionService>();
   readonly domains = input.required<any[]>();
   readonly extensionAvailable = input.required<boolean>();
-  readonly url = input.required<string>();
+  readonly url = model.required<string>();
   readonly urlValidationError = input.required<string>();
   readonly onOpenMapper = output<void>();
 }

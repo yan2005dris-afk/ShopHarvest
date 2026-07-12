@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, model, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
@@ -85,7 +85,7 @@ import { RouterLink } from '@angular/router';
   `],
 })
 export class IdleStateComponent {
-  readonly url = input.required<string>();
+  readonly url = model.required<string>();
   readonly urlValidationError = input.required<string>();
   readonly extensionAvailable = input.required<boolean>();
   readonly domains = input.required<{id: string, domain: string}[]>();

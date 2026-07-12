@@ -9,7 +9,12 @@ import { Product, Offer, PriceObservation } from '../../../services/api.service'
 export class ProductsPageStore {
   // ─── Data ──────────────────────────────────────────────
   readonly products = signal<Product[]>([]);
-  readonly filteredProducts = signal<Product[]>([]);
+  readonly filteredProducts = computed(() => {
+    const term = this.searchTerm().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    return this.products().filter(p =>
+      p.title.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(term),
+    );
+  });
 
   // ─── UI State ──────────────────────────────────────────
   readonly searchTerm = signal('');
@@ -36,7 +41,6 @@ export class ProductsPageStore {
   // ─── Actions ───────────────────────────────────────────
   setProducts(products: Product[]): void {
     this.products.set(products);
-    this.filteredProducts.set(products);
   }
 
   setLoading(loading: boolean): void {
@@ -45,14 +49,6 @@ export class ProductsPageStore {
 
   setError(error: string | null): void {
     this.error.set(error);
-  }
-
-  filterProducts(): void {
-    const term = this.searchTerm().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    const filtered = this.products().filter(p =>
-      p.title.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(term),
-    );
-    this.filteredProducts.set(filtered);
   }
 
   selectProduct(product: Product | null): void {

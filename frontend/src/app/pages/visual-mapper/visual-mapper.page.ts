@@ -1,4 +1,5 @@
 import { Component, inject, OnInit, OnDestroy, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { ApiService, DomainRule } from '../../services/api.service';
@@ -39,8 +40,8 @@ type MapperState =
           <app-mapper-hero
             [session]="session"
             [domains]="domains()"
-            [extensionAvailable]="extensionAvailable"
-            [url]="url"
+            [extensionAvailable]="extensionAvailable()"
+            [(url)]="url"
             [urlValidationError]="urlValidationError()"
             (onOpenMapper)="openExtensionMapper()"
           />
@@ -72,12 +73,12 @@ type MapperState =
             [extractedProductsCount]="extractedProductsCount()"
             [url]="url"
             [savedDomain]="savedDomain"
-            [extensionAvailable]="extensionAvailable"
-            [scheduleIntervalHours]="scheduleIntervalHours"
-            [scheduleEnabled]="scheduleEnabled"
-            [scheduleSaved]="scheduleSaved"
-            [scheduleError]="scheduleError"
-            [savingSchedule]="savingSchedule"
+            [extensionAvailable]="extensionAvailable()"
+            [(scheduleIntervalHours)]="scheduleIntervalHours"
+            [(scheduleEnabled)]="scheduleEnabled"
+            [scheduleSaved]="scheduleSaved()"
+            [scheduleError]="scheduleError()"
+            [savingSchedule]="savingSchedule()"
             [ingestError]="ingestError"
             [errorMessage]="errorMessage"
             (onTryAgain)="tryAgain()"
@@ -110,6 +111,10 @@ export class VisualMapperPage implements OnInit, OnDestroy {
   readonly session = inject(MappingSessionService);
   private readonly persistence = inject(DomainRulePersistenceService);
 
+  // Extension
+  readonly extensionAvailable = toSignal(this.extensionService.available$, { initialValue: false });
+  private extensionSub: Subscription | null = null;
+
   // State machine
   currentState = signal<MapperState>('idle');
 
@@ -120,11 +125,6 @@ export class VisualMapperPage implements OnInit, OnDestroy {
   // Domain rules (for existence check)
   domains = signal<DomainRule[]>([]);
 
-  // Extension
-  extensionAvailable = false;
-  private extensionSub: Subscription | null = null;
-  private extensionAvailableSub: Subscription | null = null;
-
   // Save states
   domainRuleSaved = false;
   productsIngested = false;
@@ -133,23 +133,19 @@ export class VisualMapperPage implements OnInit, OnDestroy {
   savedDomain: string | null = null;
 
   // Schedule (batch 5)
-  scheduleIntervalHours = 24;
-  scheduleEnabled = false;
-  scheduleSaved = false;
-  scheduleError = '';
-  savingSchedule = false;
+  scheduleIntervalHours = signal(24);
+  scheduleEnabled = signal(false);
+  scheduleSaved = signal(false);
+  scheduleError = signal('');
+  savingSchedule = signal(false);
   errorMessage = '';
 
   ngOnInit(): void {
     this.loadDomains();
-    this.extensionAvailableSub = this.extensionService.available$.subscribe((available) => {
-      this.extensionAvailable = available;
-    });
   }
 
   ngOnDestroy(): void {
     this.extensionSub?.unsubscribe();
-    this.extensionAvailableSub?.unsubscribe();
   }
 
   private loadDomains(): void {
@@ -266,25 +262,25 @@ export class VisualMapperPage implements OnInit, OnDestroy {
   }
 
   saveSchedule(): void {
-    if (!this.savedDomain || !this.extensionAvailable) return;
+    if (!this.savedDomain || !this.extensionAvailable()) return;
 
-    this.savingSchedule = true;
-    this.scheduleError = '';
-    this.scheduleSaved = false;
+    this.savingSchedule.set(true);
+    this.scheduleError.set('');
+    this.scheduleSaved.set(false);
 
-    const intervalMinutes = Math.max(1, Math.round(this.scheduleIntervalHours * 60));
+    const intervalMinutes = Math.max(1, Math.round(this.scheduleIntervalHours() * 60));
 
     this.extensionService
-      .setSchedule(this.savedDomain, intervalMinutes, this.scheduleEnabled)
+      .setSchedule(this.savedDomain, intervalMinutes, this.scheduleEnabled())
       .then((res) => {
-        if (res.ok) this.scheduleSaved = true;
-        else this.scheduleError = res.error ?? 'Failed to save schedule.';
+        if (res.ok) this.scheduleSaved.set(true);
+        else this.scheduleError.set(res.error ?? 'Failed to save schedule.');
       })
       .catch((err: Error) => {
-        this.scheduleError = err.message;
+        this.scheduleError.set(err.message);
       })
       .finally(() => {
-        this.savingSchedule = false;
+        this.savingSchedule.set(false);
       });
   }
 
@@ -296,10 +292,10 @@ export class VisualMapperPage implements OnInit, OnDestroy {
     this.savingProducts = false;
     this.ingestError = '';
     this.savedDomain = null;
-    this.scheduleEnabled = false;
-    this.scheduleSaved = false;
-    this.scheduleError = '';
-    this.savingSchedule = false;
+    this.scheduleEnabled.set(false);
+    this.scheduleSaved.set(false);
+    this.scheduleError.set('');
+    this.savingSchedule.set(false);
     this.session.reset();
   }
 
@@ -311,8 +307,6 @@ export class VisualMapperPage implements OnInit, OnDestroy {
     }
   }
 
-  // Computed for template (returns number, not Signal)
-  extractedProductsCount(): number {
-    return this.session.extractedProducts().length;
-  }
+  // Computed for template
+  readonly extractedProductsCount = computed(() => this.session.extractedProducts().length);
 }

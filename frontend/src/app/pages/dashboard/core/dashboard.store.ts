@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { retry, catchError, shareReplay, of } from 'rxjs';
+import { firstValueFrom, retry, catchError, shareReplay, of } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import type {
   Summary,
@@ -388,69 +388,81 @@ export class DashboardStore {
 
   // Individual loaders with caching (shareReplay)
 
-  private loadSummary() {
-    return this.http
-      .get<Summary>(`${this.base}/analytics/summary`)
-      .pipe(
-        retry({ count: 1, delay: 500 }),
-        catchError(() => of(null)),
-        shareReplay({ bufferSize: 1, refCount: true, windowTime: CACHE_TTL_MS }),
-      )
-      .subscribe({ next: (s) => this.summary.set(s) });
+  private async loadSummary(): Promise<void> {
+    const s = await firstValueFrom(
+      this.http
+        .get<Summary>(`${this.base}/analytics/summary`)
+        .pipe(
+          retry({ count: 1, delay: 500 }),
+          catchError(() => of(null)),
+          shareReplay({ bufferSize: 1, refCount: true, windowTime: CACHE_TTL_MS }),
+        )
+    );
+    this.summary.set(s);
   }
 
-  private loadKpis() {
-    return this.http
-      .get<AllKpis>(`${this.base}/analytics/kpis`)
-      .pipe(
-        retry({ count: 1, delay: 500 }),
-        catchError(() => of(null)),
-      )
-      .subscribe({ next: (k) => this.kpis.set(k) });
+  private async loadKpis(): Promise<void> {
+    const k = await firstValueFrom(
+      this.http
+        .get<AllKpis>(`${this.base}/analytics/kpis`)
+        .pipe(
+          retry({ count: 1, delay: 500 }),
+          catchError(() => of(null)),
+        )
+    );
+    this.kpis.set(k);
   }
 
-  private loadPreguntaPrincipal() {
-    return this.http
-      .get<PreguntaPrincipalRow[]>(`${this.base}/analytics/queries/main`)
-      .pipe(
-        retry({ count: 1, delay: 500 }),
-        catchError(() => of([])),
-      )
-      .subscribe({ next: (rows) => this.preguntaPrincipal.set(rows ?? []) });
+  private async loadPreguntaPrincipal(): Promise<void> {
+    const rows = await firstValueFrom(
+      this.http
+        .get<PreguntaPrincipalRow[]>(`${this.base}/analytics/queries/main`)
+        .pipe(
+          retry({ count: 1, delay: 500 }),
+          catchError(() => of([])),
+        )
+    );
+    this.preguntaPrincipal.set(rows ?? []);
   }
 
-  private loadOutliers() {
-    return this.http
-      .get<OutlierRow[]>(`${this.base}/analytics/queries/outliers`)
-      .pipe(
-        retry({ count: 1, delay: 500 }),
-        catchError(() => of([])),
-      )
-      .subscribe({ next: (rows) => this.outliers.set(rows ?? []) });
+  private async loadOutliers(): Promise<void> {
+    const rows = await firstValueFrom(
+      this.http
+        .get<OutlierRow[]>(`${this.base}/analytics/queries/outliers`)
+        .pipe(
+          retry({ count: 1, delay: 500 }),
+          catchError(() => of([])),
+        )
+    );
+    this.outliers.set(rows ?? []);
   }
 
-  private loadTimeSeries() {
-    return this.http
-      .get<TimeSeriesResponse>(`${this.base}/analytics/queries/time-series`)
-      .pipe(
-        retry({ count: 1, delay: 500 }),
-        catchError(() =>
-          of({
-            series: [],
-            snapshot: { fecha_min: null, fecha_max: null, fechas_distintas: 0 },
-          } as TimeSeriesResponse),
-        ),
-      )
-      .subscribe({ next: (resp) => this.timeSeries.set(resp?.series ?? []) });
+  private async loadTimeSeries(): Promise<void> {
+    const resp = await firstValueFrom(
+      this.http
+        .get<TimeSeriesResponse>(`${this.base}/analytics/queries/time-series`)
+        .pipe(
+          retry({ count: 1, delay: 500 }),
+          catchError(() =>
+            of({
+              series: [],
+              snapshot: { fecha_min: null, fecha_max: null, fechas_distintas: 0 },
+            } as TimeSeriesResponse),
+          ),
+        )
+    );
+    this.timeSeries.set(resp?.series ?? []);
   }
 
-  private loadEncuesta() {
-    return this.http
-      .get<EncuestaRow[]>(`${this.base}/analytics/queries/encuesta`)
-      .pipe(
-        retry({ count: 1, delay: 500 }),
-        catchError(() => of([])),
-      )
-      .subscribe({ next: (rows) => this.encuesta.set(rows ?? []) });
+  private async loadEncuesta(): Promise<void> {
+    const rows = await firstValueFrom(
+      this.http
+        .get<EncuestaRow[]>(`${this.base}/analytics/queries/encuesta`)
+        .pipe(
+          retry({ count: 1, delay: 500 }),
+          catchError(() => of([])),
+        )
+    );
+    this.encuesta.set(rows ?? []);
   }
 }
