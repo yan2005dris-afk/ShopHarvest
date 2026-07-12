@@ -70,14 +70,24 @@ function makePrismaMock() {
   };
 }
 
+function makeOperationalPrismaMock() {
+  return {
+    rawCapture: {
+      update: jest.fn().mockResolvedValue({}),
+    },
+  };
+}
+
 describe('DwLoaderService', () => {
   let stagingDir: string;
   let prisma: ReturnType<typeof makePrismaMock>;
+  let operationalPrisma: ReturnType<typeof makeOperationalPrismaMock>;
   let qualityService: QualityService;
 
   beforeEach(async () => {
     stagingDir = await fs.mkdtemp(path.join(os.tmpdir(), 'dw-staging-'));
     prisma = makePrismaMock();
+    operationalPrisma = makeOperationalPrismaMock();
     qualityService = new QualityService();
   });
 
@@ -90,6 +100,7 @@ describe('DwLoaderService', () => {
       prisma as never,
       makeConfigService({ PIPELINE_STAGING_DIR: stagingDir }),
       qualityService,
+      operationalPrisma as never,
     );
   }
 
@@ -216,5 +227,31 @@ describe('DwLoaderService', () => {
 
     expect(result.estado).toBe('fallido');
     expect(result.productosCargados).toBe(0);
+  });
+
+  it('updates raw captures to PROCESSED in the operational DB post-load', async () => {
+    await writeStaging([
+      {
+        ...VALID_PRODUCT,
+        _offerId: 'offer-123',
+        _sourceId: 'source-456',
+      },
+    ]);
+    const service = makeService();
+
+    const result = await service.load();
+
+    expect(result.estado).toBe('completado');
+    expect(operationalPrisma.rawCapture.update).toHaveBeenCalledWith({
+      where: {
+        offerId_sourceId: {
+          offerId: 'offer-123',
+          sourceId: 'source-456',
+        },
+      },
+      data: {
+        status: 'PROCESSED',
+      },
+    });
   });
 });

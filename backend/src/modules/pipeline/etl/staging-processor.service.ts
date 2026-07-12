@@ -23,6 +23,8 @@ import { standardizeDates } from './staging/stg-dates';
 import { loadRates, cleanAndConvertToUsd } from './staging/stg-currency';
 import { deduplicate } from './staging/stg-dedup';
 import { classifyCategory } from './etl.constants';
+import { OperationalPrismaService } from '../../../common/prisma/operational-prisma.service';
+import { RawCaptureStatus } from '../../../generated/operational';
 
 const DATE_COLS = ['_extraido_en', 'fecha_publicacion', 'Timestamp'];
 const PRODUCT_SOURCES: ReadonlyArray<PipelineSource> = [
@@ -45,7 +47,26 @@ const ENCUESTA_DEDUP_KEYS = [
 export class StagingProcessorService implements IStagingProcessor {
   private readonly logger = new Logger(StagingProcessorService.name);
 
-  constructor(private readonly configService: ConfigService) {}
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly operationalPrisma: OperationalPrismaService,
+  ) {}
+
+  async extractRawPayloads() {
+    return this.operationalPrisma.rawCapture.findMany({
+      where: {
+        status: {
+          in: [RawCaptureStatus.UNPROCESSED, RawCaptureStatus.FAILED],
+        },
+        attempts: {
+          lt: 3,
+        },
+      },
+      include: {
+        source: true,
+      },
+    });
+  }
 
   async run(opts?: StagingOptions): Promise<StagingResult> {
     const start = Date.now();
@@ -64,18 +85,48 @@ export class StagingProcessorService implements IStagingProcessor {
     const rates = loadRates(rawDir);
 
     const allRecords: Record<string, unknown>[] = [];
-    for (const source of PRODUCT_SOURCES) {
-      const raw = await this.loadLatestRaw(path.join(rawDir, source), source);
-      if (!raw.length) {
-        this.logger.warn(`Sin datos para la fuente ${source}`);
+    const rawCaptures = await this.extractRawPayloads();
+
+    for (const rawCapture of rawCaptures) {
+      const sourceCode = (rawCapture.source?.code || PipelineSource.MERCADOLIBRE) as PipelineSource;
+      const payload = rawCapture.payload;
+      if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+        this.logger.error(
+          `Payload de RawCapture inválido para offerId ${rawCapture.offerId}`,
+        );
         continue;
       }
-      for (const record of raw) {
+      try {
+        const record = { ...payload } as Record<string, unknown>;
+        const transformed = this.transformProduct(record, sourceCode, rates);
+        
+        // Retain metadata properties _offerId and _sourceId mapped from the matching RawCapture record
+        transformed['_offerId'] = rawCapture.offerId;
+        transformed['_sourceId'] = rawCapture.sourceId;
+        
+        allRecords.push(transformed);
+      } catch (err) {
+        this.logger.error(
+          `TransformError (${sourceCode}) para offerId ${rawCapture.offerId}: ${(err as Error).message} — registro omitido`,
+        );
         try {
-          allRecords.push(this.transformProduct(record, source, rates));
-        } catch (err) {
+          await this.operationalPrisma.rawCapture.update({
+            where: {
+              offerId_sourceId: {
+                offerId: rawCapture.offerId,
+                sourceId: rawCapture.sourceId,
+              },
+            },
+            data: {
+              status: RawCaptureStatus.FAILED,
+              attempts: {
+                increment: 1,
+              },
+            },
+          });
+        } catch (updateErr) {
           this.logger.error(
-            `TransformError (${source}): ${(err as Error).message} — registro omitido`,
+            `Failed to update RawCapture for failed transform: ${(updateErr as Error).message}`,
           );
         }
       }
@@ -216,16 +267,19 @@ export class StagingProcessorService implements IStagingProcessor {
 
 if (require.main === module) {
   const configService = new ConfigService();
-  new StagingProcessorService(configService)
+  const operationalPrisma = new OperationalPrismaService();
+  new StagingProcessorService(configService, operationalPrisma)
     .run()
-    .then((result) => {
+    .then(async (result) => {
       console.log(
         `staging: productos=${result.totalProductos} encuestas=${result.totalEncuestas} durationMs=${result.durationMs}`,
       );
+      await operationalPrisma.$disconnect();
       process.exit(0);
     })
-    .catch((err) => {
+    .catch(async (err) => {
       console.error('staging: fatal', err);
+      await operationalPrisma.$disconnect();
       process.exit(1);
     });
 }

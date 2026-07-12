@@ -23,6 +23,8 @@ import * as path from 'path';
 import type { IDwLoader, LoadResult } from '../interfaces';
 import { AnalyticsPrismaService } from '../../../common/prisma/analytics-prisma.service';
 import { QualityService } from './quality.service';
+import { OperationalPrismaService } from '../../../common/prisma/operational-prisma.service';
+import { RawCaptureStatus } from '../../../generated/operational';
 import {
   FUENTES,
   CATEGORIAS,
@@ -44,6 +46,8 @@ interface ProductRow {
   calificacion?: unknown;
   precio_usd?: unknown;
   precio_raw?: unknown;
+  _offerId?: unknown;
+  _sourceId?: unknown;
 }
 
 interface EncuestaRow {
@@ -79,7 +83,31 @@ export class DwLoaderService implements IDwLoader {
     private readonly prisma: AnalyticsPrismaService,
     private readonly configService: ConfigService,
     private readonly qualityService: QualityService,
+    private readonly operationalPrisma: OperationalPrismaService,
   ) {}
+
+  private async updateRawCapturesToProcessed(
+    records: { offerId: string; sourceId: string }[],
+  ): Promise<void> {
+    this.logger.log(
+      `Actualizando ${records.length} capturas a estado PROCESSED en la base de datos operacional...`,
+    );
+    await Promise.all(
+      records.map((r) =>
+        this.operationalPrisma.rawCapture.update({
+          where: {
+            offerId_sourceId: {
+              offerId: r.offerId,
+              sourceId: r.sourceId,
+            },
+          },
+          data: {
+            status: RawCaptureStatus.PROCESSED,
+          },
+        }),
+      ),
+    );
+  }
 
   async load(opts?: { truncateFirst?: boolean }): Promise<LoadResult> {
     const start = Date.now();
@@ -135,6 +163,10 @@ export class DwLoaderService implements IDwLoader {
       const dims = await this.loadDimLookups();
       const prod = await this.loadFactProductos(productos, dims);
       const enc = await this.loadFactEncuesta(encuestas, dims);
+
+      if (prod.loadedRecords.length > 0) {
+        await this.updateRawCapturesToProcessed(prod.loadedRecords);
+      }
 
       const tiempoMs = Date.now() - start;
       this.logger.log(`Carga completada en ${tiempoMs} ms`);
@@ -295,12 +327,17 @@ export class DwLoaderService implements IDwLoader {
   private async loadFactProductos(
     data: ProductRow[],
     dims: Awaited<ReturnType<DwLoaderService['loadDimLookups']>>,
-  ): Promise<{ inserted: number; skipped: number }> {
+  ): Promise<{
+    inserted: number;
+    skipped: number;
+    loadedRecords: { offerId: string; sourceId: string }[];
+  }> {
     this.logger.log(
       `Cargando FactProductos (${data.length} registros de staging)...`,
     );
     let inserted = 0;
     let skipped = 0;
+    const loadedRecords: { offerId: string; sourceId: string }[] = [];
     for (const item of data) {
       const titulo = item['titulo_oferta'];
       if (typeof titulo !== 'string' || titulo === '') {
@@ -376,6 +413,12 @@ export class DwLoaderService implements IDwLoader {
           },
         });
         inserted++;
+        if (typeof item['_offerId'] === 'string' && typeof item['_sourceId'] === 'string') {
+          loadedRecords.push({
+            offerId: item['_offerId'],
+            sourceId: item['_sourceId'],
+          });
+        }
       } catch (err) {
         this.logger.error(
           `  Error insertando hecho: ${(err as Error).message?.slice(0, 100)}`,
@@ -384,7 +427,7 @@ export class DwLoaderService implements IDwLoader {
       }
     }
     this.logger.log(`  Insertados: ${inserted} | Omitidos: ${skipped}`);
-    return { inserted, skipped };
+    return { inserted, skipped, loadedRecords };
   }
 
   private async loadFactEncuesta(
@@ -453,19 +496,22 @@ export class DwLoaderService implements IDwLoader {
 if (require.main === module) {
   const configService = new ConfigService();
   const prisma = new AnalyticsPrismaService();
+  const operationalPrisma = new OperationalPrismaService();
   const truncateFirst = process.argv.includes('--truncate');
-  new DwLoaderService(prisma, configService, new QualityService())
+  new DwLoaderService(prisma, configService, new QualityService(), operationalPrisma)
     .load({ truncateFirst })
     .then(async (result) => {
       console.log(
         `dw-load: productos=${result.productosCargados} encuestas=${result.encuestasCargadas} estado=${result.estado}`,
       );
       await prisma.$disconnect();
+      await operationalPrisma.$disconnect();
       process.exit(result.estado === 'completado' ? 0 : 1);
     })
     .catch(async (err: unknown) => {
       console.error('dw-load: fatal', err);
       await prisma.$disconnect();
+      await operationalPrisma.$disconnect();
       process.exit(1);
     });
 }

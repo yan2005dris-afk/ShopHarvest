@@ -177,6 +177,7 @@ model EtlRun {
   qualityMetric QualityMetric?
 
   @@index([status, startedAt(sort: Desc)])
+  @@index([source])
 }
 
 model QualityMetric {
@@ -272,11 +273,19 @@ model Brand {
   @@map("brands")
 }
 
+enum RawCaptureStatus {
+  UNPROCESSED
+  PROCESSED
+  FAILED
+}
+
 model RawCapture {
-  offerId    String   @db.Uuid
-  sourceId   String   @db.Uuid
-  payload    Json     @db.JsonB
-  capturedAt DateTime @default(now()) @db.Timestamp(6)
+  offerId    String           @db.Uuid
+  sourceId   String           @db.Uuid
+  payload    Json             @db.JsonB
+  capturedAt DateTime         @default(now()) @db.Timestamp(6)
+  status     RawCaptureStatus @default(UNPROCESSED)
+  attempts   Int              @default(0)
 
   source Source @relation(fields: [sourceId], references: [id])
   // Cambio SDD: product-offer-split — real FK, closing the orphan-model
@@ -286,5 +295,6 @@ model RawCapture {
 
   @@id([offerId, sourceId])
   @@index([capturedAt])
+  @@index([status, attempts])
   @@map("raw_captures")
 }

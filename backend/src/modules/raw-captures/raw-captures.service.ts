@@ -3,7 +3,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma } from '../../generated/operational';
+import { Prisma, RawCaptureStatus } from '../../generated/operational';
 import { OperationalPrismaService } from '../../common/prisma/operational-prisma.service';
 import { IngestRawCaptureDto } from '@web-scraping/contracts/raw-captures';
 
@@ -51,10 +51,14 @@ export class RawCapturesService {
         offerId: dto.offerId,
         sourceId: dto.sourceId,
         payload: dto.payload as Prisma.InputJsonValue,
+        status: RawCaptureStatus.UNPROCESSED,
+        attempts: 0,
       },
       update: {
         payload: dto.payload as Prisma.InputJsonValue,
         capturedAt: new Date(),
+        status: RawCaptureStatus.UNPROCESSED,
+        attempts: 0,
       },
     });
   }

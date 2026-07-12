@@ -67,7 +67,7 @@ function buildPrismaStub() {
   }> = [];
   const rawCaptures = new Map<
     string,
-    { offerId: string; sourceId: string; payload: unknown }
+    { offerId: string; sourceId: string; payload: unknown; status?: string; attempts?: number }
   >();
 
   let nextProductId = 0;
@@ -235,8 +235,8 @@ function buildPrismaStub() {
           update,
         }: {
           where: { offerId_sourceId: { offerId: string; sourceId: string } };
-          create: { offerId: string; sourceId: string; payload: unknown };
-          update: { payload: unknown };
+          create: { offerId: string; sourceId: string; payload: unknown; status?: string; attempts?: number };
+          update: { payload: unknown; status?: string; attempts?: number };
         }) => {
           const k = rawCaptureKey(
             where.offerId_sourceId.offerId,
@@ -245,6 +245,8 @@ function buildPrismaStub() {
           const existing = rawCaptures.get(k);
           if (existing) {
             existing.payload = update.payload;
+            existing.status = update.status;
+            existing.attempts = update.attempts;
             return existing;
           }
           const row = { ...create };
@@ -420,6 +422,8 @@ describe('ProductsService.ingestFromExtension', () => {
     );
     expect(capture).toBeDefined();
     expect(capture!.payload).toEqual({ title: 'Zapatilla Nike', price: '29.99' });
+    expect(capture!.status).toBe('UNPROCESSED');
+    expect(capture!.attempts).toBe(0);
   });
 
   it('auto-creates a DomainRule when domain is not in DB, deriving fieldMappings from inbound payload', async () => {

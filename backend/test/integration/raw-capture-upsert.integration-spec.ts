@@ -38,6 +38,23 @@ describe('RawCapture Upsert (integration)', () => {
       baseUrl: 'https://test2.example.com',
     });
     sourceId2 = src2.id;
+
+    const prisma = (rawCapturesService as any).prisma;
+    const product = await prisma.product.create({
+      data: {
+        title: 'Test Integration Product',
+      },
+    });
+
+    await prisma.offer.create({
+      data: {
+        id: offerId,
+        productId: product.id,
+        sourceId: sourceId1,
+        url: 'https://test1.example.com/product-1',
+        price: 99.99,
+      },
+    });
   });
 
   afterAll(async () => {
@@ -57,6 +74,18 @@ describe('RawCapture Upsert (integration)', () => {
         where: {
           offerId_sourceId: { offerId, sourceId: sourceId2 },
         },
+      });
+    } catch { /* ignore */ }
+
+    // Delete offer
+    try {
+      await prisma.offer.delete({ where: { id: offerId } });
+    } catch { /* ignore */ }
+
+    // Delete products associated with this integration test
+    try {
+      await prisma.product.deleteMany({
+        where: { title: 'Test Integration Product' },
       });
     } catch { /* ignore */ }
 
