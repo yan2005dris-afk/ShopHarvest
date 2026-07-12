@@ -276,7 +276,10 @@ export class EtlManagementPage implements OnInit {
 
   /** Pending source options derived from live store data — shown in local ETL mode. */
   readonly pendingSourceOptions = computed<EtlSourceOption[]>(() => {
-    const summary = this.store.pendingSummary();
+    const summary = this.store.pendingSummary() as
+      | { sources: Record<string, { name: string; pending: number }> }
+      | null
+      | undefined;
     if (!summary) return [];
     return Object.entries(summary.sources)
       .filter(([, info]) => info.pending > 0)
