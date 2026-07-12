@@ -63,7 +63,16 @@ export class BrowserFactoryService {
       }
     }
 
-    const launchOptions: any = { headless };
+    const launchOptions: any = {
+      headless,
+      args: [
+        '--disable-blink-features=AutomationControlled',
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-web-security',
+        '--disable-features=IsolateOrigins,site-per-process',
+      ],
+    };
     if (useProxy) {
       launchOptions.proxy = {
         server,
@@ -96,6 +105,11 @@ export class BrowserFactoryService {
       userAgent: opts.userAgent ?? DEFAULT_USER_AGENT,
       locale: opts.acceptLanguage?.split(',')[0] ?? DEFAULT_LOCALE,
       viewport: opts.viewport ?? { ...DEFAULT_VIEWPORT },
+      deviceScaleFactor: 1,
+      hasTouch: false,
+      timezoneId: 'America/Guayaquil',
+      geolocation: { latitude: -0.180653, longitude: -78.467837 },
+      permissions: ['geolocation'],
       extraHTTPHeaders: { 'Accept-Language': acceptLanguage },
     });
   }

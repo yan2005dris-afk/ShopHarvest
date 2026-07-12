@@ -1,0 +1,86 @@
+<div class="sources">
+  <div class="sources-header">
+    <h1>Sources</h1>
+    @if (!loading() && !error()) {
+      <span class="sources-count">{{ sources().length }}</span>
+    }
+  </div>
+
+  @if (loading()) {
+    <div class="sources-state">
+      <div class="src-spinner"></div>
+      <p>Loading sources…</p>
+    </div>
+  }
+
+  @if (error()) {
+    <div class="sources-state">
+      <div class="error-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+      </div>
+      <p class="error-text">{{ error() }}</p>
+      <button class="btn-outline" (click)="loadSources()">Retry</button>
+    </div>
+  }
+
+  @if (!loading() && !error() && sources().length > 0) {
+    <div class="sources-grid">
+      @for (source of sources(); track source) {
+        @let m = metaFor(source);
+        <div class="src-card">
+          <div class="src-card-header">
+            <h3 class="src-name">{{ m?.name ?? source }}</h3>
+            <span class="src-badge" [class]="'src-badge--' + (m?.status ?? 'pending')">
+              {{ statusIcon(m?.status ?? 'pending') }} {{ statusLabel(m?.status ?? 'pending') }}
+            </span>
+          </div>
+
+          @if (m) {
+            <p class="src-desc">{{ m.description }}</p>
+            <p class="src-url">{{ m.url }}</p>
+          }
+
+          @if (results()[source]; as result) {
+            <div class="src-result">
+              <span class="src-result-items">{{ result.totalScraped }} items</span>
+              <span class="src-result-duration">{{ result.durationMs }}ms</span>
+              @if (result.errors.length > 0) {
+                <span class="src-result-errors">{{ result.errors.length }} error(s)</span>
+              }
+            </div>
+          }
+
+          <button
+            class="btn-scrape"
+            [disabled]="scraping()[source]"
+            (click)="scrape(source)"
+          >
+            @if (scraping()[source]) {
+              <span class="btn-spinner"></span>
+              <span>Scraping…</span>
+            } @else {
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="5 3 19 12 5 21 5 3"/>
+              </svg>
+              <span>Scrape now</span>
+            }
+          </button>
+        </div>
+      }
+    </div>
+  }
+
+  @if (!loading() && !error() && sources().length === 0) {
+    <div class="sources-state">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-3)">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+      <p>No sources found.</p>
+    </div>
+  }
+</div>

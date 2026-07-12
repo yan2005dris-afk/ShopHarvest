@@ -1,0 +1,48 @@
+# ─── Scraper Worker ──────────────────────────────────────────────────────────
+# Based on the official Playwright image (Ubuntu Noble) which has:
+#   - Node.js 22
+#   - Full Chromium with display support
+#   - All system libraries for headed mode
+#
+# The container starts Xvfb on a virtual display, then runs the scraper-worker
+# Express server. Scrapers connect to DISPLAY=:99 for headed Chromium.
+#
+# Build:
+#   docker build -t scraper-worker -f docker/Dockerfile.scraper-worker .
+#
+# Run:
+#   docker run --rm --network=host -e DISPLAY=:99 scraper-worker
+# ──────────────────────────────────────────────────────────────────────────────
+
+FROM mcr.microsoft.com/playwright:v1.52.0-noble
+
+WORKDIR /app
+
+# Install Xvfb (for virtual display)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+      xvfb \
+      x11-utils \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy worker code
+# Copy worker code
+COPY docker/scraper-worker/package.json ./
+RUN npm install
+
+# Install the matching Chromium browser for the npm Playwright version
+# (the base image's browsers may be for a different Playwright version)
+RUN npx playwright install chromium 2>&1
+
+COPY docker/scraper-worker/ ./
+
+# Start Xvfb + the worker server
+# Xvfb on :99, then wait for socket, then start Express
+CMD ["sh", "-c", "\
+  Xvfb :99 -screen 0 1920x1080x24 & \
+  sleep 1 && \
+  while [ ! -e /tmp/.X11-unix/X99 ]; do sleep 0.5; done && \
+  echo 'Xvfb ready on :99' && \
+  export DISPLAY=:99 && \
+  node server.js \
+"]
