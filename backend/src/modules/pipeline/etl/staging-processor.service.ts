@@ -74,6 +74,7 @@ export class StagingProcessorService implements IStagingProcessor {
       where,
       include: {
         source: true,
+        offer: true,
       },
     });
   }
@@ -108,6 +109,12 @@ export class StagingProcessorService implements IStagingProcessor {
       }
       try {
         const record = { ...payload } as Record<string, unknown>;
+        
+        // Backfill URL from Offer when missing in the raw payload
+        if (!record['url'] && !record['link'] && !record['url_producto'] && (rawCapture as any).offer) {
+          record['url_producto'] = (rawCapture as any).offer.url;
+        }
+
         const transformed = this.transformProduct(record, sourceCode, rates);
         
         // Retain metadata properties _offerId and _sourceId mapped from the matching RawCapture record
