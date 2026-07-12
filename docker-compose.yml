@@ -58,6 +58,8 @@ services:
       ANALYTICS_DATABASE_URL: postgresql://${POSTGRES_DW_USER:-scraper}:${POSTGRES_DW_PASSWORD}@postgres-dw:5432/${POSTGRES_DW_DB:-scraperdw}
       NODE_ENV: production
       PORT: 3000
+      PIPELINE_RAW_DIR: pipeline/raw
+      PIPELINE_STAGING_DIR: pipeline/staging
     ports:
       - "${BACKEND_PORT:-3000}:3000"
     depends_on:

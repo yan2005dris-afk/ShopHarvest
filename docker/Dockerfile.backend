@@ -75,6 +75,9 @@ RUN npx prisma generate --config prisma.operational.config.ts && \
 # Copy generated clients into dist/ so the compiled JS resolves them
 RUN cp -r src/generated dist/generated
 
+# Create pipeline directories and assign ownership to node user
+RUN mkdir -p pipeline/raw pipeline/staging && chown -R node:node pipeline
+
 USER node
 EXPOSE 3000
 

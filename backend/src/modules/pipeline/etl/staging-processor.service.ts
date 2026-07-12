@@ -79,12 +79,12 @@ export class StagingProcessorService implements IStagingProcessor {
     const rawDir = this.resolveDir(
       opts?.inputDir,
       'PIPELINE_RAW_DIR',
-      'backend/pipeline/raw',
+      'pipeline/raw',
     );
     const stagingDir = this.resolveDir(
       opts?.outputDir,
       'PIPELINE_STAGING_DIR',
-      'backend/pipeline/staging',
+      'pipeline/staging',
     );
     await fs.mkdir(stagingDir, { recursive: true });
 
@@ -264,10 +264,12 @@ export class StagingProcessorService implements IStagingProcessor {
   private resolveDir(
     explicit: string | undefined,
     envVar: string,
-    fallback: string,
+    fallbackSubpath: string,
   ): string {
     if (explicit) return explicit;
-    return this.configService.get<string>(envVar) ?? fallback;
+    const envVal = this.configService.get<string>(envVar);
+    if (envVal) return envVal;
+    return path.join(path.resolve(__dirname, '../../../../'), fallbackSubpath);
   }
 }
 

@@ -111,9 +111,10 @@ export class DwLoaderService implements IDwLoader {
   async load(opts?: { truncateFirst?: boolean }): Promise<LoadResult> {
     const start = Date.now();
     try {
-      const stagingDir =
-        this.configService.get<string>('PIPELINE_STAGING_DIR') ??
-        'backend/pipeline/staging';
+      const envVal = this.configService.get<string>('PIPELINE_STAGING_DIR');
+      const stagingDir = envVal
+        ? envVal
+        : path.join(path.resolve(__dirname, '../../../../'), 'pipeline/staging');
       const productos = await this.readJsonArray<ProductRow>(
         path.join(stagingDir, 'all_products.json'),
       );
