@@ -27,11 +27,26 @@ describe('StagingProcessorService', () => {
   let rawDir: string;
   let stagingDir: string;
   let service: StagingProcessorService;
+  let prismaMock: any;
 
   beforeEach(async () => {
     rawDir = await fs.mkdtemp(path.join(os.tmpdir(), 'staging-raw-'));
     stagingDir = await fs.mkdtemp(path.join(os.tmpdir(), 'staging-out-'));
-    service = new StagingProcessorService(makeConfigService());
+
+    prismaMock = {
+      rawCapture: {
+        findMany: jest.fn().mockResolvedValue([]),
+        update: jest.fn().mockResolvedValue({}),
+      },
+    };
+
+    service = new StagingProcessorService(
+      makeConfigService({
+        PIPELINE_RAW_DIR: rawDir,
+        PIPELINE_STAGING_DIR: stagingDir,
+      }),
+      prismaMock as any,
+    );
   });
 
   afterEach(async () => {
@@ -40,30 +55,62 @@ describe('StagingProcessorService', () => {
   });
 
   it('ETL-1: normalizes, converts currency, classifies, dedupes, and writes staging files', async () => {
-    await writeRaw(rawDir, PipelineSource.MERCADOLIBRE, [
+    // Mock the operational database call to return the raw captures instead of reading files
+    prismaMock.rawCapture.findMany.mockResolvedValue([
       {
-        titulo: 'Laptop gamer 15 pulgadas',
-        precio: '$999.99',
-        moneda: 'USD',
-        url_producto: 'https://mercadolibre.com.ec/item-1',
-        _extraido_en: '2026-07-10T12:00:00.000Z',
+        offerId: 'offer-meli-1',
+        sourceId: 'source-meli',
+        status: 'UNPROCESSED',
+        attempts: 0,
+        payload: {
+          titulo: 'Laptop gamer 15 pulgadas',
+          precio: '$999.99',
+          moneda: 'USD',
+          url_producto: 'https://mercadolibre.com.ec/item-1',
+          _extraido_en: '2026-07-10T12:00:00.000Z',
+        },
+        source: {
+          id: 'source-meli',
+          code: 'mercadolibre',
+          name: 'MercadoLibre Ecuador',
+        },
       },
       // Exact duplicate (same titulo+precio+fuente) — must be deduped.
       {
-        titulo: 'Laptop gamer 15 pulgadas',
-        precio: '$999.99',
-        moneda: 'USD',
-        url_producto: 'https://mercadolibre.com.ec/item-1',
-        _extraido_en: '2026-07-10T12:00:00.000Z',
+        offerId: 'offer-meli-2',
+        sourceId: 'source-meli',
+        status: 'UNPROCESSED',
+        attempts: 0,
+        payload: {
+          titulo: 'Laptop gamer 15 pulgadas',
+          precio: '$999.99',
+          moneda: 'USD',
+          url_producto: 'https://mercadolibre.com.ec/item-1',
+          _extraido_en: '2026-07-10T12:00:00.000Z',
+        },
+        source: {
+          id: 'source-meli',
+          code: 'mercadolibre',
+          name: 'MercadoLibre Ecuador',
+        },
       },
-    ]);
-    await writeRaw(rawDir, PipelineSource.ALIEXPRESS, [
       {
-        titulo: 'Vestido de verano',
-        precio: '25.50',
-        moneda: 'USD',
-        url_producto: 'https://aliexpress.com/item-2',
-        _extraido_en: '2026-07-10T12:00:00.000Z',
+        offerId: 'offer-ali-1',
+        sourceId: 'source-ali',
+        status: 'UNPROCESSED',
+        attempts: 0,
+        payload: {
+          titulo: 'Vestido de verano',
+          precio: '25.50',
+          moneda: 'USD',
+          url_producto: 'https://aliexpress.com/item-2',
+          _extraido_en: '2026-07-10T12:00:00.000Z',
+        },
+        source: {
+          id: 'source-ali',
+          code: 'aliexpress',
+          name: 'AliExpress',
+        },
       },
     ]);
 
@@ -72,7 +119,7 @@ describe('StagingProcessorService', () => {
       outputDir: stagingDir,
     });
 
-    expect(result.totalProductos).toBe(2); // 3 raw rows → 1 dup removed
+    expect(result.totalProductos).toBe(2); // 3 raw captures -> 1 dup removed
     expect(result.totalEncuestas).toBe(0);
 
     const staged = JSON.parse(
@@ -89,6 +136,8 @@ describe('StagingProcessorService', () => {
       precio_usd: 999.99,
       categoria_normalizada: 'electronica',
       _extraido_en: '2026-07-10',
+      _offerId: 'offer-meli-1',
+      _sourceId: 'source-meli',
     });
 
     const dress = staged.find(
@@ -97,10 +146,13 @@ describe('StagingProcessorService', () => {
     expect(dress).toMatchObject({
       titulo_oferta: 'Vestido de verano',
       categoria_normalizada: 'ropa',
+      _offerId: 'offer-ali-1',
+      _sourceId: 'source-ali',
     });
   });
 
   it('processes encuesta rows and dedupes them independently from products', async () => {
+    // Encuestas are still file-based
     await writeRaw(rawDir, PipelineSource.ENCUESTA, [
       {
         edad: '25',
@@ -125,6 +177,8 @@ describe('StagingProcessorService', () => {
       },
     ]);
 
+    prismaMock.rawCapture.findMany.mockResolvedValue([]);
+
     const result = await service.run({
       inputDir: rawDir,
       outputDir: stagingDir,
@@ -140,42 +194,80 @@ describe('StagingProcessorService', () => {
     );
   });
 
-  it('skips a source directory with no raw dumps instead of crashing', async () => {
-    // Only MELI has data; ALI/Temu/Shein/CSV directories don't exist.
-    await writeRaw(rawDir, PipelineSource.MERCADOLIBRE, [
+  it('drops a record and marks status as FAILED in operational database when a transform throws', async () => {
+    prismaMock.rawCapture.findMany.mockResolvedValue([
       {
-        titulo: 'Producto único',
-        precio: '10',
-        moneda: 'USD',
-        url_producto: 'https://mercadolibre.com.ec/x',
-        _extraido_en: '2026-07-10T12:00:00.000Z',
+        offerId: 'offer-fail',
+        sourceId: 'source-meli',
+        status: 'UNPROCESSED',
+        attempts: 0,
+        payload: {
+          titulo: 'Producto malo',
+          precio: '10',
+          moneda: 'USD',
+          url_producto: 'https://x/1',
+        },
+        source: {
+          id: 'source-meli',
+          code: 'mercadolibre',
+        },
+      },
+      {
+        offerId: 'offer-ok',
+        sourceId: 'source-meli',
+        status: 'UNPROCESSED',
+        attempts: 0,
+        payload: {
+          titulo: 'Producto bueno',
+          precio: '10',
+          moneda: 'USD',
+          url_producto: 'https://x/2',
+          _extraido_en: '2026-07-10T12:00:00.000Z',
+        },
+        source: {
+          id: 'source-meli',
+          code: 'mercadolibre',
+        },
       },
     ]);
+
+    // Force transformProduct to throw on the first call
+    let callCount = 0;
+    jest.spyOn(service as any, 'transformProduct').mockImplementation((record: any) => {
+      callCount++;
+      if (callCount === 1) {
+        throw new Error('Forced transform error');
+      }
+      // Standard minimal transformation for the second one
+      return {
+        titulo_oferta: record.titulo,
+        precio_raw: record.precio,
+        precio_usd: 10,
+        categoria_normalizada: 'otros',
+        _extraido_en: '2026-07-10',
+        _fuente: 'mercadolibre',
+      };
+    });
 
     const result = await service.run({
       inputDir: rawDir,
       outputDir: stagingDir,
     });
-    expect(result.totalProductos).toBe(1);
-  });
 
-  it('drops a record instead of crashing the whole batch when a transform throws', async () => {
-    // toUpperCase() on a non-string moneda would throw inside cleanAndConvertToUsd
-    // callers — verify one bad record doesn't take down the others.
-    await writeRaw(rawDir, PipelineSource.MERCADOLIBRE, [
-      {
-        titulo: 'Producto bueno',
-        precio: '10',
-        moneda: 'USD',
-        url_producto: 'https://x/1',
+    expect(result.totalProductos).toBe(1); // the failed one is skipped, the other succeeds
+    expect(prismaMock.rawCapture.update).toHaveBeenCalledWith({
+      where: {
+        offerId_sourceId: {
+          offerId: 'offer-fail',
+          sourceId: 'source-meli',
+        },
       },
-      null, // malformed entry
-    ]);
-
-    const result = await service.run({
-      inputDir: rawDir,
-      outputDir: stagingDir,
+      data: {
+        status: 'FAILED',
+        attempts: {
+          increment: 1,
+        },
+      },
     });
-    expect(result.totalProductos).toBeGreaterThanOrEqual(1);
   });
 });

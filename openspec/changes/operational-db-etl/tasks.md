@@ -32,13 +32,13 @@ Chain strategy: feature-branch-chain
 
 ## Phase 2: Pipeline Refactoring
 
-- [ ] 2.1 Refactor `StagingProcessorService` in [staging-processor.service.ts](file:///home/yan2005dris-afk/Documentos/GitHub/WebScrapingDinamico-Automatico/backend/src/modules/pipeline/etl/staging-processor.service.ts) to query `RawCapture` where `status` is pending (`UNPROCESSED`/`FAILED`) and `attempts < 3`.
-- [ ] 2.2 Add error handling in `StagingProcessorService` to increment `attempts` and mark status as `FAILED` on transformation error.
-- [ ] 2.3 Refactor `DwLoaderService` in [dw-loader.service.ts](file:///home/yan2005dris-afk/Documentos/GitHub/WebScrapingDinamico-Automatico/backend/src/modules/pipeline/etl/dw-loader.service.ts) to collect successfully loaded `(offerId, sourceId)` pairs from staging.
-- [ ] 2.4 Add batch status update in `DwLoaderService` to mark loaded captures as `PROCESSED` in the operational database.
+- [x] 2.1 Refactor `StagingProcessorService` in [staging-processor.service.ts](file:///home/yan2005dris-afk/Documentos/GitHub/WebScrapingDinamico-Automatico/backend/src/modules/pipeline/etl/staging-processor.service.ts) to query `RawCapture` where `status` is pending (`UNPROCESSED`/`FAILED`) and `attempts < 3`.
+- [x] 2.2 Add error handling in `StagingProcessorService` to increment `attempts` and mark status as `FAILED` on transformation error.
+- [x] 2.3 Refactor `DwLoaderService` in [dw-loader.service.ts](file:///home/yan2005dris-afk/Documentos/GitHub/WebScrapingDinamico-Automatico/backend/src/modules/pipeline/etl/dw-loader.service.ts) to collect successfully loaded `(offerId, sourceId)` pairs from staging.
+- [x] 2.4 Add batch status update in `DwLoaderService` to mark loaded captures as `PROCESSED` in the operational database.
 
 ## Phase 3: Testing & Verification
 
-- [ ] 3.1 Refactor unit tests in [staging-processor.service.spec.ts](file:///home/yan2005dris-afk/Documentos/GitHub/WebScrapingDinamico-Automatico/backend/src/modules/pipeline/etl/__tests__/staging-processor.service.spec.ts) to mock database queries/updates.
-- [ ] 3.2 Refactor unit tests in [dw-loader.service.spec.ts](file:///home/yan2005dris-afk/Documentos/GitHub/WebScrapingDinamico-Automatico/backend/src/modules/pipeline/etl/__tests__/dw-loader.service.spec.ts) to mock operational database and check status marking.
-- [ ] 3.3 Verify full integration run by triggering ETL pipeline end-to-end.
+- [x] 3.1 Refactor unit tests in [staging-processor.service.spec.ts](file:///home/yan2005dris-afk/Documentos/GitHub/WebScrapingDinamico-Automatico/backend/src/modules/pipeline/etl/__tests__/staging-processor.service.spec.ts) to mock database queries/updates.
+- [x] 3.2 Refactor unit tests in [dw-loader.service.spec.ts](file:///home/yan2005dris-afk/Documentos/GitHub/WebScrapingDinamico-Automatico/backend/src/modules/pipeline/etl/__tests__/dw-loader.service.spec.ts) to mock operational database and check status marking.
+- [x] 3.3 Verify full integration run by triggering ETL pipeline end-to-end.
