@@ -22,4 +22,10 @@ export const routes: Routes = [
     loadChildren: () =>
       import('./pages/dashboard/dashboard.routes').then((m) => m.DASHBOARD_ROUTES),
   },
+  {
+    path: 'etl-management',
+    loadComponent: () =>
+      import('./pages/etl-management/etl-management.page').then((m) => m.EtlManagementPage),
+    canActivate: [authGuard],
+  },
 ];

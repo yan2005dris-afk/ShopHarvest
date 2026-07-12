@@ -14,7 +14,7 @@ import {
 } from '@nestjs/common';
 import * as path from 'path';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { interval, Observable, from, map, switchMap, takeWhile, tap, catchError, of, concatMap } from 'rxjs';
+import { interval, Observable, from, map, switchMap, takeWhile, tap, catchError, of, concatMap, mergeMap } from 'rxjs';
 import { ErrorResponseDto } from '@web-scraping/contracts/errors';
 import {
   PipelineSource,
@@ -333,12 +333,15 @@ export class PipelineController {
               ),
             ),
           ),
-          // Emit heartbeat every 5 ticks (15s)
-          map((event, index) => {
+          // Emit progress event AND heartbeat event every 5 ticks (15s)
+          mergeMap((event, index) => {
             if (index > 0 && index % 5 === 0) {
-              return { data: { event: 'heartbeat', ts: Date.now() } } as MessageEvent;
+              return of(
+                event,
+                { data: { event: 'heartbeat', ts: Date.now() } } as MessageEvent
+              );
             }
-            return event;
+            return of(event);
           }),
           // Stop when terminal or error
           takeWhile((event) => {
