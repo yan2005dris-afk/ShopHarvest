@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '../../generated/operational';
 import {
   CreateDomainDto,
@@ -13,24 +13,30 @@ export class DomainsService {
   async findAll(host?: string) {
     return this.prisma.domainRule.findMany({
       where: host ? { domain: host } : undefined,
-      // Cambio SDD: product-offer-split — DomainRule.products[] renamed to
-      // DomainRule.offers[] (flat Product model no longer FKs DomainRule
-      // directly; Offer does).
-      include: { offers: true },
+      include: {
+        offers: true,
+        category: { select: { id: true, name: true } },
+      },
     });
   }
 
   async findOne(id: string) {
     return this.prisma.domainRule.findUnique({
       where: { id },
-      include: { offers: true },
+      include: {
+        offers: true,
+        category: { select: { id: true, name: true } },
+      },
     });
   }
 
   async create(dto: CreateDomainDto) {
+    await this.ensureCategoryExists(dto.categoryId);
+
     const data: Prisma.DomainRuleUncheckedCreateInput = {
       domain: dto.domain,
       name: dto.name,
+      ...(dto.categoryId !== undefined && { categoryId: dto.categoryId }),
       fieldMappings: dto.fieldMappings as unknown as Prisma.InputJsonValue,
       ...(dto.containerSelector !== undefined && {
         containerSelector: dto.containerSelector,
@@ -43,9 +49,12 @@ export class DomainsService {
   }
 
   async update(id: string, dto: UpdateDomainDto) {
+    await this.ensureCategoryExists(dto.categoryId);
+
     const data: Prisma.DomainRuleUncheckedUpdateInput = {
       ...(dto.domain !== undefined && { domain: dto.domain }),
       ...(dto.name !== undefined && { name: dto.name }),
+      ...(dto.categoryId !== undefined && { categoryId: dto.categoryId }),
       ...(dto.fieldMappings !== undefined && {
         fieldMappings: dto.fieldMappings as unknown as Prisma.InputJsonValue,
       }),
@@ -61,5 +70,19 @@ export class DomainsService {
 
   async remove(id: string) {
     return this.prisma.domainRule.delete({ where: { id } });
+  }
+
+  private async ensureCategoryExists(categoryId?: string | null) {
+    if (categoryId) {
+      const cat = await this.prisma.category.findUnique({
+        where: { id: categoryId },
+        select: { id: true },
+      });
+      if (!cat) {
+        throw new NotFoundException(
+          `Category with id ${categoryId} not found`,
+        );
+      }
+    }
   }
 }

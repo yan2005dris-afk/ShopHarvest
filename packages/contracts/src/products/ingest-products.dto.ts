@@ -40,6 +40,15 @@ export class IngestProductsDto {
   @IsUrl({ require_protocol: true, require_valid_protocol: true })
   pageUrl?: string;
 
+  @ApiProperty({
+    required: false,
+    format: 'uuid',
+    description: 'Category UUID for organizing this domain.',
+  })
+  @IsOptional()
+  @IsString()
+  categoryId?: string;
+
   @ApiProperty({ required: false, type: [FieldMappingDto] })
   @IsArray()
   @ValidateNested({ each: true })

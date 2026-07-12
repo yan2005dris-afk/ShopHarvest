@@ -11,6 +11,11 @@ import type {
   FieldMappingDto,
   UpdateDomainDto,
 } from '@web-scraping/contracts/domains';
+import type {
+  CategoryResponseDto,
+  CreateCategoryDto,
+  UpdateCategoryDto,
+} from '@web-scraping/contracts/categories';
 import type { ScrapeResult } from '@web-scraping/contracts/pipeline';
 import type { ExtensionFieldMapping } from './extension.service';
 
@@ -26,6 +31,7 @@ export type FieldMapping = FieldMappingDto;
 export type Product = ProductResponseDto;
 export type Offer = OfferResponseDto;
 export type PriceObservation = PriceObservationResponseDto;
+export type Category = CategoryResponseDto;
 
 // ─── ApiService ─────────────────────────────────────────────
 
@@ -65,15 +71,35 @@ export class ApiService {
     pageUrl: string,
     products: Record<string, unknown>[],
     fieldMappings?: ExtensionFieldMapping[],
+    categoryId?: string,
   ): Observable<{ ingested: number; domainRuleId: string }> {
     const body: Record<string, unknown> = { domain, pageUrl, products };
     if (fieldMappings && fieldMappings.length > 0) {
       body['fieldMappings'] = fieldMappings;
     }
+    if (categoryId) body['categoryId'] = categoryId;
     return this.http.post<{ ingested: number; domainRuleId: string }>(
       `${this.baseUrl}/products/ingest`,
       body,
     );
+  }
+
+  // ── Categories ──────────────────────────────────────────────
+
+  getCategories(): Observable<Category[]> {
+    return this.http.get<Category[]>(`${this.baseUrl}/categories`);
+  }
+
+  createCategory(data: CreateCategoryDto): Observable<Category> {
+    return this.http.post<Category>(`${this.baseUrl}/categories`, data);
+  }
+
+  updateCategory(id: string, data: UpdateCategoryDto): Observable<Category> {
+    return this.http.patch<Category>(`${this.baseUrl}/categories/${id}`, data);
+  }
+
+  deleteCategory(id: string): Observable<{ deleted: boolean }> {
+    return this.http.delete<{ deleted: boolean }>(`${this.baseUrl}/categories/${id}`);
   }
 
   getProducts(includeHistory?: boolean): Observable<Product[]> {

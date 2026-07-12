@@ -5,6 +5,17 @@ const IMAGE_FIELD_PATTERNS = /^(image|img|foto|photo|picture|thumbnail|icon|imag
 const TITLE_FIELD_PATTERNS = /^(title|name|nombre|titulo|producto?)/i;
 const PRICE_FIELD_PATTERNS = /^(price|cost|precio|pricing|amount)/i;
 
+/**
+ * Maps a canonical field name to its badge label and CSS class.
+ */
+function fieldTypeBadge(name: string): { label: string; cls: string } | null {
+  const n = name.trim();
+  if (IMAGE_FIELD_PATTERNS.test(n)) return { label: '📸', cls: 'badge-img' };
+  if (TITLE_FIELD_PATTERNS.test(n))  return { label: '📝', cls: 'badge-title' };
+  if (PRICE_FIELD_PATTERNS.test(n))  return { label: '💰', cls: 'badge-price' };
+  return null;
+}
+
 @Component({
   selector: 'app-extracted-preview',
   standalone: true,
@@ -42,7 +53,7 @@ const PRICE_FIELD_PATTERNS = /^(price|cost|precio|pricing|amount)/i;
                   }
                 }
 
-                <!-- Remaining fields (compact) -->
+                <!-- Remaining fields (compact) with type badges -->
                 <div class="vm-prod-grid">
                   @for (field of session().fieldMappings(); track field.canonicalField) {
                     @if (
@@ -56,6 +67,15 @@ const PRICE_FIELD_PATTERNS = /^(price|cost|precio|pricing|amount)/i;
                           <span class="vm-prod-value">{{ prod[field.canonicalField] }}</span>
                         </div>
                       }
+                    }
+                  }
+                </div>
+
+                <!-- Field-type badges for this product -->
+                <div class="vm-prod-badges">
+                  @for (field of session().fieldMappings(); track field.canonicalField) {
+                    @if (badgeLabel(field.canonicalField); as badge) {
+                      <span class="vm-badge {{ badge.cls }}">{{ badge.label }}</span>
                     }
                   }
                 </div>
@@ -144,6 +164,13 @@ const PRICE_FIELD_PATTERNS = /^(price|cost|precio|pricing|amount)/i;
     .vm-prod-label { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-3); }
     .vm-prod-value { font-size: 0.75rem; color: var(--text-2); word-break: break-all; }
 
+    /* Field-type badges row */
+    .vm-prod-badges { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--border); }
+    .vm-badge { font-size: 0.75rem; padding: 0.125rem 0.375rem; border-radius: 0.25rem; line-height: 1.4; }
+    .vm-badge.badge-img   { background: var(--accent-dim); color: var(--accent); }
+    .vm-badge.badge-title { background: var(--warning-dim); color: var(--warning); }
+    .vm-badge.badge-price { background: var(--success-dim); color: var(--success); }
+
     .vm-preview-msg { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 2rem; gap: 1rem; color: var(--text-3); }
     .vm-preview-msg svg { color: var(--success); }
     .vm-preview-msg p { margin: 0; font-size: 0.9375rem; color: var(--text-2); }
@@ -194,4 +221,6 @@ export class ExtractedPreviewComponent {
     }
     return null;
   }
+
+  readonly badgeLabel = fieldTypeBadge;
 }

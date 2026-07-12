@@ -294,13 +294,45 @@ function removeMenu(): void {
   menuEl = null;
 }
 
+function generateRelativeSelector(el: Element, containerSelector: string): string | null {
+  const containers = Array.from(document.querySelectorAll(containerSelector));
+  let container: Element | null = null;
+  for (const c of containers) {
+    if (c === el || c.contains(el)) {
+      container = c;
+      break;
+    }
+  }
+  if (!container) return null;
+
+  // Find which direct child of the container contains `el`
+  const children = Array.from(container.children);
+  let childContainer: Element | null = null;
+  for (const child of children) {
+    if (child === el || child.contains(el)) {
+      childContainer = child;
+      break;
+    }
+  }
+  if (!childContainer) return null;
+
+  // Generate a path from the child down to `el` (excluding the child itself)
+  const path = generateSelector(el, childContainer);
+  return path || null; // empty path means el IS the childContainer — use null
+}
+
 function assignField(
   field: string,
   el: Element,
   type: FieldMapping['type'],
   attribute?: string,
 ): void {
-  const selector = generateSelector(el);
+  // Prefer a container-relative selector so extractFieldsFromElement can
+  // query each product child individually (avoids the fragile global-index
+  // fallback that misaligns fields like images across products).
+  const selector =
+    (containerSelector && generateRelativeSelector(el, containerSelector)) ??
+    generateSelector(el);
   const effectiveType = type === 'attribute' && !attribute ? 'text' : type;
 
   const mapping: FieldMapping = {
@@ -500,43 +532,51 @@ function cancelMapping(): void {
 
 // ── CSS selector generator ────────────────────────────────────────────────────
 
-function generateSelector(el: Element): string {
-  if (el.id) return `#${CSS.escape(el.id)}`;
+/**
+ * Generate a CSS selector path from `root` (or document body) to `el`.
+ * When `root` is provided, the returned selector is relative to `root` —
+ * usable with `root.querySelector(selector)` — so container-child extraction
+ * works correctly instead of relying on the fragile global-index fallback.
+ */
+function generateSelector(el: Element, root?: Element): string {
+  if (!root && el.id) return `#${CSS.escape(el.id)}`;
 
   const path: string[] = [];
   let current: Element | null = el;
   let depth = 0;
-  const MAX_DEPTH = 4;
+  const MAX_DEPTH = root ? 10 : 4;
+  const stopAt = root ?? document.body;
 
-  while (current && current !== document.body && current !== document.documentElement && depth < MAX_DEPTH) {
+  while (current && current !== stopAt && current !== document.documentElement && depth < MAX_DEPTH) {
     const tag = current.tagName.toLowerCase();
-    const parent = current.parentElement;
+    const parentEl: Element | null = current.parentElement;
 
     const meaningfulClasses = Array.from(current.classList).filter(
-      (c) => typeof c === 'string' && c.length > 1 && !c.startsWith('_'),
+      (c): c is string => typeof c === 'string' && c.length > 1 && !c.startsWith('_'),
     );
 
     let segment = tag;
     if (meaningfulClasses.length > 0) {
       const topClasses = meaningfulClasses.slice(0, 2);
       segment += topClasses.map((c) => `.${CSS.escape(c)}`).join('');
-    } else if (parent) {
-      const sameTagSiblings = Array.from(parent.children).filter(
-        (c: Element) => c.tagName === current!.tagName,
+    } else if (parentEl) {
+      const sameTagSiblings = Array.from(parentEl.children).filter(
+        (c): c is Element => c instanceof Element && c.tagName === current!.tagName,
       );
       const index = sameTagSiblings.indexOf(current) + 1;
       if (sameTagSiblings.length > 1) {
-        segment += `:nth-child(${index})`;
+        segment += `:nth-of-type(${index})`;
       }
     }
 
-    if (parent?.id) {
+    // When generating absolute selectors, bail early on a parent with an id
+    if (!root && parentEl?.id) {
       path.unshift(segment);
-      return `#${CSS.escape(parent.id)} > ${path.join(' > ')}`;
+      return `#${CSS.escape(parentEl.id)} > ${path.join(' > ')}`;
     }
 
     path.unshift(segment);
-    current = parent;
+    current = parentEl;
     depth++;
   }
 
@@ -609,21 +649,24 @@ function findNearbyImageSrc(el: Element): string | null {
   // Then walk up to 3 levels, checking each ancestor for an <img>
   let current: Element | null = el;
   for (let depth = 0; depth < 3 && current; depth++) {
-    const parent = current.parentElement;
-    if (!parent) break;
+    const parentEl: Element | null = current.parentElement;
+    if (!parentEl) break;
     // Look for an img among the siblings of the current node
-    const siblingImg = Array.from(parent.children).find(
-      (sibling) => sibling !== current && sibling.tagName === 'IMG',
-    ) as HTMLImageElement | undefined;
-    if (siblingImg?.getAttribute('src')) {
-      return siblingImg.getAttribute('src');
+    const siblingImg = Array.from(parentEl.children).find(
+      (sibling): sibling is HTMLImageElement =>
+        sibling instanceof Element && sibling !== current && sibling.tagName === 'IMG',
+    );
+    const siblingSrc = siblingImg?.getAttribute('src');
+    if (siblingSrc) {
+      return siblingSrc;
     }
-    // Also check the parent itself
-    const parentImg = parent.querySelector('img');
+    // Also check the parent itself (skip if it's the same img already found inside el)
+    const parentImg = parentEl.querySelector('img');
     if (parentImg && parentImg !== ownImg) {
-      return parentImg.getAttribute('src');
+      const parentSrc = parentImg.getAttribute('src');
+      if (parentSrc) return parentSrc;
     }
-    current = parent;
+    current = parentEl;
   }
 
   return null;

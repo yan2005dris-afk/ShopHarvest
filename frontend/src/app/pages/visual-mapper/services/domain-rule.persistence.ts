@@ -8,6 +8,7 @@ export interface SaveDomainRuleParams {
   pageTitle: string | null;
   fieldMappings: ExtensionFieldMapping[];
   containerSelector: string | null;
+  categoryId?: string;
 }
 
 export interface SaveProductsParams {
@@ -15,6 +16,7 @@ export interface SaveProductsParams {
   url: string;
   products: Record<string, unknown>[];
   fieldMappings: ExtensionFieldMapping[];
+  categoryId?: string;
 }
 
 /**
@@ -34,15 +36,17 @@ export class DomainRulePersistenceService {
     const existing = existingDomains.find((d) => d.domain === params.hostname);
 
     if (existing) {
-      const payload = {
+      const payload: Record<string, unknown> = {
         fieldMappings: params.fieldMappings,
         containerSelector: params.containerSelector ?? undefined,
       };
+      if (params.categoryId) payload['categoryId'] = params.categoryId;
       return this.apiService.updateDomain(existing.id, payload);
     }
     return this.apiService.createDomain({
       domain: params.hostname,
       name: params.pageTitle || params.hostname,
+      categoryId: params.categoryId,
       fieldMappings: params.fieldMappings,
       containerSelector: params.containerSelector ?? undefined,
     });
@@ -50,6 +54,6 @@ export class DomainRulePersistenceService {
 
   /** Ingest extracted products for a domain. */
   ingestProducts(params: SaveProductsParams): Observable<{ ingested: number; domainRuleId: string }> {
-    return this.apiService.ingestProducts(params.hostname, params.url, params.products, params.fieldMappings);
+    return this.apiService.ingestProducts(params.hostname, params.url, params.products, params.fieldMappings, params.categoryId);
   }
 }

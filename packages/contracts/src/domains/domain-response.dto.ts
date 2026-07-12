@@ -42,6 +42,14 @@ export class DomainResponseDto {
   @Expose()
   name!: string;
 
+  @ApiProperty({ required: false, format: 'uuid', description: 'Category UUID for organizing this domain.' })
+  @Expose()
+  categoryId?: string;
+
+  @ApiProperty({ required: false, example: 'Ropa', description: 'Category name (denormalized for display).' })
+  @Expose()
+  categoryName?: string;
+
   @ApiProperty({ required: false, example: '.product-card' })
   @Expose()
   containerSelector?: string;

@@ -2,7 +2,7 @@ import { Component, inject, OnInit, OnDestroy, signal, computed, ChangeDetection
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
-import { ApiService, DomainRule } from '../../services/api.service';
+import { ApiService, DomainRule, Category } from '../../services/api.service';
 import { ExtensionService } from '../../services/extension.service';
 import { MappingSessionService } from './services/mapping-session.service';
 import { DomainRulePersistenceService, SaveDomainRuleParams, SaveProductsParams } from './services/domain-rule.persistence';
@@ -40,9 +40,11 @@ type MapperState =
           <app-mapper-hero
             [session]="session"
             [domains]="domains()"
+            [categories]="categories()"
             [extensionAvailable]="extensionAvailable()"
             [(url)]="url"
             [urlValidationError]="urlValidationError()"
+            [(categoryId)]="selectedCategoryId"
             (onOpenMapper)="openExtensionMapper()"
           />
         }
@@ -122,6 +124,10 @@ export class VisualMapperPage implements OnInit, OnDestroy {
   url = '';
   urlValidationError = signal('');
 
+  // Category selection
+  selectedCategoryId = signal('');
+  categories = signal<Category[]>([]);
+
   // Domain rules (for existence check)
   domains = signal<DomainRule[]>([]);
 
@@ -142,6 +148,7 @@ export class VisualMapperPage implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadDomains();
+    this.loadCategories();
   }
 
   ngOnDestroy(): void {
@@ -152,6 +159,13 @@ export class VisualMapperPage implements OnInit, OnDestroy {
     this.apiService.getDomains().subscribe({
       next: (domains) => this.domains.set(domains),
       error: (err) => console.error('Failed to load domains', err),
+    });
+  }
+
+  private loadCategories(): void {
+    this.apiService.getCategories().subscribe({
+      next: (cats) => this.categories.set(cats),
+      error: (err) => console.error('Failed to load categories', err),
     });
   }
 
@@ -219,6 +233,7 @@ export class VisualMapperPage implements OnInit, OnDestroy {
       pageTitle: this.session.pageTitle(),
       fieldMappings: this.session.fieldMappings(),
       containerSelector: this.session.containerSelector() ?? null,
+      categoryId: this.selectedCategoryId() || undefined,
     };
 
     this.persistence.saveDomainRule(params, this.domains()).subscribe({
@@ -246,6 +261,7 @@ export class VisualMapperPage implements OnInit, OnDestroy {
       url: this.url,
       products: this.session.extractedProducts() as Record<string, unknown>[],
       fieldMappings: this.session.fieldMappings(),
+      categoryId: this.selectedCategoryId() || undefined,
     };
 
     this.persistence.ingestProducts(params).subscribe({
