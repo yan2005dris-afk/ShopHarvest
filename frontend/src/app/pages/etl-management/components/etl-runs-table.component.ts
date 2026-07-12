@@ -127,9 +127,9 @@ import type { EtlRunDto, EtlRunFiltersDto, EtlRunListResponseDto } from '@web-sc
       flex-wrap: wrap;
       gap: 16px;
       padding: 16px;
-      background: var(--bg-card, #1e1e2d);
-      border: 1px solid var(--border-color, #2d2d3f);
-      border-radius: 8px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
       margin-bottom: 20px;
       align-items: flex-end;
     }
@@ -143,14 +143,14 @@ import type { EtlRunDto, EtlRunFiltersDto, EtlRunListResponseDto } from '@web-sc
     .filter-field label {
       font-size: 0.75rem;
       font-weight: 600;
-      color: var(--text-secondary, #a1a5b7);
+      color: var(--text-2);
     }
     .filter-field select, .filter-field input {
-      background: var(--bg-body, #151521);
-      border: 1px solid var(--border-color, #2d2d3f);
-      border-radius: 4px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
       padding: 8px 10px;
-      color: var(--text-primary, #ffffff);
+      color: var(--text-1);
       font-size: 0.85rem;
       width: 100%;
     }
@@ -160,7 +160,7 @@ import type { EtlRunDto, EtlRunFiltersDto, EtlRunListResponseDto } from '@web-sc
     }
     .btn {
       padding: 8px 16px;
-      border-radius: 4px;
+      border-radius: var(--radius);
       font-weight: 500;
       cursor: pointer;
       font-size: 0.85rem;
@@ -169,30 +169,30 @@ import type { EtlRunDto, EtlRunFiltersDto, EtlRunListResponseDto } from '@web-sc
       white-space: nowrap;
     }
     .btn-primary {
-      background: #3699ff;
+      background: var(--accent);
       color: #ffffff;
     }
     .btn-primary:hover {
-      background: #187de4;
+      background: var(--accent-hover);
     }
     .btn-secondary {
-      background: var(--bg-body, #151521);
-      color: var(--text-secondary, #a1a5b7);
-      border: 1px solid var(--border-color, #2d2d3f);
+      background: var(--surface-2);
+      color: var(--text-2);
+      border: 1px solid var(--border);
     }
     .btn-secondary:hover {
-      background: var(--border-color, #2d2d3f);
-      color: var(--text-primary, #ffffff);
+      background: var(--surface-3);
+      color: var(--text-1);
     }
     .btn-nav {
-      background: var(--bg-card, #1e1e2d);
-      color: var(--text-secondary, #a1a5b7);
-      border: 1px solid var(--border-color, #2d2d3f);
+      background: var(--surface);
+      color: var(--text-2);
+      border: 1px solid var(--border);
       padding: 6px 12px;
     }
     .btn-nav:hover:not(:disabled) {
-      background: var(--border-color, #2d2d3f);
-      color: var(--text-primary, #ffffff);
+      background: var(--surface-2);
+      color: var(--text-1);
     }
     .btn-nav:disabled {
       opacity: 0.5;
@@ -200,9 +200,9 @@ import type { EtlRunDto, EtlRunFiltersDto, EtlRunListResponseDto } from '@web-sc
     }
     .table-container {
       position: relative;
-      background: var(--bg-card, #1e1e2d);
-      border: 1px solid var(--border-color, #2d2d3f);
-      border-radius: 8px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
       overflow-x: auto;
     }
     .loading-overlay {
@@ -211,20 +211,21 @@ import type { EtlRunDto, EtlRunFiltersDto, EtlRunListResponseDto } from '@web-sc
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(21, 21, 33, 0.7);
+      background: var(--surface-2);
+      opacity: 0.85;
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
       gap: 12px;
       z-index: 10;
-      color: var(--text-primary, #ffffff);
+      color: var(--text-1);
     }
     .spinner {
       width: 28px;
       height: 28px;
-      border: 3px solid rgba(54, 153, 255, 0.2);
-      border-top-color: #3699ff;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
     }
@@ -240,27 +241,27 @@ import type { EtlRunDto, EtlRunFiltersDto, EtlRunListResponseDto } from '@web-sc
     .runs-table th {
       background: rgba(255, 255, 255, 0.01);
       padding: 12px 16px;
-      border-bottom: 1px solid var(--border-color, #2d2d3f);
-      color: var(--text-secondary, #a1a5b7);
+      border-bottom: 1px solid var(--border);
+      color: var(--text-2);
       font-weight: 600;
       font-size: 0.8rem;
       text-transform: uppercase;
     }
     .runs-table td {
       padding: 12px 16px;
-      border-bottom: 1px solid var(--border-color, #2d2d3f);
-      color: var(--text-primary, #ffffff);
+      border-bottom: 1px solid var(--border);
+      color: var(--text-1);
     }
     .runs-table tbody tr {
       cursor: pointer;
       transition: background-color 0.15s ease;
     }
     .runs-table tbody tr:hover {
-      background: rgba(255, 255, 255, 0.02);
+      background: var(--surface-2);
     }
     .runs-table tbody tr.selected {
-      background: rgba(54, 153, 255, 0.08);
-      border-left: 3px solid #3699ff;
+      background: var(--accent-dim);
+      border-left: 3px solid var(--accent);
     }
     .source-text {
       font-weight: 500;
@@ -272,20 +273,20 @@ import type { EtlRunDto, EtlRunFiltersDto, EtlRunListResponseDto } from '@web-sc
       font-weight: 600;
     }
     .status-badge[data-status="RUNNING"] {
-      background: rgba(54, 153, 255, 0.15);
-      color: #3699ff;
+      background: var(--accent-dim);
+      color: var(--accent);
     }
     .status-badge[data-status="SUCCESS"] {
-      background: rgba(26, 188, 156, 0.15);
-      color: #1abc9c;
+      background: var(--success-dim);
+      color: var(--success);
     }
     .status-badge[data-status="FAILED"] {
-      background: rgba(246, 78, 96, 0.15);
-      color: #f64e60;
+      background: var(--danger-dim);
+      color: var(--danger);
     }
     .empty-state {
       text-align: center;
-      color: var(--text-secondary, #a1a5b7);
+      color: var(--text-2);
       padding: 32px !important;
     }
     .pagination-bar {
@@ -295,7 +296,7 @@ import type { EtlRunDto, EtlRunFiltersDto, EtlRunListResponseDto } from '@web-sc
       padding: 12px 16px;
       margin-top: 16px;
       font-size: 0.85rem;
-      color: var(--text-secondary, #a1a5b7);
+      color: var(--text-2);
     }
     .pagination-controls {
       display: flex;

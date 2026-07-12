@@ -21,6 +21,7 @@ export class EtlManagementStore implements OnDestroy {
   readonly error = signal<string | null>(null);
   readonly selectedRun = signal<EtlRunDto | null>(null);
   readonly streamActive = signal<boolean>(false);
+  readonly pendingSummary = signal<any>(null);
 
   // Pagination & Filtering Signals
   readonly page = signal<number>(1);
@@ -39,9 +40,21 @@ export class EtlManagementStore implements OnDestroy {
     this.error.set(null);
   }
 
+  loadPendingSummary(): void {
+    this.http.get<any>('/api/pipeline/pending-captures').subscribe({
+      next: (res) => {
+        this.pendingSummary.set(res);
+      },
+      error: (err) => {
+        console.error('Failed to load pending captures summary', err);
+      },
+    });
+  }
+
   loadRuns(): void {
     this.loading.set(true);
     this.error.set(null);
+    this.loadPendingSummary();
 
     let params = new HttpParams()
       .set('page', this.page().toString())

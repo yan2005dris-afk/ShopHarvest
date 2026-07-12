@@ -36,19 +36,19 @@ import { Component, input, output, HostListener } from '@angular/core';
       z-index: 1000;
     }
     .modal-content {
-      background: var(--bg-card, #1e1e2d);
-      color: var(--text-primary, #ffffff);
-      border-radius: 8px;
+      background: var(--surface);
+      color: var(--text-1);
+      border-radius: var(--radius-lg);
       width: 90%;
       max-width: 450px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-      border: 1px solid var(--border-color, #2d2d3f);
+      border: 1px solid var(--border);
       display: flex;
       flex-direction: column;
     }
     .modal-header {
       padding: 16px;
-      border-bottom: 1px solid var(--border-color, #2d2d3f);
+      border-bottom: 1px solid var(--border);
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -61,14 +61,14 @@ import { Component, input, output, HostListener } from '@angular/core';
     .close-btn {
       background: none;
       border: none;
-      color: var(--text-secondary, #a1a5b7);
+      color: var(--text-2);
       font-size: 1.5rem;
       cursor: pointer;
       line-height: 1;
       padding: 0;
     }
     .close-btn:hover {
-      color: var(--text-primary, #ffffff);
+      color: var(--text-1);
     }
     .modal-body {
       padding: 20px 16px;
@@ -77,14 +77,14 @@ import { Component, input, output, HostListener } from '@angular/core';
     }
     .modal-footer {
       padding: 12px 16px;
-      border-top: 1px solid var(--border-color, #2d2d3f);
+      border-top: 1px solid var(--border);
       display: flex;
       justify-content: flex-end;
       gap: 10px;
     }
     .btn {
       padding: 8px 16px;
-      border-radius: 4px;
+      border-radius: var(--radius);
       font-weight: 500;
       cursor: pointer;
       font-size: 0.875rem;
@@ -92,20 +92,20 @@ import { Component, input, output, HostListener } from '@angular/core';
       transition: background-color 0.15s ease;
     }
     .btn-secondary {
-      background: var(--bg-body, #151521);
-      color: var(--text-secondary, #a1a5b7);
-      border: 1px solid var(--border-color, #2d2d3f);
+      background: var(--surface-2);
+      color: var(--text-2);
+      border: 1px solid var(--border);
     }
     .btn-secondary:hover {
-      background: var(--border-color, #2d2d3f);
-      color: var(--text-primary, #ffffff);
+      background: var(--surface-3);
+      color: var(--text-1);
     }
     .btn-primary {
-      background: #3699ff;
+      background: var(--accent);
       color: #ffffff;
     }
     .btn-primary:hover {
-      background: #187de4;
+      background: var(--accent-hover);
     }
   `]
 })

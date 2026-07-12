@@ -82,17 +82,17 @@ import type { EtlRunDto } from '@web-scraping/contracts/pipeline';
   `,
   styles: [`
     .stream-panel {
-      background: var(--bg-card, #1e1e2d);
-      border: 1px solid var(--border-color, #2d2d3f);
-      border-radius: 8px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
       margin-bottom: 20px;
       overflow: hidden;
-      color: var(--text-primary, #ffffff);
+      color: var(--text-1);
     }
     .panel-header {
       padding: 14px 16px;
       background: rgba(255, 255, 255, 0.02);
-      border-bottom: 1px solid var(--border-color, #2d2d3f);
+      border-bottom: 1px solid var(--border);
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -116,25 +116,25 @@ import type { EtlRunDto } from '@web-scraping/contracts/pipeline';
       width: 10px;
       height: 10px;
       border-radius: 50%;
-      background: #a1a5b7;
+      background: var(--text-3);
     }
     .pulse-indicator.active {
-      background: #3699ff;
-      box-shadow: 0 0 0 0 rgba(54, 153, 255, 0.7);
+      background: var(--accent);
+      box-shadow: 0 0 0 0 var(--accent-border);
       animation: pulse 1.6s infinite;
     }
     @keyframes pulse {
       0% {
         transform: scale(0.95);
-        box-shadow: 0 0 0 0 rgba(54, 153, 255, 0.7);
+        box-shadow: 0 0 0 0 var(--accent-border);
       }
       70% {
         transform: scale(1);
-        box-shadow: 0 0 0 6px rgba(54, 153, 255, 0);
+        box-shadow: 0 0 0 6px rgba(124, 111, 205, 0);
       }
       100% {
         transform: scale(0.95);
-        box-shadow: 0 0 0 0 rgba(54, 153, 255, 0);
+        box-shadow: 0 0 0 0 rgba(124, 111, 205, 0);
       }
     }
     .status-badge {
@@ -145,26 +145,26 @@ import type { EtlRunDto } from '@web-scraping/contracts/pipeline';
       text-transform: uppercase;
     }
     .status-badge[data-status="RUNNING"] {
-      background: rgba(54, 153, 255, 0.15);
-      color: #3699ff;
+      background: var(--accent-dim);
+      color: var(--accent);
     }
     .status-badge[data-status="SUCCESS"] {
-      background: rgba(26, 188, 156, 0.15);
-      color: #1abc9c;
+      background: var(--success-dim);
+      color: var(--success);
     }
     .status-badge[data-status="FAILED"] {
-      background: rgba(246, 78, 96, 0.15);
-      color: #f64e60;
+      background: var(--danger-dim);
+      color: var(--danger);
     }
     .collapse-btn {
       background: none;
       border: none;
-      color: var(--text-secondary, #a1a5b7);
+      color: var(--text-2);
       font-size: 0.85rem;
       cursor: pointer;
     }
     .collapse-btn:hover {
-      color: var(--text-primary, #ffffff);
+      color: var(--text-1);
     }
     .panel-body {
       padding: 16px;
@@ -176,17 +176,17 @@ import type { EtlRunDto } from '@web-scraping/contracts/pipeline';
       margin-bottom: 16px;
     }
     .metric-card {
-      background: var(--bg-body, #151521);
+      background: var(--surface-2);
       padding: 12px;
-      border-radius: 6px;
-      border: 1px solid var(--border-color, #2d2d3f);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
       display: flex;
       flex-direction: column;
       align-items: center;
     }
     .metric-label {
       font-size: 0.75rem;
-      color: var(--text-secondary, #a1a5b7);
+      color: var(--text-2);
       margin-bottom: 4px;
     }
     .metric-value {
@@ -204,34 +204,34 @@ import type { EtlRunDto } from '@web-scraping/contracts/pipeline';
       display: flex;
       justify-content: space-between;
       padding-bottom: 6px;
-      border-bottom: 1px dashed var(--border-color, #2d2d3f);
+      border-bottom: 1px dashed var(--border);
     }
     .detail-item .label {
-      color: var(--text-secondary, #a1a5b7);
+      color: var(--text-2);
     }
     .detail-item .value {
       font-weight: 500;
     }
     .error-box {
-      background: rgba(246, 78, 96, 0.08);
-      border: 1px solid rgba(246, 78, 96, 0.2);
-      border-radius: 6px;
+      background: var(--danger-dim);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
       padding: 12px;
       margin-bottom: 16px;
     }
     .error-box h5 {
-      color: #f64e60;
+      color: var(--danger);
       margin: 0 0 8px 0;
       font-size: 0.9rem;
       font-weight: 600;
     }
     .error-box pre {
       margin: 0;
-      font-family: monospace;
+      font-family: var(--font-mono);
       font-size: 0.8rem;
       white-space: pre-wrap;
       word-break: break-all;
-      color: #f64e60;
+      color: var(--danger);
     }
     .stream-status {
       display: flex;
@@ -239,16 +239,16 @@ import type { EtlRunDto } from '@web-scraping/contracts/pipeline';
       justify-content: center;
       gap: 10px;
       font-size: 0.85rem;
-      color: var(--text-secondary, #a1a5b7);
+      color: var(--text-2);
       padding: 8px;
-      background: var(--bg-body, #151521);
-      border-radius: 6px;
+      background: var(--surface-2);
+      border-radius: var(--radius);
     }
     .spinner {
       width: 16px;
       height: 16px;
-      border: 2px solid rgba(54, 153, 255, 0.2);
-      border-top-color: #3699ff;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
     }
@@ -256,12 +256,12 @@ import type { EtlRunDto } from '@web-scraping/contracts/pipeline';
       to { transform: rotate(360deg); }
     }
     .placeholder-panel {
-      background: var(--bg-card, #1e1e2d);
-      border: 1px dashed var(--border-color, #2d2d3f);
-      border-radius: 8px;
+      background: var(--surface);
+      border: 1px dashed var(--border);
+      border-radius: var(--radius-lg);
       padding: 24px;
       text-align: center;
-      color: var(--text-secondary, #a1a5b7);
+      color: var(--text-2);
       font-size: 0.9rem;
       margin-bottom: 20px;
     }

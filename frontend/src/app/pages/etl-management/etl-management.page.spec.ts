@@ -16,6 +16,7 @@ describe('EtlManagementPage', () => {
       error: signalMock(null),
       selectedRun: vi.fn().mockReturnValue(null),
       streamActive: vi.fn().mockReturnValue(false),
+      pendingSummary: vi.fn().mockReturnValue(null),
       loadRuns: vi.fn(),
       triggerRun: vi.fn(),
       selectRun: vi.fn(),

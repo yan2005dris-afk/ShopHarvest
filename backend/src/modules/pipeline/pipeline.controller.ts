@@ -170,6 +170,55 @@ export class PipelineController {
 
   // ── NEW: ETL Management Dashboard endpoints ──────────────────────
 
+  @ApiOperation({ summary: 'Get summary of pending raw captures by source.' })
+  @ApiResponse({ status: 200, type: Object })
+  @Get('pending-captures')
+  async getPendingCapturesSummary() {
+    const [sources, groups] = await Promise.all([
+      this.prisma.source.findMany({
+        select: { id: true, code: true, name: true },
+      }),
+      this.prisma.rawCapture.groupBy({
+        by: ['sourceId', 'status'],
+        where: {
+          status: { in: ['UNPROCESSED', 'FAILED'] },
+          attempts: { lt: 3 },
+        },
+        _count: true,
+      }),
+    ]);
+
+    const sourcesSummary: Record<string, { pending: number; failed: number; total: number; name: string }> = {};
+    for (const src of sources) {
+      sourcesSummary[src.code] = {
+        pending: 0,
+        failed: 0,
+        total: 0,
+        name: src.name,
+      };
+    }
+
+    let total = 0;
+    for (const group of groups) {
+      const source = sources.find((s) => s.id === group.sourceId);
+      if (source && sourcesSummary[source.code]) {
+        const count = group._count;
+        if (group.status === 'UNPROCESSED') {
+          sourcesSummary[source.code].pending += count;
+        } else if (group.status === 'FAILED') {
+          sourcesSummary[source.code].failed += count;
+        }
+        sourcesSummary[source.code].total += count;
+        total += count;
+      }
+    }
+
+    return {
+      total,
+      sources: sourcesSummary,
+    };
+  }
+
   /**
    * GET /pipeline/etl-runs
    * Paginated list of ETL runs with optional filters.

@@ -57,6 +57,10 @@ describe('EtlManagementStore', () => {
   });
 
   afterEach(() => {
+    // Flush any pending captures summary requests
+    const pendingReqs = httpMock.match('/api/pipeline/pending-captures');
+    pendingReqs.forEach(req => req.flush({ total: 0, sources: {} }));
+
     httpMock.verify();
     store.ngOnDestroy();
     vi.useRealTimers();
