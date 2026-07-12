@@ -124,7 +124,7 @@
                   <tr class="prd-offer-row">
                     <td>{{ offer.sourceId }}</td>
                     <td class="price-cell">{{ offer.price | currency:offer.currency:'symbol':'1.2-2' }}</td>
-                    <td><a [href]="offer.url" target="_blank" rel="noopener">{{ offer.url }}</a></td>
+                    <td><a [href]="offer.url" target="_blank" rel="noopener" class="prd-offer-link">Visit Link ↗</a></td>
                   </tr>
                 }
               </tbody>
