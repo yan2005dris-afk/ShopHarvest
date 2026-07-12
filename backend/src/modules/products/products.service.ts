@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Prisma } from '../../generated/operational';
+import { Prisma, RawCaptureStatus } from '../../generated/operational';
 import { OperationalPrismaService } from '../../common/prisma/operational-prisma.service';
 import type { IngestProductsDto } from '@web-scraping/contracts/products';
 import type { FieldMappingDto } from '@web-scraping/contracts/domains';
@@ -266,10 +266,14 @@ export class ProductsService {
               offerId: offer.id,
               sourceId: source.id,
               payload: product as Prisma.InputJsonValue,
+              status: RawCaptureStatus.UNPROCESSED,
+              attempts: 0,
             },
             update: {
               payload: product as Prisma.InputJsonValue,
               capturedAt: new Date(),
+              status: RawCaptureStatus.UNPROCESSED,
+              attempts: 0,
             },
           });
 
