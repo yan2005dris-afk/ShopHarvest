@@ -167,9 +167,9 @@ function fieldTypeBadge(name: string): { label: string; cls: string } | null {
     /* Field-type badges row */
     .vm-prod-badges { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--border); }
     .vm-badge { font-size: 0.75rem; padding: 0.125rem 0.375rem; border-radius: 0.25rem; line-height: 1.4; }
-    .vm-badge.badge-img   { background: #dbeafe; color: #1d4ed8; }
-    .vm-badge.badge-title { background: #fef3c7; color: #b45309; }
-    .vm-badge.badge-price { background: #d1fae5; color: #047857; }
+    .vm-badge.badge-img   { background: var(--accent-dim); color: var(--accent); }
+    .vm-badge.badge-title { background: var(--warning-dim); color: var(--warning); }
+    .vm-badge.badge-price { background: var(--success-dim); color: var(--success); }
 
     .vm-preview-msg { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 2rem; gap: 1rem; color: var(--text-3); }
     .vm-preview-msg svg { color: var(--success); }

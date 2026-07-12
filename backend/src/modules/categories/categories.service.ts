@@ -53,8 +53,10 @@ export class CategoriesService {
           name: dto.name,
           parentId: dto.parentId ?? null,
           description: dto.description ?? null,
-          defaultFieldMappings:
-            dto.defaultFieldMappings as unknown as Prisma.InputJsonValue ?? Prisma.NullableJsonNullValueInput,
+          ...(dto.defaultFieldMappings !== undefined && {
+            defaultFieldMappings:
+              dto.defaultFieldMappings as unknown as Prisma.InputJsonValue,
+          }),
           path: '', // placeholder — updated below after we know the id
         },
       });

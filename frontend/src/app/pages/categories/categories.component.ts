@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { catchError, of } from 'rxjs';
 import { ApiService, Category } from '../../services/api.service';
 
 @Component({
@@ -30,7 +31,7 @@ import { ApiService, Category } from '../../services/api.service';
             </label>
             <label class="cats-label">
               Default Field Mappings
-              <span class="cats-hint">One per line: <code>canonicalField:type</code> (e.g. <code>title:text</code>, <code>image:image</code>, <code>price:price</code>)</span>
+              <span class="cats-hint">One per line: <code>canonicalField:type</code> (e.g. <code>title:text</code>, <code>image:text</code>, <code>price:text</code>). Type can be <code>text</code>, <code>attribute</code>, or <code>html</code>.</span>
               <textarea class="cats-input cats-textarea cats-mono" [(ngModel)]="formMappings" placeholder="title:text&#10;image:image&#10;price:price"></textarea>
             </label>
             <div class="cats-form-actions">
@@ -105,7 +106,7 @@ import { ApiService, Category } from '../../services/api.service';
     .cats-desc { margin: 0.375rem 0 0; font-size: 0.875rem; color: var(--text-2); }
     .cats-mappings { display: flex; flex-wrap: wrap; gap: 0.375rem; align-items: center; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border); }
     .cats-mappings-label { font-size: 0.75rem; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.04em; }
-    .cats-badge { font-size: 0.75rem; padding: 0.125rem 0.5rem; border-radius: 999px; background: var(--accent-dim); color: var(--accent); }
+    .cats-badge { font-size: 0.75rem; padding: 0.125rem 0.5rem; border-radius: 999px; background: var(--surface-3); color: var(--text-1); }
 
     .btn { padding: 0.5rem 1rem; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface); color: var(--text-1); cursor: pointer; font-size: 0.875rem; }
     .btn-sm { padding: 0.25rem 0.625rem; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface); color: var(--text-1); cursor: pointer; font-size: 0.75rem; }
@@ -128,7 +129,9 @@ export class CategoriesComponent {
   }
 
   private load(): void {
-    this.api.getCategories().subscribe((cats) => this.categories.set(cats));
+    this.api.getCategories()
+      .pipe(catchError(() => of([])))
+      .subscribe((cats) => this.categories.set(cats));
   }
 
   startCreate(): void {

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '../../generated/operational';
 import {
   CreateDomainDto,
@@ -31,6 +31,8 @@ export class DomainsService {
   }
 
   async create(dto: CreateDomainDto) {
+    await this.ensureCategoryExists(dto.categoryId);
+
     const data: Prisma.DomainRuleUncheckedCreateInput = {
       domain: dto.domain,
       name: dto.name,
@@ -47,6 +49,8 @@ export class DomainsService {
   }
 
   async update(id: string, dto: UpdateDomainDto) {
+    await this.ensureCategoryExists(dto.categoryId);
+
     const data: Prisma.DomainRuleUncheckedUpdateInput = {
       ...(dto.domain !== undefined && { domain: dto.domain }),
       ...(dto.name !== undefined && { name: dto.name }),
@@ -66,5 +70,19 @@ export class DomainsService {
 
   async remove(id: string) {
     return this.prisma.domainRule.delete({ where: { id } });
+  }
+
+  private async ensureCategoryExists(categoryId?: string | null) {
+    if (categoryId) {
+      const cat = await this.prisma.category.findUnique({
+        where: { id: categoryId },
+        select: { id: true },
+      });
+      if (!cat) {
+        throw new NotFoundException(
+          `Category with id ${categoryId} not found`,
+        );
+      }
+    }
   }
 }

@@ -295,7 +295,14 @@ function removeMenu(): void {
 }
 
 function generateRelativeSelector(el: Element, containerSelector: string): string | null {
-  const container = document.querySelector(containerSelector);
+  const containers = Array.from(document.querySelectorAll(containerSelector));
+  let container: Element | null = null;
+  for (const c of containers) {
+    if (c === el || c.contains(el)) {
+      container = c;
+      break;
+    }
+  }
   if (!container) return null;
 
   // Find which direct child of the container contains `el`
@@ -558,7 +565,7 @@ function generateSelector(el: Element, root?: Element): string {
       );
       const index = sameTagSiblings.indexOf(current) + 1;
       if (sameTagSiblings.length > 1) {
-        segment += `:nth-child(${index})`;
+        segment += `:nth-of-type(${index})`;
       }
     }
 
@@ -649,13 +656,15 @@ function findNearbyImageSrc(el: Element): string | null {
       (sibling): sibling is HTMLImageElement =>
         sibling instanceof Element && sibling !== current && sibling.tagName === 'IMG',
     );
-    if (siblingImg?.getAttribute('src')) {
-      return siblingImg.getAttribute('src');
+    const siblingSrc = siblingImg?.getAttribute('src');
+    if (siblingSrc) {
+      return siblingSrc;
     }
-    // Also check the parent itself
+    // Also check the parent itself (skip if it's the same img already found inside el)
     const parentImg = parentEl.querySelector('img');
     if (parentImg && parentImg !== ownImg) {
-      return parentImg.getAttribute('src');
+      const parentSrc = parentImg.getAttribute('src');
+      if (parentSrc) return parentSrc;
     }
     current = parentEl;
   }

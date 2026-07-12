@@ -24,10 +24,10 @@ import {
 export class DomainsController {
   constructor(private readonly domainsService: DomainsService) {}
 
-  private toDto<T extends object>(row: unknown): T {
+  private toDto(row: unknown): DomainResponseDto {
     return plainToInstance(DomainResponseDto, row, {
       excludeExtraneousValues: true,
-    }) as T;
+    });
   }
 
   private mapCategory(row: Record<string, unknown>): Record<string, unknown> {
@@ -87,7 +87,7 @@ export class DomainsController {
   @Post()
   async create(@Body() dto: CreateDomainDto) {
     const row = await this.domainsService.create(dto);
-    return this.toDto(row);
+    return this.toDto(this.mapCategory(row as unknown as Record<string, unknown>));
   }
 
   @ApiOperation({ summary: 'Update an existing domain rule' })
@@ -104,7 +104,7 @@ export class DomainsController {
   @Patch(':id')
   async update(@Param('id') id: string, @Body() dto: UpdateDomainDto) {
     const row = await this.domainsService.update(id, dto);
-    return this.toDto(row);
+    return this.toDto(this.mapCategory(row as unknown as Record<string, unknown>));
   }
 
   @ApiOperation({ summary: 'Delete a domain rule' })

@@ -122,12 +122,12 @@ async function main() {
       where: { name: cat.name },
       update: {
         description: cat.description,
-        defaultFieldMappings: cat.defaultFieldMappings as any,
+        defaultFieldMappings: cat.defaultFieldMappings as Prisma.InputJsonValue,
       },
       create: {
         name: cat.name,
         description: cat.description,
-        defaultFieldMappings: cat.defaultFieldMappings as any,
+        defaultFieldMappings: cat.defaultFieldMappings as Prisma.InputJsonValue,
         path: '', // placeholder — root categories don't need a materialized path
       },
     });
