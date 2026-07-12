@@ -29,12 +29,16 @@ export class EtlManagementStore implements OnDestroy {
 
   // SSE/Polling handles
   private eventSource: EventSource | null = null;
-  private heartbeatTimeoutId: any = null;
-  private pollingIntervalId: any = null;
+  private heartbeatTimeoutId: ReturnType<typeof setTimeout> | null = null;
+  private pollingIntervalId: ReturnType<typeof setInterval> | null = null;
 
   constructor() {}
 
   // ─── Actions ────────────────────────────────────────────────
+  clearError(): void {
+    this.error.set(null);
+  }
+
   loadRuns(): void {
     this.loading.set(true);
     this.error.set(null);

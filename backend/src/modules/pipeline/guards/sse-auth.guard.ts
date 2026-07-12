@@ -35,7 +35,7 @@ export class SseAuthGuard implements CanActivate {
       // Verify the token using the same JwtService that created it
       const payload = await this.jwtService.verifyAsync(token);
       // Attach user to request for downstream use
-      (request as any).user = payload;
+      (request as Request & { user?: any }).user = payload;
       return true;
     } catch {
       throw new UnauthorizedException('Invalid or expired token');

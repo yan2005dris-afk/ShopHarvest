@@ -22,7 +22,7 @@ import { EtlRunsTableComponent } from './components/etl-runs-table.component';
         <div class="header-actions">
           <button 
             class="btn-trigger" 
-            [disabled]="store.streamActive()"
+            [disabled]="store.streamActive() || store.loading()"
             (click)="onOpenTriggerModal()"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -39,7 +39,7 @@ import { EtlRunsTableComponent } from './components/etl-runs-table.component';
           <div class="alert-content">
             <strong>Error:</strong> {{ err }}
           </div>
-          <button class="alert-close" (click)="store.error.set(null)">&times;</button>
+          <button class="alert-close" (click)="store.clearError()">&times;</button>
         </div>
       }
 

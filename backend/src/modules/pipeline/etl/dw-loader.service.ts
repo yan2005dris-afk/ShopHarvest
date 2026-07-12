@@ -89,24 +89,23 @@ export class DwLoaderService implements IDwLoader {
   private async updateRawCapturesToProcessed(
     records: { offerId: string; sourceId: string }[],
   ): Promise<void> {
+    if (records.length === 0) {
+      return;
+    }
     this.logger.log(
       `Actualizando ${records.length} capturas a estado PROCESSED en la base de datos operacional...`,
     );
-    await Promise.all(
-      records.map((r) =>
-        this.operationalPrisma.rawCapture.update({
-          where: {
-            offerId_sourceId: {
-              offerId: r.offerId,
-              sourceId: r.sourceId,
-            },
-          },
-          data: {
-            status: RawCaptureStatus.PROCESSED,
-          },
-        }),
-      ),
-    );
+    await this.operationalPrisma.rawCapture.updateMany({
+      where: {
+        OR: records.map((r) => ({
+          offerId: r.offerId,
+          sourceId: r.sourceId,
+        })),
+      },
+      data: {
+        status: RawCaptureStatus.PROCESSED,
+      },
+    });
   }
 
   async load(opts?: { truncateFirst?: boolean }): Promise<LoadResult> {

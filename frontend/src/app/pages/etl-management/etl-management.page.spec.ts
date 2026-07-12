@@ -1,6 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { EtlManagementPage } from './etl-management.page';
 import { EtlManagementStore } from './etl-management.store';
+import { ConfirmModalComponent } from './components/confirm-modal.component';
+import { By } from '@angular/platform-browser';
 import { vi } from 'vitest';
 
 describe('EtlManagementPage', () => {
@@ -42,7 +44,7 @@ describe('EtlManagementPage', () => {
     expect(storeMock.loadRuns).toHaveBeenCalled();
   });
 
-  it('should open confirm modal on trigger button click and trigger run on confirm', () => {
+  it('should trigger ETL run when confirmation is confirmed', () => {
     const fixture = TestBed.createComponent(EtlManagementPage);
     fixture.detectChanges();
 
@@ -55,8 +57,10 @@ describe('EtlManagementPage', () => {
 
     expect(fixture.componentInstance.isConfirmOpen()).toBe(true);
 
-    // Confirm execution
-    fixture.componentInstance.onConfirmTrigger();
+    // Confirm execution via modal component output binding
+    const modalDebugEl = fixture.debugElement.query(By.directive(ConfirmModalComponent));
+    expect(modalDebugEl).toBeTruthy();
+    modalDebugEl.triggerEventHandler('confirm', null);
     fixture.detectChanges();
 
     expect(fixture.componentInstance.isConfirmOpen()).toBe(false);

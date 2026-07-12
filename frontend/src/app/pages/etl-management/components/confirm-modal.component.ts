@@ -1,4 +1,4 @@
-import { Component, input, output } from '@angular/core';
+import { Component, input, output, HostListener } from '@angular/core';
 
 @Component({
   selector: 'app-confirm-modal',
@@ -6,10 +6,10 @@ import { Component, input, output } from '@angular/core';
   template: `
     @if (isOpen()) {
       <div class="modal-backdrop" (click)="onCancel()">
-        <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-content" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" [attr.aria-label]="title()">
           <div class="modal-header">
             <h3>{{ title() }}</h3>
-            <button class="close-btn" (click)="onCancel()">&times;</button>
+            <button class="close-btn" (click)="onCancel()" aria-label="Cerrar">&times;</button>
           </div>
           <div class="modal-body">
             <p>{{ message() }}</p>
@@ -118,6 +118,13 @@ export class ConfirmModalComponent {
 
   confirm = output<void>();
   cancel = output<void>();
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.isOpen()) {
+      this.onCancel();
+    }
+  }
 
   onConfirm(): void {
     this.confirm.emit();

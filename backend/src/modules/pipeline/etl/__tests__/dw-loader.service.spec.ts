@@ -73,7 +73,7 @@ function makePrismaMock() {
 function makeOperationalPrismaMock() {
   return {
     rawCapture: {
-      update: jest.fn().mockResolvedValue({}),
+      updateMany: jest.fn().mockResolvedValue({}),
     },
   };
 }
@@ -242,12 +242,14 @@ describe('DwLoaderService', () => {
     const result = await service.load();
 
     expect(result.estado).toBe('completado');
-    expect(operationalPrisma.rawCapture.update).toHaveBeenCalledWith({
+    expect(operationalPrisma.rawCapture.updateMany).toHaveBeenCalledWith({
       where: {
-        offerId_sourceId: {
-          offerId: 'offer-123',
-          sourceId: 'source-456',
-        },
+        OR: [
+          {
+            offerId: 'offer-123',
+            sourceId: 'source-456',
+          },
+        ],
       },
       data: {
         status: 'PROCESSED',
