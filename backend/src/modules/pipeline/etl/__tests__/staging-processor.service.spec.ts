@@ -243,6 +243,7 @@ describe('StagingProcessorService', () => {
         titulo_oferta: record.titulo,
         precio_raw: record.precio,
         precio_usd: 10,
+        url_producto: record.url_producto ?? 'https://x/2',
         categoria_normalizada: 'otros',
         _extraido_en: '2026-07-10',
         _fuente: 'mercadolibre',

@@ -149,12 +149,32 @@ export class StagingProcessorService implements IStagingProcessor {
       }
     }
 
+    const REQUIRED_STAGING_FIELDS = ['titulo_oferta', 'url_producto', '_fuente'] as const;
+    const validRecords: Record<string, unknown>[] = [];
+    for (const rec of allRecords) {
+      const missing = REQUIRED_STAGING_FIELDS.filter(
+        (f) => rec[f] == null || rec[f] === '',
+      );
+      if (missing.length > 0) {
+        this.logger.warn(
+          `Registro omitido por campos requeridos faltantes [${missing.join(', ')}] — offerId: ${rec['_offerId'] ?? 'desconocido'}`,
+        );
+      } else {
+        validRecords.push(rec);
+      }
+    }
+    if (validRecords.length === 0) {
+      this.logger.warn(
+        'Ningún registro válido después de filtrar campos requeridos — staging vacío',
+      );
+    }
+
     const { data: dedupedProducts, removed: prodRemoved } = deduplicate(
-      allRecords,
+      validRecords,
       PRODUCT_DEDUP_KEYS,
     );
     this.logger.log(
-      `Productos: ${allRecords.length} antes de deduplicar, ${prodRemoved} duplicados eliminados, ${dedupedProducts.length} en staging`,
+      `Productos: ${validRecords.length} válidos (${allRecords.length - validRecords.length} omitidos), ${prodRemoved} duplicados eliminados, ${dedupedProducts.length} en staging`,
     );
     await fs.writeFile(
       path.join(stagingDir, 'all_products.json'),
