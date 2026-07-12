@@ -14,6 +14,7 @@ export interface SaveProductsParams {
   hostname: string;
   url: string;
   products: Record<string, unknown>[];
+  fieldMappings: ExtensionFieldMapping[];
 }
 
 /**
@@ -49,6 +50,6 @@ export class DomainRulePersistenceService {
 
   /** Ingest extracted products for a domain. */
   ingestProducts(params: SaveProductsParams): Observable<{ ingested: number; domainRuleId: string }> {
-    return this.apiService.ingestProducts(params.hostname, params.url, params.products);
+    return this.apiService.ingestProducts(params.hostname, params.url, params.products, params.fieldMappings);
   }
 }

@@ -245,6 +245,7 @@ export class VisualMapperPage implements OnInit, OnDestroy {
       hostname,
       url: this.url,
       products: this.session.extractedProducts() as Record<string, unknown>[],
+      fieldMappings: this.session.fieldMappings(),
     };
 
     this.persistence.ingestProducts(params).subscribe({
