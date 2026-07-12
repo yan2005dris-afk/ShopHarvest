@@ -157,13 +157,16 @@ export class ProductsService {
         }
       }
 
+      // The extension is authoritative for field mappings — use incoming
+      // mappings when provided, falling back to the stored rule.
       const mappings =
-        (domainRule.fieldMappings as unknown as FieldMappingDto[]) ?? [];
+        incomingMappings ??
+        ((domainRule.fieldMappings as unknown as FieldMappingDto[]) ?? []);
 
       // Hoist the "no title mapping" warning so a 500-product ingest does
       // not log 500 lines.
       const hasTitleMapping = mappings.some((m) =>
-        /^title$|^nombre$|^name$/i.test(m.canonicalField),
+        /^title$|^nombre$|^name$|^titulo$/i.test(m.canonicalField),
       );
       if (!hasTitleMapping) {
         this.logger.warn(
@@ -309,7 +312,7 @@ export class ProductsService {
     // the parent ingest call so we don't spam logs.
     let title = 'Raw product';
     const titleMapping = mappings.find((m) =>
-      /^title$|^nombre$|^name$/i.test(m.canonicalField),
+      /^title$|^nombre$|^name$|^titulo$/i.test(m.canonicalField),
     );
     if (titleMapping) {
       const raw = product[titleMapping.canonicalField];
@@ -336,7 +339,7 @@ export class ProductsService {
     const asString = (v: unknown): string | undefined =>
       typeof v === 'string' && v.trim() ? v.trim() : undefined;
 
-    const imageUrl = asString(valueFor(/^image$|^img$|^foto$|^picture$/i));
+    const imageUrl = asString(valueFor(/^image$|^img$|^foto$|^picture$|^imagen$/i));
     const sku = asString(valueFor(/^sku$/i));
     const description = asString(valueFor(/^desc/i));
 
