@@ -8,6 +8,8 @@ type RawCaptureRow = {
   sourceId: string;
   payload: unknown;
   capturedAt: Date;
+  status?: string;
+  attempts?: number;
   source?: { id: string; name: string };
 };
 
@@ -44,8 +46,8 @@ function buildPrismaStub() {
           update,
         }: {
           where: { offerId_sourceId: { offerId: string; sourceId: string } };
-          create: { offerId: string; sourceId: string; payload: unknown };
-          update: { payload: unknown; capturedAt: Date };
+          create: { offerId: string; sourceId: string; payload: unknown; status?: string; attempts?: number };
+          update: { payload: unknown; capturedAt: Date; status?: string; attempts?: number };
         }) => {
           const k = key(create.offerId, create.sourceId);
           const existing = captures.get(k);
@@ -55,6 +57,8 @@ function buildPrismaStub() {
             // Update
             existing.payload = update.payload;
             existing.capturedAt = update.capturedAt;
+            existing.status = update.status;
+            existing.attempts = update.attempts;
             return existing;
           }
 
@@ -64,6 +68,8 @@ function buildPrismaStub() {
             sourceId: create.sourceId,
             payload: create.payload,
             capturedAt: now,
+            status: create.status,
+            attempts: create.attempts,
           };
           captures.set(k, row);
           return row;
@@ -159,6 +165,8 @@ describe('RawCapturesService', () => {
       expect(result.offerId).toBe('off_001');
       expect(result.sourceId).toBe('src_001');
       expect(result.payload).toEqual({ price: 100, title: 'Test' });
+      expect(result.status).toBe('UNPROCESSED');
+      expect(result.attempts).toBe(0);
     });
 
     it('overwrites existing capture on re-scrape (same offerId + sourceId)', async () => {
@@ -175,6 +183,8 @@ describe('RawCapturesService', () => {
       });
 
       expect(updated.payload).toEqual({ price: 90, title: 'Updated' });
+      expect(updated.status).toBe('UNPROCESSED');
+      expect(updated.attempts).toBe(0);
     });
 
     it('keeps captures independent for different sourceIds', async () => {

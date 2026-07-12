@@ -3,6 +3,7 @@ import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { ExtensionService } from './services/extension.service';
 import { ThemeService } from './services/theme.service';
+import { AuthService } from './services/auth.service';
 import { ToastHostComponent } from './core/components/toast-host.component';
 import { ToastService } from './core/services/toast.service';
 
@@ -15,6 +16,7 @@ import { ToastService } from './core/services/toast.service';
 export class App implements OnInit, OnDestroy {
   extensionAvailable = false;
   isDark = true;
+  readonly auth = inject(AuthService);
   private readonly toastService = inject(ToastService);
   private subs: Subscription[] = [];
 
