@@ -1,4 +1,4 @@
-import { Component, input, output, HostListener } from '@angular/core';
+import { Component, input, output, signal, HostListener } from '@angular/core';
 
 @Component({
   selector: 'app-confirm-modal',
@@ -9,10 +9,31 @@ import { Component, input, output, HostListener } from '@angular/core';
         <div class="modal-content" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" [attr.aria-label]="title()">
           <div class="modal-header">
             <h3>{{ title() }}</h3>
-            <button class="close-btn" (click)="onCancel()" aria-label="Cerrar">&times;</button>
+            <button class="close-btn" aria-label="Cerrar" (click)="onCancel()">&times;</button>
           </div>
           <div class="modal-body">
             <p>{{ message() }}</p>
+
+            <div class="form-group">
+              <label for="modal-action">Tipo de Ejecución</label>
+              <select id="modal-action" [value]="action()" (change)="onActionChange($event)">
+                <option value="full">Ejecutar Pipeline Completo (Scraping + ETL)</option>
+                <option value="local">Procesar Capturas Pendientes únicamente (ETL Local)</option>
+              </select>
+            </div>
+
+            @if (action() === 'full') {
+              <div class="form-group animate-fade-in">
+                <label for="modal-source">Fuente a Scraping</label>
+                <select id="modal-source" [value]="source()" (change)="onSourceChange($event)">
+                  <option value="all">Todas las fuentes</option>
+                  <option value="mercadolibre">MercadoLibre</option>
+                  <option value="aliexpress">AliExpress</option>
+                  <option value="temu">Temu</option>
+                  <option value="shein">SHEIN</option>
+                </select>
+              </div>
+            }
           </div>
           <div class="modal-footer">
             <button class="btn btn-secondary" (click)="onCancel()">{{ cancelText() }}</button>
@@ -75,6 +96,35 @@ import { Component, input, output, HostListener } from '@angular/core';
       font-size: 0.95rem;
       line-height: 1.5;
     }
+    .form-group {
+      margin-top: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      text-align: left;
+    }
+    .form-group label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-2);
+    }
+    .form-group select {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 8px 10px;
+      color: var(--text-1);
+      font-size: 0.9rem;
+      width: 100%;
+      outline: none;
+    }
+    .animate-fade-in {
+      animation: fadeIn 0.2s ease-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
     .modal-footer {
       padding: 12px 16px;
       border-top: 1px solid var(--border);
@@ -116,21 +166,38 @@ export class ConfirmModalComponent {
   cancelText = input<string>('Cancel');
   isOpen = input<boolean>(false);
 
-  confirm = output<void>();
+  confirm = output<{ action: 'full' | 'local'; source: string }>();
   cancel = output<void>();
+
+  // State signals inside modal
+  action = signal<'full' | 'local'>('full');
+  source = signal<string>('all');
+
+  onConfirm(): void {
+    this.confirm.emit({
+      action: this.action(),
+      source: this.source(),
+    });
+  }
+
+  onCancel(): void {
+    this.cancel.emit();
+  }
+
+  onActionChange(event: Event): void {
+    const val = (event.target as HTMLSelectElement).value as 'full' | 'local';
+    this.action.set(val);
+  }
+
+  onSourceChange(event: Event): void {
+    const val = (event.target as HTMLSelectElement).value;
+    this.source.set(val);
+  }
 
   @HostListener('document:keydown.escape')
   onEscape(): void {
     if (this.isOpen()) {
       this.onCancel();
     }
-  }
-
-  onConfirm(): void {
-    this.confirm.emit();
-  }
-
-  onCancel(): void {
-    this.cancel.emit();
   }
 }

@@ -100,10 +100,10 @@ import { KeyValuePipe } from '@angular/common';
       <app-confirm-modal 
         [isOpen]="isConfirmOpen()"
         title="Ejecutar Pipeline ETL"
-        message="¿Estás seguro de iniciar una ejecución completa del pipeline ETL? Esto activará el Scraping de todas las fuentes configuradas, Staging y la carga de datos al Data Warehouse. Puede tardar varios minutos."
+        message="¿Estás seguro de iniciar la ejecución manual del pipeline ETL? Podés elegir procesar solo las capturas pendientes de la base de datos (ETL Local) o ejecutar el Scraping completo mediante navegadores."
         confirmText="Iniciar Ejecución"
         cancelText="Cancelar"
-        (confirm)="onConfirmTrigger()"
+        (confirm)="onConfirmTrigger($event)"
         (cancel)="onCancelTrigger()"
       />
     </div>
@@ -281,9 +281,9 @@ export class EtlManagementPage implements OnInit {
     this.isConfirmOpen.set(true);
   }
 
-  onConfirmTrigger(): void {
+  onConfirmTrigger(evt: { action: 'full' | 'local'; source: string }): void {
     this.isConfirmOpen.set(false);
-    this.store.triggerRun();
+    this.store.triggerRun(evt);
   }
 
   onCancelTrigger(): void {

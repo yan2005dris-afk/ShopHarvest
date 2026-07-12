@@ -48,6 +48,6 @@ describe('ConfirmModalComponent', () => {
     expect(cancelSpy).toHaveBeenCalled();
 
     buttons[2].click();
-    expect(confirmSpy).toHaveBeenCalled();
+    expect(confirmSpy).toHaveBeenCalledWith({ action: 'full', source: 'all' });
   });
 });

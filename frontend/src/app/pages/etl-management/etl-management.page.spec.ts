@@ -61,10 +61,10 @@ describe('EtlManagementPage', () => {
     // Confirm execution via modal component output binding
     const modalDebugEl = fixture.debugElement.query(By.directive(ConfirmModalComponent));
     expect(modalDebugEl).toBeTruthy();
-    modalDebugEl.triggerEventHandler('confirm', null);
+    modalDebugEl.triggerEventHandler('confirm', { action: 'full', source: 'all' });
     fixture.detectChanges();
 
     expect(fixture.componentInstance.isConfirmOpen()).toBe(false);
-    expect(storeMock.triggerRun).toHaveBeenCalled();
+    expect(storeMock.triggerRun).toHaveBeenCalledWith({ action: 'full', source: 'all' });
   });
 });

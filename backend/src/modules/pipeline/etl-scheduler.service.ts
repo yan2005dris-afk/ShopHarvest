@@ -3,6 +3,7 @@ import { SchedulerRegistry } from '@nestjs/schedule';
 import { CronJob } from 'cron';
 import { OperationalPrismaService } from '../../common/prisma/operational-prisma.service';
 import { PipelineService } from './pipeline.service';
+import { PipelineSource } from '@web-scraping/contracts/pipeline';
 
 /**
  * A single tick fans out to every registered scraper, then runs
@@ -54,12 +55,16 @@ export class EtlSchedulerService implements OnModuleInit {
    * 4-state `EtlRun` lifecycle (ETL-5): `queued` has no row yet,
    * `running` on create, `success`/`failed` on completion.
    */
-  async runEtlTick(): Promise<void> {
-    const source = TICK_SOURCE_LABEL;
+  async runEtlTick(options?: { action: 'full' | 'local'; source?: string }): Promise<void> {
+    const action = options?.action ?? 'full';
+    const sourceParam = options?.source ?? 'all';
+
+    // Define source label for etlRun table
+    const source = action === 'local' ? 'pending' : sourceParam;
 
     // 1. Idempotency gate: skip if a previous RUNNING run exists.
     const inFlight = await this.prisma.etlRun.findFirst({
-      where: { source, status: 'RUNNING' },
+      where: { status: 'RUNNING' },
     });
     if (inFlight) {
       this.logger.warn(
@@ -72,26 +77,40 @@ export class EtlSchedulerService implements OnModuleInit {
     const run = await this.prisma.etlRun.create({
       data: { source, status: 'RUNNING' },
     });
-    this.logger.log(`ETL run ${run.id} started.`);
+    this.logger.log(`ETL run ${run.id} started (action: ${action}, source: ${source}).`);
 
     try {
-      const summary = await this.pipelineService.runAll();
+      let rowsScraped = 0;
+      let scrapeErrors: string[] = [];
+      let loadResult: any;
 
-      const rowsScraped = summary.scrapeResults.reduce(
-        (acc, r) => acc + r.totalScraped,
-        0,
-      );
-      const scrapeErrors = summary.scrapeResults
-        .filter((r) => r.errors.length > 0)
-        .map((r) => `${r.source}: ${r.errors.join('; ')}`);
-
-      for (const r of summary.scrapeResults) {
-        this.logger.log(
-          `  scrape ${r.source}: items=${r.totalScraped} errors=${r.errors.length}`,
+      if (action === 'local') {
+        // Run only Staging & DW Load (process pending operational captures)
+        this.logger.log(`ETL run ${run.id}: running Staging...`);
+        const stagingResult = await this.pipelineService.runStaging();
+        this.logger.log(`ETL run ${run.id}: running DW Loader...`);
+        loadResult = await this.pipelineService.loadDw();
+      } else {
+        // Run Scraping + Staging + DW Load (either all or specific source)
+        const runOpts = sourceParam !== 'all' ? { sources: [sourceParam as PipelineSource] } : undefined;
+        const summary = await this.pipelineService.runAll(runOpts);
+        
+        rowsScraped = summary.scrapeResults.reduce(
+          (acc, r) => acc + r.totalScraped,
+          0,
         );
+        scrapeErrors = summary.scrapeResults
+          .filter((r) => r.errors.length > 0)
+          .map((r) => `${r.source}: ${r.errors.join('; ')}`);
+          
+        for (const r of summary.scrapeResults) {
+          this.logger.log(
+            `  scrape ${r.source}: items=${r.totalScraped} errors=${r.errors.length}`,
+          );
+        }
+        loadResult = summary.loadResult;
       }
 
-      const loadResult = summary.loadResult;
       const rowsPersisted = loadResult
         ? loadResult.productosCargados + loadResult.encuestasCargadas
         : 0;
@@ -102,7 +121,7 @@ export class EtlSchedulerService implements OnModuleInit {
             .filter(Boolean)
             .join(' | ')
             .slice(0, 2000)
-        : undefined;
+        : (scrapeErrors.length > 0 ? scrapeErrors.join(' | ').slice(0, 2000) : undefined);
 
       await this.prisma.etlRun.update({
         where: { id: run.id },

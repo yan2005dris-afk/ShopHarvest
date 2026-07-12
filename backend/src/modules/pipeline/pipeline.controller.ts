@@ -294,7 +294,7 @@ export class PipelineController {
   @HttpCode(201)
   @Post('etl-runs/trigger')
   async triggerEtlRun(
-    @Body() _dto?: TriggerEtlRunDto,
+    @Body() dto?: TriggerEtlRunDto,
   ): Promise<{ runId: string; status: string }> {
     // Idempotency check: if a RUNNING run exists, return it
     const existing = await this.prisma.etlRun.findFirst({
@@ -304,8 +304,11 @@ export class PipelineController {
       return { runId: existing.id, status: existing.status };
     }
 
+    const action = dto?.action ?? 'full';
+    const source = dto?.source ?? 'all';
+
     // Start a new tick asynchronously
-    this.scheduler.runEtlTick().catch((err) => {
+    this.scheduler.runEtlTick({ action, source }).catch((err) => {
       this.logger.error(`Manual ETL trigger failed: ${(err as Error).message}`);
     });
 

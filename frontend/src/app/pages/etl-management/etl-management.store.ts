@@ -87,10 +87,10 @@ export class EtlManagementStore implements OnDestroy {
     });
   }
 
-  triggerRun(): void {
+  triggerRun(options?: { action: 'full' | 'local'; source: string }): void {
     this.loading.set(true);
     this.error.set(null);
-    this.http.post<TriggerEtlResponseDto>('/api/pipeline/etl-runs/trigger', {}).subscribe({
+    this.http.post<TriggerEtlResponseDto>('/api/pipeline/etl-runs/trigger', options || {}).subscribe({
       next: (res) => {
         this.loading.set(false);
         this.selectRunId(res.runId);

@@ -47,7 +47,15 @@ export class ListEtlRunsQueryDto {
  * Request body for POST /pipeline/etl-runs/trigger.
  */
 export class TriggerEtlRunDto {
-  // Reserved for future selective-source triggers.
+  @ApiPropertyOptional({ enum: ['full', 'local'], default: 'full' })
+  @IsOptional()
+  @IsString()
+  action?: 'full' | 'local' = 'full';
+
+  @ApiPropertyOptional({ default: 'all' })
+  @IsOptional()
+  @IsString()
+  source?: string = 'all';
 }
 
 /**
