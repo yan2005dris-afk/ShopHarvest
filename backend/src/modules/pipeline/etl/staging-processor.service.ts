@@ -62,8 +62,12 @@ export class StagingProcessorService implements IStagingProcessor {
       },
     };
     if (source && source !== 'all') {
+      const cleanSource = source.includes('.') ? source.split('.')[0] : source;
       where.source = {
-        code: source,
+        code: {
+          contains: cleanSource,
+          mode: 'insensitive',
+        },
       };
     }
     return this.operationalPrisma.rawCapture.findMany({
