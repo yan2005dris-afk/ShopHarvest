@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { JwtModule } from '@nestjs/jwt';
 import {
   DW_LOADER,
   DATA_SOURCES,
@@ -6,6 +8,7 @@ import {
 } from '@web-scraping/contracts/pipeline';
 import { PipelineController } from './pipeline.controller';
 import { PipelineService } from './pipeline.service';
+import { SseAuthGuard } from './guards/sse-auth.guard';
 import { DwLoaderAdapter } from './adapters/dw-loader.adapter';
 import { StagingProcessorAdapter } from './adapters/staging-processor.adapter';
 import { EtlSchedulerService } from './etl-scheduler.service';
@@ -36,10 +39,21 @@ import {
  * instance.
  */
 @Module({
+  imports: [
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        secret: config.get<string>('JWT_SECRET'),
+        signOptions: { expiresIn: '7d' },
+      }),
+    }),
+  ],
   controllers: [PipelineController],
   providers: [
     PipelineService,
     EtlSchedulerService,
+    SseAuthGuard,
     // BrowserFactoryService — singleton, stealth always-on, proxy opt-in
     // Consumed by Playwright-based scrapers (MELI/AliExpress in PR 3/4).
     // Extension-based scrapers (Temu/Shein in PR 5) MUST NOT inject it.

@@ -177,6 +177,7 @@ model EtlRun {
   qualityMetric QualityMetric?
 
   @@index([status, startedAt(sort: Desc)])
+  @@index([source])
 }
 
 model QualityMetric {

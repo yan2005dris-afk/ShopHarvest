@@ -23,3 +23,4 @@ export { SOURCE_MECHANISM_MAP } from './source-mechanism.js';
 export type { ExtensionExport, ExtensionExportProduct } from './extension-export.js';
 export { validateExtensionExport } from './extension-export.js';
 export { BadExtensionExportError } from './bad-extension-export.error.js';
+export type { EtlRunStatus, EtlRunDto, EtlRunListResponseDto, EtlRunFiltersDto, TriggerEtlRequestDto, TriggerEtlResponseDto } from './etl-run.dto.js';
