@@ -373,10 +373,10 @@ export class DwLoaderService implements IDwLoader {
         },
       });
 
-      const nombreFuente = toSafeString(
-        item['_fuente'],
-        'csv_dataset',
-      ).toLowerCase();
+      // Normalize domain-based source codes: 'temu.com' → 'temu'
+      const nombreFuente = toSafeString(item['_fuente'], 'csv_dataset')
+        .toLowerCase()
+        .split('.')[0];
       const nombreCategoria = toSafeString(
         item['categoria_normalizada'] ?? item['_categoria'],
         'otros',

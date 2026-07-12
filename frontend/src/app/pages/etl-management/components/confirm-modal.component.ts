@@ -1,4 +1,9 @@
-import { Component, input, output, signal, HostListener } from '@angular/core';
+import { Component, computed, input, output, signal, HostListener } from '@angular/core';
+
+export interface EtlSourceOption {
+  code: string;
+  label: string;
+}
 
 @Component({
   selector: 'app-confirm-modal',
@@ -28,10 +33,9 @@ import { Component, input, output, signal, HostListener } from '@angular/core';
               </label>
               <select id="modal-source" [value]="source()" (change)="onSourceChange($event)">
                 <option value="all">Todas las fuentes</option>
-                <option value="mercadolibre">MercadoLibre</option>
-                <option value="aliexpress">AliExpress</option>
-                <option value="temu">Temu</option>
-                <option value="shein">SHEIN</option>
+                @for (opt of sourceOptions(); track opt.code) {
+                  <option [value]="opt.code">{{ opt.label }}</option>
+                }
               </select>
             </div>
           </div>
@@ -165,6 +169,8 @@ export class ConfirmModalComponent {
   confirmText = input<string>('Confirm');
   cancelText = input<string>('Cancel');
   isOpen = input<boolean>(false);
+  /** Sources with pending captures — shown in local ETL mode. */
+  pendingSources = input<EtlSourceOption[]>([]);
 
   confirm = output<{ action: 'full' | 'local'; source: string }>();
   cancel = output<void>();
@@ -172,6 +178,19 @@ export class ConfirmModalComponent {
   // State signals inside modal
   action = signal<'full' | 'local'>('full');
   source = signal<string>('all');
+
+  /** Full-scraping sources (static — these are the installed scrapers). */
+  private readonly SCRAPING_SOURCES: EtlSourceOption[] = [
+    { code: 'mercadolibre', label: 'MercadoLibre' },
+    { code: 'aliexpress', label: 'AliExpress' },
+    { code: 'temu', label: 'Temu' },
+    { code: 'shein', label: 'SHEIN' },
+  ];
+
+  /** Dynamic list based on current action. */
+  readonly sourceOptions = computed<EtlSourceOption[]>(() =>
+    this.action() === 'local' ? this.pendingSources() : this.SCRAPING_SOURCES,
+  );
 
   onConfirm(): void {
     this.confirm.emit({

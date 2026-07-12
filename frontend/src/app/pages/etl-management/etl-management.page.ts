@@ -1,6 +1,6 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { EtlManagementStore } from './etl-management.store';
-import { ConfirmModalComponent } from './components/confirm-modal.component';
+import { ConfirmModalComponent, EtlSourceOption } from './components/confirm-modal.component';
 import { EtlStreamPanelComponent } from './components/etl-stream-panel.component';
 import { EtlRunsTableComponent } from './components/etl-runs-table.component';
 import { KeyValuePipe } from '@angular/common';
@@ -99,6 +99,7 @@ import { KeyValuePipe } from '@angular/common';
       <!-- Trigger ETL confirm modal -->
       <app-confirm-modal 
         [isOpen]="isConfirmOpen()"
+        [pendingSources]="pendingSourceOptions()"
         title="Ejecutar Pipeline ETL"
         message="¿Estás seguro de iniciar la ejecución manual del pipeline ETL? Podés elegir procesar solo las capturas pendientes de la base de datos (ETL Local) o ejecutar el Scraping completo mediante navegadores."
         confirmText="Iniciar Ejecución"
@@ -272,6 +273,15 @@ export class EtlManagementPage implements OnInit {
   readonly store = inject(EtlManagementStore);
 
   isConfirmOpen = signal<boolean>(false);
+
+  /** Pending source options derived from live store data — shown in local ETL mode. */
+  readonly pendingSourceOptions = computed<EtlSourceOption[]>(() => {
+    const summary = this.store.pendingSummary();
+    if (!summary) return [];
+    return Object.entries(summary.sources)
+      .filter(([, info]) => info.pending > 0)
+      .map(([code, info]) => ({ code, label: info.name }));
+  });
 
   ngOnInit(): void {
     this.store.loadRuns();
