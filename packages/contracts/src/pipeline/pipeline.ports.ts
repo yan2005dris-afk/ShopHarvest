@@ -23,7 +23,13 @@ import type { PipelineSource } from './pipeline.source.js';
  * keeps the existing rows in place.
  */
 export interface IDwLoader {
-  load(opts?: { truncateFirst?: boolean }): Promise<LoadResult>;
+  load(opts?: {
+    truncateFirst?: boolean;
+    inMemoryData?: {
+      productos?: Record<string, unknown>[];
+      encuestas?: Record<string, unknown>[];
+    };
+  }): Promise<LoadResult>;
 }
 
 /**

@@ -21,7 +21,11 @@ describe('EtlSchedulerService', () => {
   let service: EtlSchedulerService;
   let prisma: { etlRun: EtlRunMock };
   let schedulerRegistry: { addCronJob: jest.Mock };
-  let pipelineService: { runAll: jest.Mock };
+  let pipelineService: {
+    runAll: jest.Mock;
+    runStaging: jest.Mock;
+    loadDw: jest.Mock;
+  };
 
   const mockPrismaService: { etlRun: EtlRunMock } = {
     etlRun: {
@@ -35,8 +39,14 @@ describe('EtlSchedulerService', () => {
     addCronJob: jest.fn(),
   };
 
-  const mockPipelineService: { runAll: jest.Mock } = {
+  const mockPipelineService: {
+    runAll: jest.Mock;
+    runStaging: jest.Mock;
+    loadDw: jest.Mock;
+  } = {
     runAll: jest.fn(),
+    runStaging: jest.fn(),
+    loadDw: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -79,7 +89,7 @@ describe('EtlSchedulerService', () => {
       await service.runEtlTick();
 
       expect(prisma.etlRun.findFirst).toHaveBeenCalledWith({
-        where: { source: 'all', status: 'RUNNING' },
+        where: { status: 'RUNNING' },
       });
       expect(prisma.etlRun.create).not.toHaveBeenCalled();
       expect(pipelineService.runAll).not.toHaveBeenCalled();
@@ -193,6 +203,57 @@ describe('EtlSchedulerService', () => {
         data: {
           status: 'FAILED',
           errorSummary: 'unexpected crash',
+          finishedAt: expect.any(Date) as Date,
+        },
+      });
+    });
+
+    it('runs staging and load in-memory for action === local', async () => {
+      prisma.etlRun.findFirst.mockResolvedValueOnce(null);
+      prisma.etlRun.create.mockResolvedValueOnce({ id: 'run-id-local' });
+
+      const mockProducts = [{ titulo_oferta: 'Local Product' }];
+      const mockEncuestas = [{ edad: 22 }];
+
+      pipelineService.runStaging.mockResolvedValueOnce({
+        totalProductos: 1,
+        totalEncuestas: 1,
+        durationMs: 15,
+        productos: mockProducts,
+        encuestas: mockEncuestas,
+      });
+
+      pipelineService.loadDw.mockResolvedValueOnce({
+        productosCargados: 1,
+        encuestasCargadas: 1,
+        tiempoMs: 20,
+        estado: 'completado',
+      });
+
+      await service.runEtlTick({ action: 'local', source: 'mercadolibre' });
+
+      expect(prisma.etlRun.create).toHaveBeenCalledWith({
+        data: { source: 'pending', status: 'RUNNING' },
+      });
+
+      expect(pipelineService.runStaging).toHaveBeenCalledWith({
+        source: 'mercadolibre',
+      });
+
+      expect(pipelineService.loadDw).toHaveBeenCalledWith({
+        inMemoryData: {
+          productos: mockProducts,
+          encuestas: mockEncuestas,
+        },
+      });
+
+      expect(prisma.etlRun.update).toHaveBeenCalledWith({
+        where: { id: 'run-id-local' },
+        data: {
+          status: 'SUCCESS',
+          rowsScraped: 0,
+          rowsPersisted: 2,
+          errorSummary: null,
           finishedAt: expect.any(Date) as Date,
         },
       });

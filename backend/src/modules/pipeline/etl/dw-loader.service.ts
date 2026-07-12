@@ -108,19 +108,33 @@ export class DwLoaderService implements IDwLoader {
     });
   }
 
-  async load(opts?: { truncateFirst?: boolean }): Promise<LoadResult> {
+  async load(opts?: {
+    truncateFirst?: boolean;
+    inMemoryData?: {
+      productos?: Record<string, unknown>[];
+      encuestas?: Record<string, unknown>[];
+    };
+  }): Promise<LoadResult> {
     const start = Date.now();
     try {
-      const envVal = this.configService.get<string>('PIPELINE_STAGING_DIR');
-      const stagingDir = envVal
-        ? envVal
-        : path.join(path.resolve(__dirname, '../../../../'), 'pipeline/staging');
-      const productos = await this.readJsonArray<ProductRow>(
-        path.join(stagingDir, 'all_products.json'),
-      );
-      const encuestas = await this.readJsonArray<EncuestaRow>(
-        path.join(stagingDir, 'stg_encuesta.json'),
-      );
+      let productos: ProductRow[];
+      let encuestas: EncuestaRow[];
+
+      if (opts?.inMemoryData) {
+        productos = (opts.inMemoryData.productos || []) as ProductRow[];
+        encuestas = (opts.inMemoryData.encuestas || []) as EncuestaRow[];
+      } else {
+        const envVal = this.configService.get<string>('PIPELINE_STAGING_DIR');
+        const stagingDir = envVal
+          ? envVal
+          : path.join(path.resolve(__dirname, '../../../../'), 'pipeline/staging');
+        productos = await this.readJsonArray<ProductRow>(
+          path.join(stagingDir, 'all_products.json'),
+        );
+        encuestas = await this.readJsonArray<EncuestaRow>(
+          path.join(stagingDir, 'stg_encuesta.json'),
+        );
+      }
 
       const report = this.qualityService.run(
         productos as Record<string, unknown>[],

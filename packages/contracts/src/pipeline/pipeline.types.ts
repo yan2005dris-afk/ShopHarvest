@@ -87,4 +87,6 @@ export interface StagingResult {
   totalProductos: number;
   totalEncuestas: number;
   durationMs: number;
+  productos?: Record<string, unknown>[];
+  encuestas?: Record<string, unknown>[];
 }

@@ -89,7 +89,12 @@ export class EtlSchedulerService implements OnModuleInit {
         this.logger.log(`ETL run ${run.id}: running Staging for source ${sourceParam}...`);
         const stagingResult = await this.pipelineService.runStaging({ source: sourceParam });
         this.logger.log(`ETL run ${run.id}: running DW Loader...`);
-        loadResult = await this.pipelineService.loadDw();
+        loadResult = await this.pipelineService.loadDw({
+          inMemoryData: {
+            productos: stagingResult.productos,
+            encuestas: stagingResult.encuestas,
+          },
+        });
       } else {
         // Run Scraping + Staging + DW Load (either all or specific source)
         const runOpts = sourceParam !== 'all' ? { sources: [sourceParam as PipelineSource] } : undefined;

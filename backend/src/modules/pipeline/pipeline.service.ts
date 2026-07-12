@@ -96,7 +96,13 @@ export class PipelineService {
   }
 
   /** Run only the DW loader (staging → dw.*). */
-  async loadDw(opts?: { truncateFirst?: boolean }): Promise<LoadResult> {
+  async loadDw(opts?: {
+    truncateFirst?: boolean;
+    inMemoryData?: {
+      productos?: Record<string, unknown>[];
+      encuestas?: Record<string, unknown>[];
+    };
+  }): Promise<LoadResult> {
     return this.dwLoader.load(opts);
   }
 

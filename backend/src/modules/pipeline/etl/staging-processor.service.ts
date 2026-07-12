@@ -152,6 +152,7 @@ export class StagingProcessorService implements IStagingProcessor {
     );
 
     let encuestaCount = 0;
+    let dedupedEncuestas: Record<string, unknown>[] = [];
     const rawEncuestas = await this.loadLatestRaw(
       path.join(rawDir, PipelineSource.ENCUESTA),
       PipelineSource.ENCUESTA,
@@ -169,10 +170,11 @@ export class StagingProcessorService implements IStagingProcessor {
           );
         }
       }
-      const { data: dedupedEncuestas, removed: encRemoved } = deduplicate(
+      const { data: deduped, removed: encRemoved } = deduplicate(
         processedEncuestas,
         ENCUESTA_DEDUP_KEYS,
       );
+      dedupedEncuestas = deduped;
       this.logger.log(
         `Encuestas: ${rawEncuestas.length} antes de deduplicar, ${encRemoved} duplicados eliminados, ${dedupedEncuestas.length} en staging`,
       );
@@ -190,6 +192,8 @@ export class StagingProcessorService implements IStagingProcessor {
       totalProductos: dedupedProducts.length,
       totalEncuestas: encuestaCount,
       durationMs: Date.now() - start,
+      productos: dedupedProducts,
+      encuestas: dedupedEncuestas,
     };
   }
 

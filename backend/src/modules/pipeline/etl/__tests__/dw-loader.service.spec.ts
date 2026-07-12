@@ -256,4 +256,20 @@ describe('DwLoaderService', () => {
       },
     });
   });
+
+  it('loads in-memory data directly when inMemoryData option is provided, bypassing filesystem reads', async () => {
+    // Note: we do NOT call writeStaging, so files all_products.json and stg_encuesta.json do not exist.
+    const service = makeService();
+
+    const result = await service.load({
+      inMemoryData: {
+        productos: [VALID_PRODUCT] as any,
+        encuestas: [],
+      },
+    });
+
+    expect(result.estado).toBe('completado');
+    expect(result.productosCargados).toBe(1);
+    expect(prisma.dimProducto.create).toHaveBeenCalled();
+  });
 });
