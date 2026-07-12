@@ -115,6 +115,12 @@ export class StagingProcessorService implements IStagingProcessor {
           record['url_producto'] = (rawCapture as any).offer.url;
         }
 
+        // Backfill extraction date from DB capturedAt when missing in the raw payload
+        const hasDate = record['_extraido_en'] || record['fecha'] || record['date'] || record['extractedAt'];
+        if (!hasDate && rawCapture.capturedAt) {
+          record['_extraido_en'] = rawCapture.capturedAt.toISOString().slice(0, 10);
+        }
+
         const transformed = this.transformProduct(record, sourceCode, rates);
         
         // Retain metadata properties _offerId and _sourceId mapped from the matching RawCapture record
