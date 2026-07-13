@@ -66,7 +66,9 @@ import { ApiService, Category } from '../../services/api.service';
                 <div class="cats-mappings">
                   <span class="cats-mappings-label">Default fields:</span>
                   @for (m of cat.defaultFieldMappings; track m.canonicalField) {
-                    <span class="cats-badge">{{ fieldIcon(m.canonicalField) }} {{ m.canonicalField }}</span>
+                    @if (m.canonicalField) {
+                      <span class="cats-badge">{{ fieldIcon(m.canonicalField) }} {{ m.canonicalField }}</span>
+                    }
                   }
                 </div>
               }
@@ -198,7 +200,8 @@ export class CategoriesComponent {
     });
   }
 
-  fieldIcon(name: string): string {
+  fieldIcon(name: string | null | undefined): string {
+    if (!name) return '🔤';
     const n = name.toLowerCase();
     if (/image|img|foto|photo|thumbnail|imagen/i.test(n)) return '📸';
     if (/title|name|nombre|titulo|producto/i.test(n)) return '📝';

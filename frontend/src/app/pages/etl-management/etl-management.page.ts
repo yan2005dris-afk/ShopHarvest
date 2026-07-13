@@ -1,18 +1,20 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { EtlManagementStore } from './etl-management.store';
 import { ConfirmModalComponent, EtlSourceOption } from './components/confirm-modal.component';
-import { EtlStreamPanelComponent } from './components/etl-stream-panel.component';
+import { EtlLoadPreviewComponent } from './components/etl-load-preview.component';
 import { EtlRunsTableComponent } from './components/etl-runs-table.component';
 import { KeyValuePipe } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-etl-management-page',
   standalone: true,
   imports: [
     ConfirmModalComponent,
-    EtlStreamPanelComponent,
+    EtlLoadPreviewComponent,
     EtlRunsTableComponent,
     KeyValuePipe,
+    FormsModule,
   ],
   template: `
     <div class="page-container">
@@ -24,7 +26,8 @@ import { KeyValuePipe } from '@angular/common';
         <div class="header-actions">
           <button 
             class="btn-trigger" 
-            [disabled]="store.streamActive() || store.loading()"
+            [disabled]="store.loading() || selectedPendingSources().size === 0"
+            [title]="selectedPendingSources().size === 0 ? 'Seleccioná fuentes pendientes para ejecutar' : 'Ejecutar ETL'"
             (click)="onOpenTriggerModal()"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -45,30 +48,44 @@ import { KeyValuePipe } from '@angular/common';
         </div>
       }
 
-      <!-- Pending Queue Summary -->
+      <!-- Pending Queue Summary with Multi-Select -->
       @if (store.pendingSummary(); as pending) {
         <div class="pending-summary">
           <div class="pending-header">
             <h3>Lotes de Ingesta Pendientes</h3>
-            <span class="pending-badge" [class.badge-clean]="pending.total === 0">
-              {{ pending.total }} items para procesar
-            </span>
+            <div class="pending-actions">
+              <span class="pending-badge" [class.badge-clean]="pending.total === 0">
+                {{ selectedPendingSources().size }} de {{ pending.total }} items seleccionados
+              </span>
+            </div>
           </div>
           <div class="pending-grid">
             @for (item of pending.sources | keyvalue; track item.key) {
-              <div class="pending-card">
-                <div class="card-title-row">
-                  <span class="source-name">{{ item.value.name }}</span>
-                  <span class="source-code">{{ item.key }}</span>
+              <div 
+                class="pending-card"
+                [class.selected]="selectedPendingSources().has(toKey(item.key))"
+                (click)="togglePendingSource(toKey(item.key))"
+              >
+                <div class="card-checkbox">
+                  <input type="checkbox" 
+                         [checked]="selectedPendingSources().has(toKey(item.key))"
+                         (click)="$event.stopPropagation()"
+                         (change)="togglePendingSource(toKey(item.key))" />
                 </div>
-                <div class="card-stats">
-                  <div class="stat-group">
-                    <span class="stat-label">Nuevos</span>
-                    <span class="stat-val pending-count">{{ item.value.pending }}</span>
+                <div class="card-content">
+                  <div class="card-title-row">
+                    <span class="source-name">{{ item.value.name }}</span>
+                    <span class="source-code">{{ item.key }}</span>
                   </div>
-                  <div class="stat-group">
-                    <span class="stat-label">Fallidos</span>
-                    <span class="stat-val failed-count" [class.has-failed]="item.value.failed > 0">{{ item.value.failed }}</span>
+                  <div class="card-stats">
+                    <div class="stat-group">
+                      <span class="stat-label">Nuevos</span>
+                      <span class="stat-val pending-count">{{ item.value.pending }}</span>
+                    </div>
+                    <div class="stat-group">
+                      <span class="stat-label">Fallidos</span>
+                      <span class="stat-val failed-count" [class.has-failed]="item.value.failed > 0">{{ item.value.failed }}</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -79,10 +96,7 @@ import { KeyValuePipe } from '@angular/common';
 
       <div class="page-content">
         <!-- Live SSE stream panel -->
-        <app-etl-stream-panel 
-          [run]="store.selectedRun()" 
-          [streamActive]="store.streamActive()"
-        />
+        <app-etl-load-preview [run]="store.selectedRun()" />
 
         <!-- Paginated Runs Table -->
         <app-etl-runs-table 
@@ -92,6 +106,7 @@ import { KeyValuePipe } from '@angular/common';
           [loading]="store.loading()"
           (pageChange)="store.setPage($event)"
           (rowSelect)="store.selectRun($event)"
+          (rowDoubleClick)="onRunDoubleClick($event)"
           (filterChange)="store.setFilters($event)"
         />
       </div>
@@ -152,6 +167,11 @@ import { KeyValuePipe } from '@angular/common';
       font-weight: 600;
       color: var(--text-1);
     }
+    .pending-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
     .pending-badge {
       font-size: 0.75rem;
       font-weight: 700;
@@ -174,6 +194,32 @@ import { KeyValuePipe } from '@angular/common';
       border: 1px solid var(--border);
       border-radius: var(--radius);
       padding: 16px;
+      display: flex;
+      gap: 12px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .pending-card:hover {
+      background: var(--surface-3);
+      border-color: var(--accent);
+    }
+    .pending-card.selected {
+      background: var(--accent-dim);
+      border-color: var(--accent);
+    }
+    .card-checkbox {
+      display: flex;
+      align-items: flex-start;
+      padding-top: 2px;
+    }
+    .card-checkbox input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+      accent-color: var(--accent);
+    }
+    .card-content {
+      flex: 1;
       display: flex;
       flex-direction: column;
       gap: 12px;
@@ -273,8 +319,8 @@ export class EtlManagementPage implements OnInit {
   readonly store = inject(EtlManagementStore);
 
   isConfirmOpen = signal<boolean>(false);
+  selectedPendingSources = signal<Set<string>>(new Set());
 
-  /** Pending source options derived from live store data — shown in local ETL mode. */
   readonly pendingSourceOptions = computed<EtlSourceOption[]>(() => {
     const summary = this.store.pendingSummary() as
       | { sources: Record<string, { name: string; pending: number }> }
@@ -290,12 +336,40 @@ export class EtlManagementPage implements OnInit {
     this.store.loadRuns();
   }
 
+  togglePendingSource(code: string): void {
+    this.selectedPendingSources.update(set => {
+      const newSet = new Set(set);
+      if (newSet.has(code)) {
+        newSet.delete(code);
+      } else {
+        newSet.add(code);
+      }
+      return newSet;
+    });
+  }
+
+  toKey(value: string | number | symbol): string {
+    return String(value);
+  }
+
+  onRunDoubleClick(run: any): void {
+    this.store.selectRun(run);
+  }
+
   onOpenTriggerModal(): void {
     this.isConfirmOpen.set(true);
   }
 
   onConfirmTrigger(evt: { action: 'full' | 'local'; source: string }): void {
     this.isConfirmOpen.set(false);
+    
+    if (evt.action === 'local' && evt.source === 'all') {
+      evt = {
+        ...evt,
+        source: Array.from(this.selectedPendingSources()).join(','),
+      };
+    }
+    
     this.store.triggerRun(evt);
   }
 

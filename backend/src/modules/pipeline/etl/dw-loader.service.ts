@@ -86,6 +86,29 @@ export class DwLoaderService implements IDwLoader {
     private readonly operationalPrisma: OperationalPrismaService,
   ) {}
 
+  /**
+   * Normalize source names from staging data to match dim_fuente keys.
+   * 'ec.shein.com' → 'shein', 'temu.com' → 'temu', 'csv_dataset' → 'csv_dataset'
+   */
+  private normalizeSourceName(raw: string): string {
+    // Handle domain-style sources like 'ec.shein.com', 'www.temu.com', etc.
+    const domainMap: Record<string, string> = {
+      'ec.shein.com': 'shein',
+      'www.shein.com': 'shein',
+      'shein.com': 'shein',
+      'ec.temu.com': 'temu',
+      'temu.com': 'temu',
+      'www.mercadolibre.com': 'mercadolibre',
+      'mercadolibre.com': 'mercadolibre',
+      'www.aliexpress.com': 'aliexpress',
+      'aliexpress.com': 'aliexpress',
+    };
+    if (domainMap[raw]) return domainMap[raw];
+    // Fallback: take second part of domain (e.g. 'foo.bar.com' → 'bar')
+    const parts = raw.split('.');
+    return parts.length >= 2 ? parts[1] : parts[0];
+  }
+
   private async updateRawCapturesToProcessed(
     records: { offerId: string; sourceId: string }[],
   ): Promise<void> {
@@ -373,10 +396,9 @@ export class DwLoaderService implements IDwLoader {
         },
       });
 
-      // Normalize domain-based source codes: 'temu.com' → 'temu'
-      const nombreFuente = toSafeString(item['_fuente'], 'csv_dataset')
-        .toLowerCase()
-        .split('.')[0];
+      // Normalize domain-based source codes: 'ec.shein.com' → 'shein', 'temu.com' → 'temu'
+      const rawFuente = toSafeString(item['_fuente'], 'csv_dataset').toLowerCase();
+      const nombreFuente = this.normalizeSourceName(rawFuente);
       const nombreCategoria = toSafeString(
         item['categoria_normalizada'] ?? item['_categoria'],
         'otros',

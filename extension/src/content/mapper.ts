@@ -678,6 +678,26 @@ function extractFieldsFromElement(
 ): ExtractedProduct | null {
   const product: ExtractedProduct = {};
   for (const mapping of mappings) {
+    const isPriceField = /precio|price|amount|cost|costo/i.test(mapping.canonicalField);
+
+    if (isPriceField) {
+      // For price fields: query all matches, parse all prices, pick the lowest
+      const allEls = root.querySelectorAll(mapping.selector);
+      const prices: number[] = [];
+      for (const el of allEls) {
+        const raw = el.textContent?.trim() ?? '';
+        const parsed = parseLocalizedPrice(raw);
+        if (parsed !== null && parsed > 0) {
+          prices.push(parsed);
+        }
+      }
+      // Select the lowest positive price (filters out "from $X" range refs)
+      if (prices.length > 0) {
+        product[mapping.canonicalField] = Math.min(...prices);
+      }
+      continue;
+    }
+
     const el = root.querySelector(mapping.selector);
     if (!el) continue;
 
@@ -746,32 +766,32 @@ function extractProductsGlobal(mappings: FieldMapping[]): ExtractedProduct[] {
   const target = counts[Math.floor(counts.length / 2)];
 
   const products: ExtractedProduct[] = [];
-  for (let i = 0; i < target; i++) {
-    const product: ExtractedProduct = {};
-    for (const m of mappings) {
-      const el = fieldResults[m.canonicalField][i];
-      if (!el) continue;
+    for (let i = 0; i < target; i++) {
+      const product: ExtractedProduct = {};
+      for (const m of mappings) {
+        const el = fieldResults[m.canonicalField][i];
+        if (!el) continue;
 
-      if (m.type === 'text') {
-        product[m.canonicalField] = el.textContent?.trim() ?? null;
-      } else if (m.type === 'attribute') {
-        product[m.canonicalField] = el.getAttribute(m.attribute ?? '') ?? null;
-      } else if (m.type === 'html') {
-        product[m.canonicalField] = el.innerHTML?.trim() ?? null;
-      }
-
-      // Same image heuristic: if text content isn't a URL, try to find
-      // a nearby <img> (up to 3 levels up).
-      if (m.type === 'text' && IMAGE_FIELD_RE.test(m.canonicalField)) {
-        const raw = product[m.canonicalField];
-        if (typeof raw === 'string' && raw && !raw.startsWith('http')) {
-          const src = findNearbyImageSrc(el);
-          if (src) product[m.canonicalField] = src;
+        if (m.type === 'text') {
+          product[m.canonicalField] = el.textContent?.trim() ?? null;
+        } else if (m.type === 'attribute') {
+          product[m.canonicalField] = el.getAttribute(m.attribute ?? '') ?? null;
+        } else if (m.type === 'html') {
+          product[m.canonicalField] = el.innerHTML?.trim() ?? null;
         }
-      }
 
-      coercePriceField(product, m);
-    }
+        // Same image heuristic: if text content isn't a URL, try to find
+        // a nearby <img> (up to 3 levels up).
+        if (m.type === 'text' && IMAGE_FIELD_RE.test(m.canonicalField)) {
+          const raw = product[m.canonicalField];
+          if (typeof raw === 'string' && raw && !raw.startsWith('http')) {
+            const src = findNearbyImageSrc(el);
+            if (src) product[m.canonicalField] = src;
+          }
+        }
+
+        coercePriceField(product, m);
+      }
     // Only include products that have a title-like field with a value.
     // This filters out index slots where the title selector didn't match
     // (common when title has fewer DOM matches than price/image).

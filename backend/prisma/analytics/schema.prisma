@@ -25,7 +25,7 @@ datasource db {
 
 model DimProducto {
   id_producto     Int      @id @default(autoincrement()) @map("id_producto")
-  titulo_oferta   String   @db.VarChar(500)
+  titulo_oferta   String   @db.VarChar(700)
   url_producto    String?  @db.Text
   disponibilidad  String?  @db.VarChar(20)
 

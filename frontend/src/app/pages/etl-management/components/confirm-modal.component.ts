@@ -28,20 +28,33 @@ export interface EtlSourceOption {
             </div>
 
             <div class="form-group animate-fade-in">
-              <label for="modal-source">
-                {{ action() === 'full' ? 'Fuente a Scraping' : 'Fuente a Procesar' }}
+              <label>
+                {{ action() === 'full' ? 'Fuentes a Scraping' : 'Fuentes a Procesar' }}
               </label>
-              <select id="modal-source" [value]="source()" (change)="onSourceChange($event)">
-                <option value="all">Todas las fuentes</option>
+              <div class="source-checkbox-list">
                 @for (opt of sourceOptions(); track opt.code) {
-                  <option [value]="opt.code">{{ opt.label }}</option>
+                  <label class="source-check">
+                    <input type="checkbox" 
+                           [checked]="selectedSources().has(opt.code)"
+                           (change)="toggleSource(opt.code)" />
+                    <span>{{ opt.label }}</span>
+                  </label>
                 }
-              </select>
+              </div>
+              @if (selectedSources().size === 0) {
+                <span class="warning-text">Seleccioná al menos una fuente para continuar</span>
+              } @else {
+                <span class="selected-summary">
+                  Seleccionadas: {{ selectedSourcesLabel() }}
+                </span>
+              }
             </div>
           </div>
           <div class="modal-footer">
             <button class="btn btn-secondary" (click)="onCancel()">{{ cancelText() }}</button>
-            <button class="btn btn-primary" (click)="onConfirm()">{{ confirmText() }}</button>
+            <button class="btn btn-primary" 
+                    [disabled]="selectedSources().size === 0"
+                    (click)="onConfirm()">{{ confirmText() }}</button>
           </div>
         </div>
       </div>
@@ -122,6 +135,50 @@ export interface EtlSourceOption {
       width: 100%;
       outline: none;
     }
+    .source-checkbox-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 8px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .source-check {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      padding: 6px 8px;
+      border-radius: var(--radius);
+      transition: background-color 0.15s ease;
+    }
+    .source-check:hover {
+      background: var(--surface-3);
+    }
+    .source-check input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+      accent-color: var(--accent);
+    }
+    .source-check span {
+      font-size: 0.9rem;
+      color: var(--text-1);
+    }
+    .warning-text {
+      font-size: 0.8rem;
+      color: var(--danger);
+      margin-top: 4px;
+    }
+    .selected-summary {
+      font-size: 0.8rem;
+      color: var(--text-2);
+      margin-top: 4px;
+    }
     .animate-fade-in {
       animation: fadeIn 0.2s ease-out;
     }
@@ -158,8 +215,12 @@ export interface EtlSourceOption {
       background: var(--accent);
       color: #ffffff;
     }
-    .btn-primary:hover {
+    .btn-primary:hover:not(:disabled) {
       background: var(--accent-hover);
+    }
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
     }
   `]
 })
@@ -169,17 +230,14 @@ export class ConfirmModalComponent {
   confirmText = input<string>('Confirm');
   cancelText = input<string>('Cancel');
   isOpen = input<boolean>(false);
-  /** Sources with pending captures — shown in local ETL mode. */
   pendingSources = input<EtlSourceOption[]>([]);
 
   confirm = output<{ action: 'full' | 'local'; source: string }>();
   cancel = output<void>();
 
-  // State signals inside modal
   action = signal<'full' | 'local'>('full');
-  source = signal<string>('all');
+  selectedSources = signal<Set<string>>(new Set());
 
-  /** Full-scraping sources (static — these are the installed scrapers). */
   private readonly SCRAPING_SOURCES: EtlSourceOption[] = [
     { code: 'mercadolibre', label: 'MercadoLibre' },
     { code: 'aliexpress', label: 'AliExpress' },
@@ -187,30 +245,53 @@ export class ConfirmModalComponent {
     { code: 'shein', label: 'SHEIN' },
   ];
 
-  /** Dynamic list based on current action. */
   readonly sourceOptions = computed<EtlSourceOption[]>(() =>
     this.action() === 'local' ? this.pendingSources() : this.SCRAPING_SOURCES,
   );
 
-  onConfirm(): void {
-    this.confirm.emit({
-      action: this.action(),
-      source: this.source(),
+  readonly selectedSourcesLabel = computed<string>(() => {
+    const selected = this.selectedSources();
+    const opts = this.sourceOptions();
+    const labels = opts.filter(o => selected.has(o.code)).map(o => o.label);
+    return labels.join(', ');
+  });
+
+  toggleSource(code: string): void {
+    this.selectedSources.update(set => {
+      const newSet = new Set(set);
+      if (newSet.has(code)) {
+        newSet.delete(code);
+      } else {
+        newSet.add(code);
+      }
+      return newSet;
     });
   }
 
+  onConfirm(): void {
+    if (this.selectedSources().size === 0) return;
+    
+    const sourceStr = this.selectedSources().size === this.sourceOptions().length
+      ? 'all'
+      : Array.from(this.selectedSources()).join(',');
+    
+    this.confirm.emit({
+      action: this.action(),
+      source: sourceStr,
+    });
+    
+    this.selectedSources.set(new Set());
+  }
+
   onCancel(): void {
+    this.selectedSources.set(new Set());
     this.cancel.emit();
   }
 
   onActionChange(event: Event): void {
     const val = (event.target as HTMLSelectElement).value as 'full' | 'local';
     this.action.set(val);
-  }
-
-  onSourceChange(event: Event): void {
-    const val = (event.target as HTMLSelectElement).value;
-    this.source.set(val);
+    this.selectedSources.set(new Set());
   }
 
   @HostListener('document:keydown.escape')
