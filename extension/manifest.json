@@ -4,7 +4,18 @@
   "version": "1.0.0",
   "description": "Map and extract data from any e-commerce page",
   "permissions": ["storage", "activeTab", "scripting", "alarms", "tabs"],
-  "host_permissions": ["http://localhost:3000/*"],
+  "host_permissions": [
+    "http://localhost:3000/*",
+    "http://localhost:3081/*",
+    "https://bi.dihm-muertos.site/*"
+  ],
+  "externally_connectable": {
+    "matches": [
+      "https://bi.dihm-muertos.site/*",
+      "http://localhost:4200/*",
+      "http://localhost:8080/*"
+    ]
+  },
   "action": {
     "default_popup": "popup.html",
     "default_icon": "icon.png"
