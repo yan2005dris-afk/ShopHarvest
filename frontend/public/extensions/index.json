@@ -11,7 +11,7 @@
     "browser": "firefox",
     "label": "Firefox",
     "file": "firefox.zip",
-    "size": "11 KB",
+    "size": "12 KB",
     "configUrl": "about:debugging#/runtime/this-firefox",
     "docsUrl": "https://extensionworkshop.com/documentation/develop/temporary-installation-in-firefox/"
   },
