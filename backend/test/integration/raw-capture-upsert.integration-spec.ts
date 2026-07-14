@@ -1,12 +1,22 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import { AppModule } from '../../src/app.module';
-import { RawCapturesService } from '../../src/modules/operational/raw-captures/raw-captures.service';
+import { OperationalPrismaService } from '../../src/common/prisma/operational-prisma.service';
+import {
+  DeleteRawCaptureUseCase,
+  FindRawCaptureUseCase,
+  ListRawCapturesUseCase,
+  UpsertRawCaptureUseCase,
+} from '../../src/modules/operational/raw-captures';
 import { CreateSourceUseCase } from '../../src/modules/operational/sources';
 
 describe('RawCapture Upsert (integration)', () => {
   let app: INestApplication;
-  let rawCapturesService: RawCapturesService;
+  let prisma: OperationalPrismaService;
+  let upsertRawCapture: UpsertRawCaptureUseCase;
+  let findRawCapture: FindRawCaptureUseCase;
+  let listRawCaptures: ListRawCapturesUseCase;
+  let deleteRawCapture: DeleteRawCaptureUseCase;
   let createSource: CreateSourceUseCase;
 
   let sourceId1: string;
@@ -21,10 +31,13 @@ describe('RawCapture Upsert (integration)', () => {
     app = moduleFixture.createNestApplication();
     await app.init();
 
-    rawCapturesService = moduleFixture.get(RawCapturesService);
+    prisma = moduleFixture.get(OperationalPrismaService);
+    upsertRawCapture = moduleFixture.get(UpsertRawCaptureUseCase);
+    findRawCapture = moduleFixture.get(FindRawCaptureUseCase);
+    listRawCaptures = moduleFixture.get(ListRawCapturesUseCase);
+    deleteRawCapture = moduleFixture.get(DeleteRawCaptureUseCase);
     createSource = moduleFixture.get(CreateSourceUseCase);
 
-    // Create test sources
     const src1 = await createSource.execute({
       code: 'FUZZY_TEST_SRC_1',
       name: 'Fuzzy Test Source 1',
@@ -39,7 +52,6 @@ describe('RawCapture Upsert (integration)', () => {
     });
     sourceId2 = src2.id;
 
-    const prisma = (rawCapturesService as any).prisma;
     const product = await prisma.product.create({
       data: {
         title: 'Test Integration Product',
@@ -58,50 +70,55 @@ describe('RawCapture Upsert (integration)', () => {
   });
 
   afterAll(async () => {
-    // Cleanup test data
-    const prisma = (rawCapturesService as any).prisma;
-
-    // Delete raw captures first
     try {
       await prisma.rawCapture.delete({
         where: {
           offerId_sourceId: { offerId, sourceId: sourceId1 },
         },
       });
-    } catch { /* ignore */ }
+    } catch {
+      await Promise.resolve();
+    }
     try {
       await prisma.rawCapture.delete({
         where: {
           offerId_sourceId: { offerId, sourceId: sourceId2 },
         },
       });
-    } catch { /* ignore */ }
+    } catch {
+      await Promise.resolve();
+    }
 
-    // Delete offer
     try {
       await prisma.offer.delete({ where: { id: offerId } });
-    } catch { /* ignore */ }
+    } catch {
+      await Promise.resolve();
+    }
 
-    // Delete products associated with this integration test
     try {
       await prisma.product.deleteMany({
         where: { title: 'Test Integration Product' },
       });
-    } catch { /* ignore */ }
+    } catch {
+      await Promise.resolve();
+    }
 
-    // Delete sources
     try {
       await prisma.source.delete({ where: { id: sourceId1 } });
-    } catch { /* ignore */ }
+    } catch {
+      await Promise.resolve();
+    }
     try {
       await prisma.source.delete({ where: { id: sourceId2 } });
-    } catch { /* ignore */ }
+    } catch {
+      await Promise.resolve();
+    }
 
     await app.close();
   });
 
   it('creates a raw capture on first upsert', async () => {
-    const result = await rawCapturesService.upsert({
+    const result = await upsertRawCapture.execute({
       offerId,
       sourceId: sourceId1,
       payload: { title: 'Test Product', price: 99.99 },
@@ -113,7 +130,7 @@ describe('RawCapture Upsert (integration)', () => {
   });
 
   it('overwrites payload on re-scrape of same offerId+sourceId', async () => {
-    const updated = await rawCapturesService.upsert({
+    const updated = await upsertRawCapture.execute({
       offerId,
       sourceId: sourceId1,
       payload: { title: 'Updated Product', price: 79.99, stock: true },
@@ -129,7 +146,7 @@ describe('RawCapture Upsert (integration)', () => {
   });
 
   it('keeps different sourceIds independent for the same offerId', async () => {
-    const capture1 = await rawCapturesService.upsert({
+    const capture1 = await upsertRawCapture.execute({
       offerId,
       sourceId: sourceId2,
       payload: { title: 'Different Source', price: 49.99 },
@@ -138,8 +155,7 @@ describe('RawCapture Upsert (integration)', () => {
     expect(capture1.offerId).toBe(offerId);
     expect(capture1.sourceId).toBe(sourceId2);
 
-    // Verify source1 still has the updated payload
-    const capture2 = await rawCapturesService.findOne(offerId, sourceId1);
+    const capture2 = await findRawCapture.execute(offerId, sourceId1);
     expect(capture2.payload).toEqual({
       title: 'Updated Product',
       price: 79.99,
@@ -148,29 +164,26 @@ describe('RawCapture Upsert (integration)', () => {
   });
 
   it('finds a raw capture by composite key', async () => {
-    const found = await rawCapturesService.findOne(offerId, sourceId1);
+    const found = await findRawCapture.execute(offerId, sourceId1);
     expect(found.offerId).toBe(offerId);
     expect(found.sourceId).toBe(sourceId1);
   });
 
   it('lists raw captures filtered by sourceId', async () => {
-    const list = await rawCapturesService.findAll(sourceId1);
+    const list = await listRawCaptures.execute(sourceId1);
     expect(list.length).toBeGreaterThanOrEqual(1);
-    expect(list.every((r) => r.sourceId === sourceId1)).toBe(true);
+    expect(list.every((capture) => capture.sourceId === sourceId1)).toBe(true);
   });
 
-  it('throws NotFoundException for nonexistent capture', async () => {
+  it('throws for a nonexistent capture', async () => {
     const fakeOfferId = '00000000-0000-0000-0000-000000009999';
     await expect(
-      rawCapturesService.findOne(fakeOfferId, sourceId1),
+      findRawCapture.execute(fakeOfferId, sourceId1),
     ).rejects.toThrow();
   });
 
   it('deletes a raw capture', async () => {
-    // We created sourceId2 capture — delete and verify
-    await rawCapturesService.remove(offerId, sourceId2);
-    await expect(
-      rawCapturesService.findOne(offerId, sourceId2),
-    ).rejects.toThrow();
+    await deleteRawCapture.execute(offerId, sourceId2);
+    await expect(findRawCapture.execute(offerId, sourceId2)).rejects.toThrow();
   });
 });
