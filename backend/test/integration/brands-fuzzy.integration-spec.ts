@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import { AppModule } from '../../src/app.module';
-import { BrandsService } from '../../src/modules/brands/brands.service';
+import { BrandsService } from '../../src/modules/operational/brands/brands.service';
 
 describe('Brands — Fuzzy Matching (integration)', () => {
   let app: INestApplication;

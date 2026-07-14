@@ -12,8 +12,8 @@
  */
 import { ConfigService } from '@nestjs/config';
 import { PipelineSource } from '@web-scraping/contracts/pipeline';
-import { BrowserFactoryService } from '../src/modules/pipeline/scraping/browser-factory.service';
-import { scrapeMercadoLibre } from '../src/modules/pipeline/scraping/mercadolibre';
+import { BrowserFactoryService } from '../src/modules/etl/pipeline/scraping/browser-factory.service';
+import { scrapeMercadoLibre } from '../src/modules/etl/pipeline/scraping/mercadolibre';
 
 async function main(): Promise<void> {
   if (!process.env.MELI_PROBE_TOKEN) {

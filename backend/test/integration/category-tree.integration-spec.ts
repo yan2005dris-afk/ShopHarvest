@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import { AppModule } from '../../src/app.module';
-import { CategoriesService } from '../../src/modules/categories/categories.service';
+import { CategoriesService } from '../../src/modules/operational/categories/categories.service';
 
 /**
  * Cleanup helper — deletes all categories created during the test run by

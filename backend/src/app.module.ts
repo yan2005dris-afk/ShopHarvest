@@ -3,16 +3,16 @@ import { ConfigModule } from '@nestjs/config';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { PrismaModule } from './common/prisma/prisma.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
-import { AuthModule } from './modules/auth/auth.module';
-import { JwtAuthGuard } from './modules/auth/jwt-auth.guard';
-import { DomainsModule } from './modules/domains/domains.module';
-import { ProductsModule } from './modules/products/products.module';
-import { SourcesModule } from './modules/sources/sources.module';
-import { CategoriesModule } from './modules/categories/categories.module';
-import { BrandsModule } from './modules/brands/brands.module';
-import { RawCapturesModule } from './modules/raw-captures/raw-captures.module';
-import { AnalyticsModule } from './modules/analytics/analytics.module';
-import { PipelineModule } from './modules/pipeline/pipeline.module';
+import { AuthModule } from './modules/operational/auth/auth.module';
+import { JwtAuthGuard } from './modules/operational/auth/jwt-auth.guard';
+import { DomainsModule } from './modules/operational/domains/domains.module';
+import { ProductsModule } from './modules/operational/products/products.module';
+import { SourcesModule } from './modules/operational/sources/sources.module';
+import { CategoriesModule } from './modules/operational/categories/categories.module';
+import { BrandsModule } from './modules/operational/brands/brands.module';
+import { RawCapturesModule } from './modules/operational/raw-captures/raw-captures.module';
+import { AnalyticsModule } from './modules/analytics/analytics/analytics.module';
+import { PipelineModule } from './modules/etl/pipeline/pipeline.module';
 import { ScheduleModule } from '@nestjs/schedule';
 
 // ScrapingJobsModule and SchedulesModule were removed in review batch 4. They

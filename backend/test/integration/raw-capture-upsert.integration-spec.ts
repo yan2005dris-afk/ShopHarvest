@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import { AppModule } from '../../src/app.module';
-import { RawCapturesService } from '../../src/modules/raw-captures/raw-captures.service';
-import { CreateSourceUseCase } from '../../src/modules/sources';
+import { RawCapturesService } from '../../src/modules/operational/raw-captures/raw-captures.service';
+import { CreateSourceUseCase } from '../../src/modules/operational/sources';
 
 describe('RawCapture Upsert (integration)', () => {
   let app: INestApplication;

@@ -12,8 +12,8 @@
  */
 import { ConfigService } from '@nestjs/config';
 import { PipelineSource } from '@web-scraping/contracts/pipeline';
-import { BrowserFactoryService } from '../src/modules/pipeline/scraping/browser-factory.service';
-import { scrapeAliExpress } from '../src/modules/pipeline/scraping/aliexpress';
+import { BrowserFactoryService } from '../src/modules/etl/pipeline/scraping/browser-factory.service';
+import { scrapeAliExpress } from '../src/modules/etl/pipeline/scraping/aliexpress';
 
 async function main(): Promise<void> {
   if (!process.env.ALI_PROBE_TOKEN) {
