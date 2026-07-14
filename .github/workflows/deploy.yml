@@ -47,38 +47,51 @@ jobs:
           clean: false
 
       - name: Ensure .env exists
+        env:
+          # GITHUB_WORKSPACE is auto-set to the directory where the repo
+          # was checked out — the canonical place to look for .env.
+          GH_WORKSPACE: ${{ github.workspace }}
         run: |
-          # The runner workspace path varies by runner config (e.g. GitHub's
-          # default uses _work/<repo>/<repo>). Look in a few likely spots
-          # so we don't fail just because the user cloned to /opt/scraper.
-          # Priority order: current dir → parent → /opt/scraper → runner _work.
+          set +e
           FOUND=""
           for candidate in \
             ".env" \
             "../.env" \
+            "${GH_WORKSPACE}/.env" \
+            "${GH_WORKSPACE}/../.env" \
             "/opt/scraper/.env" \
-            "$RUNNER_TEMP/../_work/WebScrapingDinamico-Automatico/WebScrapingDinamico-Automatico/.env"
+            "${HOME}/.env"
           do
-            if [ -f "$candidate" ]; then
+            if [ -n "$candidate" ] && [ -f "$candidate" ]; then
               FOUND="$candidate"
               break
             fi
           done
+          set -e
 
           if [ -z "$FOUND" ]; then
-            echo "::error::.env not found!"
-            echo "Searched in: $(pwd), $(dirname $(pwd)), /opt/scraper, \$RUNNER_TEMP/_work/..."
+            echo "::error::.env not found in any candidate location"
             echo ""
-            echo "Fix: copy or symlink your .env into the runner workspace:"
-            echo "  ln -sf /opt/scraper/.env /path/to/runner/workspace/.env"
+            echo "GITHUB_WORKSPACE = ${GH_WORKSPACE}"
+            echo "HOME             = ${HOME}"
+            echo "pwd              = $(pwd)"
             echo ""
-            echo "Current workspace: $(pwd)"
-            echo "Runner temp dir:   ${RUNNER_TEMP:-not set}"
+            echo "Searched in:"
+            for candidate in .env ../.env "${GH_WORKSPACE}/.env" "${GH_WORKSPACE}/../.env" /opt/scraper/.env "${HOME}/.env"; do
+              echo "  - $candidate"
+            done
+            echo ""
+            echo "Fix: place .env in \$GITHUB_WORKSPACE/.env (auto-discovered)"
+            echo "  or symlink: ln -sf /path/to/.env ${GH_WORKSPACE}/.env"
+            echo "  or:        cp /path/to/.env ${GH_WORKSPACE}/.env"
+            echo ""
+            echo "If your .env lives elsewhere on the VPS, list candidates here:"
+            echo "  ls -la /opt/scraper/.env /root/.env ~/BI/.env 2>/dev/null"
             exit 1
           fi
 
-          # If the .env is not in the current dir (e.g. it lives in /opt/scraper),
-          # symlink it so subsequent docker compose commands find it automatically.
+          # If the .env is not in the workspace root, symlink it so
+          # `docker compose` (which reads from cwd) finds it automatically.
           if [ "$FOUND" != ".env" ]; then
             echo "Found .env at $FOUND — symlinking into $(pwd)/.env"
             ln -sf "$(realpath "$FOUND")" .env

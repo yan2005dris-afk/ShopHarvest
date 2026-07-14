@@ -62,14 +62,20 @@ services:
       - internal
 
   # ─── Analytical Postgres (OLAP, dimensional DW) ───────────────────────────
+  # NOTE: the official postgres:16-alpine image reads POSTGRES_USER /
+  # POSTGRES_PASSWORD / POSTGRES_DB at init time. We expose the DW vars
+  # with a _DW suffix in .env (for clarity to humans), but we translate
+  # them to the canonical names here so the image understands them.
+  # Bug we fixed: an earlier draft passed POSTGRES_DW_PASSWORD directly,
+  # which the image silently ignores → "Database is uninitialized" error.
   postgres-dw:
     image: postgres:16-alpine
     container_name: scraper-postgres-dw
     restart: unless-stopped
     environment:
-      POSTGRES_DW_USER: ${POSTGRES_DW_USER:-scraper}
-      POSTGRES_DW_PASSWORD: ${POSTGRES_DW_PASSWORD:?POSTGRES_DW_PASSWORD must be set in .env}
-      POSTGRES_DW_DB: ${POSTGRES_DW_DB:-scraperdw}
+      POSTGRES_USER: ${POSTGRES_DW_USER:-scraper}
+      POSTGRES_PASSWORD: ${POSTGRES_DW_PASSWORD:?POSTGRES_DW_PASSWORD must be set in .env}
+      POSTGRES_DB: ${POSTGRES_DW_DB:-scraperdw}
     volumes:
       - postgres_dw_data:/var/lib/postgresql/data
     healthcheck:
