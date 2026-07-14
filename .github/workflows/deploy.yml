@@ -76,27 +76,29 @@ jobs:
           "
 
           log "Step 3/5 — Build only changed images"
-          ssh "${REMOTE}" "cd '${VPS_DEPLOY_PATH}' && docker compose -f docker-compose.prod.yml build --pull"
+          ssh "${REMOTE}" "cd '${VPS_DEPLOY_PATH}' && docker compose build --pull"
 
           log "Step 4/5 — Recreate changed services (rolling)"
           # --no-deps: don't restart sibling services. --remove-orphans cleans
           # up services removed from the compose file.
           ssh "${REMOTE}" "
             cd '${VPS_DEPLOY_PATH}'
-            docker compose -f docker-compose.prod.yml up -d --no-deps --remove-orphans \
-              backend frontend proxy certbot
+            docker compose up -d --no-deps --remove-orphans \
+              backend frontend cloudflared
           "
 
           log "Step 5/5 — Verify the stack is healthy"
           ssh "${REMOTE}" "
             cd '${VPS_DEPLOY_PATH}'
-            docker compose -f docker-compose.prod.yml ps
+            docker compose ps
             echo '---'
-            curl -fsSL -o /dev/null -w 'HTTP %{http_code} in %{time_total}s\n' https://${DOMAIN:-localhost}/ || echo 'HTTPS probe failed'
+            # Probe via the host-port frontend (8080) since the tunnel is
+            # not directly verifiable from inside the VPS.
+            curl -fsSL -o /dev/null -w 'HTTP %{http_code} in %{time_total}s (via :8080)\n' http://localhost:8080/ || echo 'Local probe failed'
           "
 
       - name: Notify on failure
         if: failure()
         run: |
           echo "::error::Deployment to ${{ secrets.VPS_HOST }} failed."
-          echo "Check: ssh ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} 'cd ${{ secrets.VPS_DEPLOY_PATH }} && docker compose -f docker-compose.prod.yml logs --tail=100'"
+          echo "Check: ssh ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} 'cd ${{ secrets.VPS_DEPLOY_PATH }} && docker compose logs --tail=100'"

@@ -50,7 +50,7 @@ La extensión reemplazó al stack anterior (RabbitMQ + Worker Crawlee/Playwright
 │   ├── Dockerfile.backend
 │   └── Dockerfile.frontend
 │
-├── docker-compose.yml      # postgres + backend + frontend
+├── compose.yaml            # unified stack: postgres + postgres-dw + backend + frontend + cloudflared (profile)
 └── PLAN.md                 # Plan de mejora continua
 ```
 

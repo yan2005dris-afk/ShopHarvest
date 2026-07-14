@@ -1,0 +1,182 @@
+# ════════════════════════════════════════════════════════════════════════════
+#  Unified production compose file — single source of truth.
+#
+#  Architecture:
+#
+#    [Internet]
+#         │
+#         ▼
+#    [Cloudflare Edge]      ← TLS termination, DDoS, CDN (free tier)
+#         │  (encrypted tunnel — no open ports on the VPS)
+#         ▼
+#    [cloudflared]          ← Docker profile "tunnel"
+#         │  (internal docker network)
+#         ▼
+#    [frontend (nginx)]     ← serves Angular SPA + proxies /api/* to backend
+#         │
+#         ▼
+#    [backend (NestJS)]
+#         │
+#         ├──▶ [postgres]      (operational, transactional)
+#         └──▶ [postgres-dw]   (analytics, dimensional DW)
+#
+#  Usage:
+#    docker compose up -d          # everything: postgres + backend + frontend + cloudflared
+#
+#  If TUNNEL_TOKEN is empty, cloudflared will keep restarting (the rest of
+#  the stack stays up). Set TUNNEL_TOKEN in .env and `docker compose up -d
+#  cloudflared` to bring the tunnel online.
+#
+#  Why cloudflared?
+#    - No need to open ports 80/443 on the VPS firewall
+#    - Free TLS via Cloudflare (no certbot, no cert renewals)
+#    - Free DDoS protection
+#    - CDN caching of static assets
+#    - The tunnel is encrypted end-to-end
+# ════════════════════════════════════════════════════════════════════════════
+
+# Project name = same as the legacy docker-compose.yml so existing
+# volumes (postgres_data, postgres_dw_data) survive the migration. If
+# you ever want to rename, change this AND rename the named volumes
+# below in lock-step.
+name: webscrapingdinamico-automatico
+
+services:
+  # ─── Operational Postgres (OLTP, transactional captures) ──────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: scraper-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-scraper}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-scraperdb}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-scraper} -d ${POSTGRES_DB:-scraperdb}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - internal
+
+  # ─── Analytical Postgres (OLAP, dimensional DW) ───────────────────────────
+  postgres-dw:
+    image: postgres:16-alpine
+    container_name: scraper-postgres-dw
+    restart: unless-stopped
+    environment:
+      POSTGRES_DW_USER: ${POSTGRES_DW_USER:-scraper}
+      POSTGRES_DW_PASSWORD: ${POSTGRES_DW_PASSWORD:?POSTGRES_DW_PASSWORD must be set in .env}
+      POSTGRES_DW_DB: ${POSTGRES_DW_DB:-scraperdw}
+    volumes:
+      - postgres_dw_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_DW_USER:-scraper} -d ${POSTGRES_DW_DB:-scraperdw}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - internal
+
+  # ─── Backend (NestJS) ─────────────────────────────────────────────────────
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    container_name: scraper-backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      # Inside Docker, hostnames are the service names (not localhost).
+      DATABASE_URL: postgresql://${POSTGRES_USER:-scraper}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-scraperdb}
+      ANALYTICS_DATABASE_URL: postgresql://${POSTGRES_DW_USER:-scraper}:${POSTGRES_DW_PASSWORD}@postgres-dw:5432/${POSTGRES_DW_DB:-scraperdw}
+      NODE_ENV: production
+      PORT: 3000
+      # FRONTEND_ORIGIN is the CORS whitelist (comma-separated). Read by
+      # backend/src/main.ts enableCors(). MUST include the public tunnel
+      # hostname — otherwise the browser's POST/Authorization requests get
+      # rejected with "Not allowed by CORS" (HTTP 500).
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:4200}
+      PIPELINE_RAW_DIR: pipeline/raw
+      PIPELINE_STAGING_DIR: pipeline/staging
+    # Internal-only port. Only reachable from the docker network.
+    expose:
+      - "3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      postgres-dw:
+        condition: service_healthy
+    networks:
+      - internal
+
+  # ─── Frontend (Angular SPA on inner nginx) ────────────────────────────────
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+      args:
+        # API base URL baked into the JS bundle at build time.
+        # Use "/api" so the SPA calls the same origin via the tunnel.
+        API_BASE_URL: ${API_BASE_URL:-/api}
+    container_name: scraper-frontend
+    restart: unless-stopped
+    # Host port 8080 is exposed for two scenarios:
+    #   1. Local dev (no cloudflared) — browser hits http://localhost:8080/
+    #   2. SSH-tunnel debugging — `ssh -L 8080:localhost:8080 user@vps`
+    # In strict prod (only Cloudflare Tunnel as ingress), comment this out
+    # so the SPA is reachable only through the tunnel.
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+    depends_on:
+      - backend
+    networks:
+      - internal
+
+  # ─── Cloudflare Tunnel ──────────────────────────────────────────────────────
+  # Provides public HTTPS access without opening ports 80/443 on the VPS.
+  # Always-on: starts together with the rest of the stack.
+  #
+  # Ingress rules (what hostname → what local service) are configured
+  # REMOTELY via Cloudflare dashboard: Zero Trust → Networks → Tunnels.
+  # The container only needs TUNNEL_TOKEN at runtime — it fetches the
+  # ingress config from Cloudflare's edge on connect.
+  #
+  # Setup (one-time):
+  #   1. Add your domain to Cloudflare (free tier works).
+  #   2. Run on your LOCAL machine:
+  #        cloudflared tunnel login
+  #        cloudflared tunnel create scraper-bi
+  #      This produces ~/.cloudflared/<UUID>.json — paste its contents
+  #      (or just the UUID) as TUNNEL_TOKEN in .env.
+  #   3. In Cloudflare dashboard → Zero Trust → Networks → Tunnels:
+  #      - Find your tunnel
+  #      - Add a Public Hostname: subdomain=bi, domain=example.com,
+  #        service=http://frontend:80
+  #
+  # If TUNNEL_TOKEN is empty, this container will keep restarting (with
+  # backoff). The rest of the stack stays healthy; just set TUNNEL_TOKEN
+  # and `docker compose up -d cloudflared` to bring the tunnel online.
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: scraper-cloudflared
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:-}
+    depends_on:
+      - frontend
+    networks:
+      - internal
+
+
+networks:
+  internal:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  postgres_dw_data:

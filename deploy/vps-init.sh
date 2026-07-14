@@ -2,13 +2,16 @@
 #
 # VPS bootstrap script — runs ONCE on a fresh Ubuntu 22.04/24.04 VPS to set up
 # the entire stack: clone the repo, install Docker, render the production
-# .env, build images, request the first Let's Encrypt cert, and bring the
-# stack up.
+# .env, build images, and bring the stack up via `compose.yaml`.
 #
 # Usage (from the VPS):
 #   git clone https://github.com/<owner>/WebScrapingDinamico-Automatico.git /opt/scraper
 #   cd /opt/scraper
-#   DOMAIN=bi.example.com EMAIL=admin@example.com bash deploy/vps-init.sh
+#   bash deploy/vps-init.sh
+#
+# The script does NOT generate a Cloudflare tunnel token — that step requires
+# a browser login to Cloudflare and must be done on your LOCAL machine first.
+# See DEPLOY.md for the full tunnel setup walkthrough.
 #
 # Idempotent: re-running after a partial failure picks up where it left off.
 # Safe to re-run after the initial deploy to refresh secrets.
@@ -17,8 +20,6 @@ set -euo pipefail
 
 REPO_DIR="/opt/scraper"
 GITHUB_REPO="${GITHUB_REPO:-$(git -C . config --get remote.origin.url 2>/dev/null || echo '')}"
-DOMAIN="${DOMAIN:?Usage: DOMAIN=bi.example.com EMAIL=admin@example.com bash deploy/vps-init.sh}"
-EMAIL="${EMAIL:?Usage: DOMAIN=bi.example.com EMAIL=admin@example.com bash deploy/vps-init.sh}"
 
 log() { printf "\033[1;34m[vps-init]\033[0m %s\n" "$*"; }
 warn() { printf "\033[1;33m[vps-init]\033[0m %s\n" "$*" >&2; }
@@ -44,13 +45,12 @@ else
   log "Docker already present: $(docker --version)"
 fi
 
-# docker compose v2 is bundled with the docker-compose-plugin package above.
 if ! docker compose version >/dev/null 2>&1; then
   fatal "docker compose v2 not available. Install docker-compose-plugin."
 fi
 
 # ─── 2. Clone the repo if we are not already inside it ─────────────────────
-if [ ! -f docker-compose.prod.yml ]; then
+if [ ! -f compose.yaml ]; then
   if [ -z "${GITHUB_REPO}" ]; then
     fatal "Not inside a clone and GITHUB_REPO is not set. Pass GITHUB_REPO=https://github.com/<owner>/repo.git"
   fi
@@ -74,63 +74,56 @@ if [ ! -f .env ]; then
   sed -i "s|^ANALYTICS_DATABASE_URL=.*|ANALYTICS_DATABASE_URL=postgresql://scraper:${DW_PASS}@localhost:5434/scraperdw|" .env
   sed -i "s|^DATABASE_URL=.*|DATABASE_URL=postgresql://scraper:${OP_PASS}@localhost:5433/scraperdb|" .env
 
-  # Append the new prod-only variables (DOMAIN, EMAIL for certbot, CORS).
-  cat >> .env <<EOF
+  # Append / update the prod-only variables (CORS_ORIGIN defaults to empty
+  # since the SPA is served same-origin via the tunnel).
+  sed -i "s|^CORS_ORIGIN=.*|CORS_ORIGIN=|" .env
 
-# ─── Production (added by vps-init.sh) ──────────────────────────────────
-DOMAIN=${DOMAIN}
-EMAIL=${EMAIL}
-CORS_ORIGIN=https://${DOMAIN}
-API_BASE_URL=/api
-EOF
   chmod 600 .env
   log ".env written. Backing up to /root/.env.backup (1Password/Bitwarden recommended)."
   cp .env /root/.env.backup
 else
   log ".env already exists — leaving untouched."
-  # Make sure DOMAIN is present (idempotent re-runs may need to refresh it).
-  if ! grep -q "^DOMAIN=" .env; then
-    echo "DOMAIN=${DOMAIN}" >> .env
-  fi
 fi
 
-# ─── 4. Pre-flight DNS check ──────────────────────────────────────────────
-RESOLVED_IP=$(dig +short "${DOMAIN}" | head -n1)
-PUBLIC_IP=$(curl -fsS https://api.ipify.org || curl -fsS https://ifconfig.me || echo "")
-if [ -z "${RESOLVED_IP}" ]; then
-  warn "DNS lookup for ${DOMAIN} returned no A record."
-  warn "Certbot will fail until the domain points at this VPS."
-  warn "Current public IP: ${PUBLIC_IP:-unknown}"
-elif [ -n "${PUBLIC_IP}" ] && [ "${RESOLVED_IP}" != "${PUBLIC_IP}" ]; then
-  warn "DNS for ${DOMAIN} resolves to ${RESOLVED_IP}, but this VPS is ${PUBLIC_IP}."
-  warn "Let's Encrypt will refuse to issue a cert until they match."
-else
-  log "DNS OK: ${DOMAIN} → ${RESOLVED_IP}"
+# ─── 4. Pre-flight: warn if TUNNEL_TOKEN is empty ──────────────────────────
+if ! grep -q "^TUNNEL_TOKEN=.\+" .env 2>/dev/null; then
+  warn "TUNNEL_TOKEN is empty in .env."
+  warn "cloudflared will keep restarting until you set it. The rest of"
+  warn "the stack still comes up so you can verify locally on :8080."
+  warn ""
+  warn "To enable public access later:"
+  warn "  1. On your LOCAL machine: cloudflared tunnel login"
+  warn "  2. Then: cloudflared tunnel create scraper-bi"
+  warn "  3. Copy the UUID or credentials JSON to .env as TUNNEL_TOKEN=<token>"
+  warn "  4. In Cloudflare dashboard → Zero Trust → Networks → Tunnels:"
+  warn "       add a Public Hostname for your domain pointing to http://frontend:80"
+  warn "  5. On the VPS: docker compose up -d cloudflared"
 fi
 
 # ─── 5. Bring the stack up ─────────────────────────────────────────────────
-log "Building images (this can take 5-10 minutes on a small VPS)..."
-docker compose -f docker-compose.prod.yml pull --ignore-pull-failures || true
-docker compose -f docker-compose.prod.yml build --pull
+log "Building images (5-10 minutes on a small VPS)..."
+docker compose pull --ignore-pull-failures || true
+docker compose build --pull
 
-log "Starting postgres + backend + frontend (without the proxy)..."
-docker compose -f docker-compose.prod.yml up -d postgres postgres-dw
+log "Starting postgres + backend + frontend..."
+docker compose up -d postgres postgres-dw
+
 # Wait for both DBs to be healthy before starting the backend (which runs migrations).
 for i in {1..30}; do
-  if docker compose -f docker-compose.prod.yml ps postgres | grep -q "(healthy)" \
-     && docker compose -f docker-compose.prod.yml ps postgres-dw | grep -q "(healthy)"; then
+  if docker compose ps postgres | grep -q "(healthy)" \
+     && docker compose ps postgres-dw | grep -q "(healthy)"; then
     log "Both Postgres instances healthy."
     break
   fi
   sleep 2
 done
 
-docker compose -f docker-compose.prod.yml up -d backend frontend
+docker compose up -d backend frontend
 
-# Wait for backend healthcheck to pass (the API endpoint is the cheapest probe).
+# Wait for backend healthcheck to pass.
 log "Waiting for backend to be ready..."
 for i in {1..60}; do
-  if docker compose -f docker-compose.prod.yml exec -T backend wget -q -O- http://localhost:3000/health 2>/dev/null | grep -q "ok\|OK"; then
+  if docker compose exec -T backend wget -q -O- http://localhost:3000/health 2>/dev/null | grep -q "ok\|OK"; then
     log "Backend is up."
     break
   fi
@@ -140,34 +133,29 @@ for i in {1..60}; do
   sleep 2
 done
 
-# ─── 6. Issue the first Let's Encrypt certificate ─────────────────────────
-log "Requesting Let's Encrypt certificate for ${DOMAIN}..."
-
-# The proxy MUST be running so certbot can hit /.well-known/acme-challenge/
-docker compose -f docker-compose.prod.yml up -d proxy
-
-# Give nginx a moment to bind :80.
-sleep 5
-
-docker compose -f docker-compose.prod.yml run --rm certbot \
-  certonly --webroot --webroot-path=/var/www/certbot \
-  --email "${EMAIL}" --agree-tos --no-eff-email \
-  -d "${DOMAIN}"
-
-# Restart proxy so it picks up the new cert files.
-log "Restarting proxy with the new certificate..."
-docker compose -f docker-compose.prod.yml restart proxy
+# ─── 6. Start cloudflared (always) ─────────────────────────────────────────
+log "Starting cloudflared..."
+docker compose up -d cloudflared
+if grep -q "^TUNNEL_TOKEN=.\+" .env 2>/dev/null; then
+  log "Cloudflare Tunnel connecting to Cloudflare's edge..."
+  log "Public URL will be the hostname you configured in the Cloudflare dashboard."
+else
+  warn "TUNNEL_TOKEN not set — cloudflared will keep restarting."
+  warn "Set TUNNEL_TOKEN in .env and run 'docker compose up -d cloudflared' to retry."
+fi
 
 # ─── 7. Final summary ──────────────────────────────────────────────────────
 log "═══════════════════════════════════════════════════════════════"
 log "  Stack is up."
 log ""
-log "  Dashboard:  https://${DOMAIN}"
-log "  API:        https://${DOMAIN}/api"
-log "  Backup env: /root/.env.backup"
+log "  Local access:    http://localhost:8080    (or http://<vps-ip>:8080)"
+if grep -q "^TUNNEL_TOKEN=.\+" .env 2>/dev/null; then
+  log "  Public access:   https://<your-hostname>  (configure in Cloudflare dashboard)"
+fi
+log "  Backup env:      /root/.env.backup"
 log ""
 log "  Useful commands:"
-log "    docker compose -f docker-compose.prod.yml ps"
-log "    docker compose -f docker-compose.prod.yml logs -f backend"
-log "    docker compose -f docker-compose.prod.yml restart proxy"
+log "    docker compose ps                          # status de todo el stack"
+log "    docker compose logs -f backend             # tail backend logs"
+log "    docker compose logs -f cloudflared         # tail tunnel logs"
 log "═══════════════════════════════════════════════════════════════"

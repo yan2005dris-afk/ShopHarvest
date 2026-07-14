@@ -1,52 +1,132 @@
 # Despliegue en VPS (producción)
 
-Guía paso a paso para llevar la plataforma completa a un VPS Ubuntu con
-Docker. Cubre el primer despliegue y el ciclo de actualizaciones vía
-GitHub Actions.
+Guía para llevar la plataforma completa a un VPS Ubuntu con Docker. Cubre
+el primer despliegue y el ciclo de actualizaciones vía GitHub Actions.
 
-> **TL;DR**: configurar DNS → `ssh vps "bash deploy/vps-init.sh"` → listo.
+> **TL;DR**: configurar DNS en Cloudflare → crear tunnel en tu máquina local →
+> `ssh vps "bash deploy/vps-init.sh"` → listo.
 
 ---
 
 ## Prerrequisitos
 
-| Componente | Mínimo | Recomendado |
-|---|---|---|
-| SO | Ubuntu 22.04 LTS | Ubuntu 24.04 LTS |
-| CPU | 2 vCPU | 4 vCPU |
-| RAM | 4 GB | 8 GB |
-| Disco | 40 GB SSD | 80 GB SSD |
-| Ancho de banda | 100 Mbps | 1 Gbps |
-| Docker | 24.x + compose v2 | igual |
-| Dominio apuntando al VPS | A record | A + AAAA |
-
-El VPS debe tener **Docker Engine** y **docker compose plugin** instalados
-(lo hace `vps-init.sh` si faltan).
+| Componente | Mínimo |
+|---|---|
+| SO | Ubuntu 22.04 LTS o 24.04 LTS |
+| CPU / RAM | 2 vCPU / 4 GB |
+| Disco | 40 GB SSD |
+| Docker | 24.x + compose v2 (lo instala `vps-init.sh` si falta) |
+| Dominio en Cloudflare | DNS gestionado por Cloudflare (free tier alcanza) |
 
 ---
 
-## Paso 1 — DNS
-
-Apuntá un dominio (o subdominio) al VPS. Ejemplo con Cloudflare:
+## Arquitectura
 
 ```
-Tipo  Nombre  Contenido         Proxy
-A     bi      203.0.113.42      DNS only   (gris, NO naranja — sino ACME falla)
+                Internet
+                   │
+                   ▼
+            ┌──────────────┐
+            │  Cloudflare  │  ← TLS, DDoS, CDN (gratis)
+            │     Edge     │     + ingress rules (dashboard)
+            └──────┬───────┘
+                   │  Tunnel cifrado (sin puertos abiertos en el VPS)
+                   ▼
+            ┌──────────────┐
+            │  cloudflared │  ← perfil "tunnel" (opcional)
+            │              │     solo necesita TUNNEL_TOKEN,
+            │              │     descarga ingress del edge
+            └──────┬───────┘
+                   │  red interna Docker
+                   ▼
+            ┌──────────────┐
+            │   frontend   │  ← nginx sirviendo el SPA + proxy /api/*
+            └──────┬───────┘
+                   │
+                   ▼
+            ┌──────────────┐
+            │   backend    │  ← NestJS (no expone puerto al host)
+            └─┬──────────┬─┘
+              │          │
+              ▼          ▼
+         ┌─────────┐ ┌──────────┐
+         │postgres │ │postgres-dw│
+         └─────────┘ └──────────┘
 ```
 
-> **Importante**: si usás Cloudflare, dejá el proxy **desactivado** (gris)
-> durante el `certbot` inicial. Después podés activarlo si querés, pero el
-> modo "Full (strict)" es el único compatible.
+**Diferencias con un deploy tradicional con nginx + certbot:**
 
-Verificá la propagación antes de continuar:
+| | nginx + certbot (viejo) | Cloudflare Tunnel (actual) |
+|---|---|---|
+| Puertos abiertos en el VPS | 80, 443 | **ninguno** |
+| Gestión de certificados | certbot + cron | automática por Cloudflare |
+| DDoS protection | manual (fail2ban, etc.) | incluido gratis |
+| CDN de estáticos | no | incluido |
+| HTTPS automático | requiere config | por default |
+| Coste mensual | solo el VPS | solo el VPS |
+
+---
+
+## Paso 1 — DNS en Cloudflare
+
+1. Crear cuenta gratuita en [dash.cloudflare.com](https://dash.cloudflare.com).
+2. Agregar tu dominio (cambiar los nameservers en el registrador a los de Cloudflare).
+3. Esperar la propagación (puede tomar hasta 24 h, usualmente minutos).
+
+---
+
+## Paso 2 — Crear el Tunnel (en tu máquina local)
 
 ```bash
-dig +short bi.example.com   # debe devolver 203.0.113.42
+# 1. Instalar cloudflared
+# Linux:
+curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg | sudo tee /usr/share/keyrings/cloudflare-main.gpg >/dev/null
+echo 'deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared focal main' | sudo tee /etc/apt/sources.list.d/cloudflared.list
+sudo apt update && sudo apt install -y cloudflared
+
+# macOS: brew install cloudflared
+# Windows: choco install cloudflared
+
+# 2. Login (abre el navegador)
+cloudflared tunnel login
+
+# 3. Crear el tunnel
+cloudflared tunnel create scraper-bi
+#   → Imprime: "Created tunnel scraper-bi with id a1b2c3d4-..."
+#   → Genera ~/.cloudflared/<UUID>.json con las credenciales
+
+# 4. Obtener el TUNNEL_TOKEN
+# El cloudflared de Docker acepta cualquiera de estos formatos en TUNNEL_TOKEN:
+#   (a) Token corto: pega el <UUID> que imprimió el paso anterior
+TUNNEL_TOKEN="a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+#   (b) O el JSON completo serializado en una línea:
+TUNNEL_TOKEN=$(cat ~/.cloudflared/<UUID>.json | jq -c .)
+
+# 5. Configurar el routing (modo remoto via dashboard, RECOMENDADO)
+# En vez de mantener un config.yml en el contenedor, configurás el
+# routing directamente en Cloudflare y el cloudflared lo descarga del edge:
+#   - Ir a https://one.dash.cloudflare.com → Networks → Tunnels
+#   - Click en "scraper-bi"
+#   - Pestaña "Public Hostname" → Add a public hostname:
+#       Subdomain: bi
+#       Domain:    example.com
+#       Service:   http://frontend:80
+#   - Save
+
+# 5'. (Alternativa) Modo local con config.yml
+# Si preferís tener el routing en un archivo (más control, más boilerplate):
+#   cloudflared tunnel route dns scraper-bi bi.example.com
+# Y montar un config.yml en el contenedor (no incluido por defecto).
 ```
+
+> **TUNNEL_TOKEN**: en modo dashboard (recomendado) alcanza con el `<UUID>`
+> del paso 3. En modo local hace falta el JSON completo.
+> **Ingress rules**: en modo dashboard se configuran en la UI; en modo
+> local se configuran en `~/.cloudflared/config.yml` montado en el contenedor.
 
 ---
 
-## Paso 2 — Clonar el repo en el VPS
+## Paso 3 — Clonar el repo en el VPS
 
 ```bash
 ssh deploy@bi.example.com
@@ -56,62 +136,88 @@ git clone https://github.com/yan2005dris-afk/WebScrapingDinamico-Automatico.git 
 cd /opt/scraper
 ```
 
-> Usuario `deploy` no debe tener sudo. Docker se opera desde el grupo
-> `docker` (lo agrega `vps-init.sh` si corres con root).
+> Usuario `deploy` no necesita sudo. Docker se opera desde el grupo `docker`
+> (lo agrega `vps-init.sh` si corres con root).
 
 ---
 
-## Paso 3 — Bootstrap (`vps-init.sh`)
-
-El script hace TODO: instala Docker si falta, genera un `.env` con
-contraseñas aleatorias, construye las imágenes, emite el primer
-certificado Let's Encrypt, y arranca la stack.
+## Paso 4 — Bootstrap (`vps-init.sh`)
 
 ```bash
-DOMAIN=bi.example.com EMAIL=admin@example.com bash deploy/vps-init.sh
+bash deploy/vps-init.sh
 ```
 
-Tarda entre 5 y 15 minutos (la build de Angular + NestJS es lo más
-lento en una VPS pequeña). Al final imprime:
+El script hace TODO: instala Docker si falta, genera un `.env` con
+contraseñas aleatorias, construye las imágenes, levanta Postgres + backend +
+frontend.
+
+**Sobre el tunnel:** si pegaste el JSON de credenciales en `TUNNEL_TOKEN=` antes
+de correr el script, también levanta `cloudflared`. Si lo dejás vacío,
+arranca todo lo demás y la app queda accesible en `http://<vps-ip>:8080` para
+que puedas validar antes de configurar el tunnel.
+
+Tarda entre 5 y 15 minutos. Al final imprime:
 
 ```
 ═══════════════════════════════════════════════════════════════
   Stack is up.
-  Dashboard:  https://bi.example.com
-  API:        https://bi.example.com/api
-  Backup env: /root/.env.backup
+
+  Local access:    http://localhost:8080    (o http://<vps-ip>:8080)
+  Public access:   https://bi.example.com   (vía Cloudflare Tunnel)
+  Backup env:      /root/.env.backup
 ═══════════════════════════════════════════════════════════════
 ```
 
-### Backup del `.env`
+---
 
-El `.env` contiene contraseñas de Postgres y la API key de Let's Encrypt.
-**Copialo a un gestor de secretos** (1Password, Bitwarden, etc.) apenas
-termine el bootstrap. El script deja una copia en `/root/.env.backup`
-que NO se sincroniza con git (es `.gitignored`).
+## Paso 5 — Configurar el TUNNEL_TOKEN (si lo dejaste vacío)
+
+Si arrancaste sin tunnel y querés agregarlo después:
+
+```bash
+ssh deploy@bi.example.com
+cd /opt/scraper
+
+# Editar .env y pegar el token (ver Paso 2 para obtenerlo)
+nano .env
+
+# Levantar solo el servicio cloudflared
+docker compose up -d cloudflared
+
+# Ver logs del tunnel
+docker compose logs -f cloudflared
+# Deberías ver "Connection established" en 10-30 segundos.
+```
 
 ---
 
-## Paso 4 — Verificación post-deploy
+## Paso 6 — Verificación post-deploy
 
 ```bash
 # Estado de los contenedores
-docker compose -f docker-compose.prod.yml ps
+docker compose ps
 
 # Logs del backend (si algo no responde)
-docker compose -f docker-compose.prod.yml logs --tail=50 backend
+docker compose logs --tail=50 backend
 
 # Probar el endpoint de salud
-curl -fsS https://bi.example.com/api/health
+curl -fsS http://localhost:8080/api/health          # vía nginx local
+curl -fsS https://bi.example.com/api/health         # vía Cloudflare Tunnel
 ```
 
-Abrí `https://bi.example.com` en el navegador. Deberías ver el dashboard
-con los datos del DW. Si la página carga pero el dashboard dice "Sin
-datos", corré el ETL desde la UI o vía:
+Abrí `https://bi.example.com` en el navegador. Deberías ver el dashboard con
+los datos del DW.
+
+---
+
+## Operación
 
 ```bash
-docker compose -f docker-compose.prod.yml exec backend \
-  npx ts-node -P tsconfig.json src/scripts/trigger-etl.ts
+# Arrancar todo el stack (5 servicios, incluido cloudflared):
+docker compose up -d
+
+# Si TUNNEL_TOKEN está vacío, cloudflared mantiene un restart loop
+# hasta que lo configures. El resto del stack funciona normal.
 ```
 
 ---
@@ -122,89 +228,93 @@ Configurá 4 secrets en `Settings → Secrets and variables → Actions`:
 
 | Secret | Ejemplo | Descripción |
 |---|---|---|
-| `VPS_SSH_KEY` | `-----BEGIN OPENSSH PRIVATE KEY-----\n...` | Llave SSH **privada** que está autorizada en el VPS (sin passphrase) |
-| `VPS_HOST` | `bi.example.com` | Hostname o IP del VPS |
+| `VPS_SSH_KEY` | `-----BEGIN OPENSSH...` | Llave SSH **privada** autorizada en el VPS (sin passphrase) |
+| `VPS_HOST` | `203.0.113.42` | IP del VPS (no el hostname, para evitar dependencia del DNS) |
 | `VPS_USER` | `deploy` | Usuario SSH (miembro del grupo `docker`) |
 | `VPS_DEPLOY_PATH` | `/opt/scraper` | Carpeta donde está clonado el repo |
 
-**Generar el par de llaves** (en tu máquina local, NO en el VPS):
+**Generar el par de llaves** (en tu máquina local):
 
 ```bash
 ssh-keygen -t ed25519 -C "github-actions-deploy" -f ~/.ssh/scraper_deploy -N ""
-# Subí la pública al VPS:
-ssh-copy-id -i ~/.ssh/scraper_deploy.pub deploy@bi.example.com
-# Pegá el contenido de la privada en el secret VPS_SSH_KEY:
+ssh-copy-id -i ~/.ssh/scraper_deploy.pub deploy@<vps-ip>
+# Pegar el contenido de la privada en el secret VPS_SSH_KEY:
 cat ~/.ssh/scraper_deploy
 ```
 
-**Ciclo**:
+**Ciclo automático**:
 
 1. Pusheás un commit a `main`.
 2. GitHub Actions se conecta al VPS por SSH.
 3. Hace `git pull --ff-only`, `docker compose build`, `docker compose up -d`.
-4. Renueva el cert automáticamente (el contenedor `certbot` corre un
-   loop cada 12h).
+4. Zero-downtime para servicios no tocados.
 
 ---
 
 ## Rollback manual
 
-Si una actualización rompe algo:
-
 ```bash
-ssh deploy@bi.example.com
+ssh deploy@<vps-ip>
 cd /opt/scraper
-# Volver al commit anterior
 git log --oneline -5
 git checkout <commit-anterior>
-docker compose -f docker-compose.prod.yml up -d --build
+docker compose up -d --build
 ```
 
 ---
 
 ## Troubleshooting
 
-### "certbot: connection refused" en el primer deploy
+### "tunnel: connection error" en logs de cloudflared
 
-- DNS no apunta al VPS. Verificá con `dig +short bi.example.com`.
-- Cloudflare proxy (naranja) está activo. Ponelo en **DNS only** (gris).
-- Puerto 80 bloqueado por firewall. Abrilo:
+- `TUNNEL_TOKEN` mal copiado. Pegalo completo, sin saltos de línea.
+- DNS no apuntando al tunnel: verificá en Cloudflare dashboard que el CNAME `bi.example.com → <UUID>.cfargotunnel.com` existe.
+- Firewall del VPS bloqueando conexiones salientes a Cloudflare:
   ```bash
-  sudo ufw allow 80/tcp
-  sudo ufw allow 443/tcp
-  sudo ufw reload
+  sudo ufw allow out 7844/tcp  # tunnel protocol
+  sudo ufw allow out 443/tcp   # HTTPS for tunnel metadata
   ```
+
+### "404 Not Found" en https://bi.example.com
+
+El tunnel está conectado pero cloudflared no sabe qué servir. Verificá que
+el servicio `frontend` está corriendo:
+
+```bash
+docker compose ps frontend
+docker compose logs frontend
+```
 
 ### "502 Bad Gateway" al abrir el dashboard
 
-El proxy arrancó antes que el backend. Reintentá en 30 s; si persiste:
+Frontend arrancó antes que backend. Reintentá en 30 s; si persiste:
 
 ```bash
-docker compose -f docker-compose.prod.yml logs backend
-docker compose -f docker-compose.prod.yml restart proxy
+docker compose restart backend
+docker compose restart cloudflared
 ```
 
 ### "CORS error" en la consola del navegador
 
-`CORS_ORIGIN` no coincide con el dominio actual. Editá `.env` en el VPS:
+`CORS_ORIGIN` no coincide con el dominio actual. Editá `.env`:
 
 ```bash
 CORS_ORIGIN=https://bi.example.com   # sin slash final, https incluido
-docker compose -f docker-compose.prod.yml up -d --no-deps backend
+docker compose up -d --no-deps backend
 ```
 
-### "PrismaClientInitializationError: Can't reach database server"
+### "PrismaClientInitializationError"
 
-El backend arrancó antes que Postgres. Esperá al healthcheck o reiniciá:
+Backend arrancó antes que Postgres. Esperá al healthcheck o reiniciá:
 
 ```bash
-docker compose -f docker-compose.prod.yml restart backend
+docker compose restart backend
 ```
 
 ### Disco lleno (logs de Docker)
 
 ```bash
-docker system prune -af --volumes    # ⚠ borra imágenes sin usar, no volúmenes nombrados
+docker system prune -af --volumes    # ⚠ borra imágenes sin usar, NO volúmenes nombrados
 docker volume ls                      # postgres_data + postgres_dw_data están safe
 ```
 
@@ -216,17 +326,14 @@ Los volúmenes Docker `postgres_data` y `postgres_dw_data` viven en
 `/var/lib/docker/volumes/`. Para un backup lógico diario:
 
 ```bash
-# Backup operacional
-docker compose -f docker-compose.prod.yml exec postgres \
+docker compose exec postgres \
   pg_dump -U scraper scraperdb | gzip > backup-op-$(date +%F).sql.gz
 
-# Backup DW
-docker compose -f docker-compose.prod.yml exec postgres-dw \
+docker compose exec postgres-dw \
   pg_dump -U scraper scraperdw | gzip > backup-dw-$(date +%F).sql.gz
 ```
 
-Automatizá con un cron del VPS que mueva los `.sql.gz` a S3, B2 o
-cualquier object storage (cron + rclone es la receta más simple).
+Automatizá con cron + rclone a S3, B2, etc.
 
 ---
 
@@ -234,12 +341,11 @@ cualquier object storage (cron + rclone es la receta más simple).
 
 | Var | Requerida | Default | Propósito |
 |---|---|---|---|
-| `DOMAIN` | sí (prod) | — | FQDN para nginx + certbot |
-| `EMAIL` | sí (prod) | — | Contacto Let's Encrypt |
-| `POSTGRES_PASSWORD` | sí | — | DB operacional (auto-generada por vps-init) |
-| `POSTGRES_DW_PASSWORD` | sí | — | DB DW (auto-generada por vps-init) |
+| `POSTGRES_PASSWORD` | sí | — | DB operacional (auto-gen por vps-init) |
+| `POSTGRES_DW_PASSWORD` | sí | — | DB DW (auto-gen por vps-init) |
 | `JWT_SECRET` | sí | `change-me-...` | Firma de JWT (rotar antes de prod) |
-| `CORS_ORIGIN` | recomendado | `https://${DOMAIN}` | Origins permitidos |
+| `TUNNEL_TOKEN` | sí para tunnel | vacío | Credenciales del tunnel (modo remoto, ingress rules en dashboard) |
+| `CORS_ORIGIN` | opcional | — | Origins CORS permitidos (vacío = permissive en backend) |
 | `API_BASE_URL` | opcional | `/api` | URL de la API baked en el bundle JS |
-| `NODE_ENV` | — | `development` | Auto-set a `production` por el compose |
+| `NODE_ENV` | — | `production` | Auto-set por el compose |
 | `ETL_CRON_SCHEDULE` | opcional | `0 2 * * *` | Cuándo corre el ETL automático |
