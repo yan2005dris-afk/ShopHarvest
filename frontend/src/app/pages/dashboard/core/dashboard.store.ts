@@ -167,12 +167,58 @@ export class DashboardStore {
     });
   });
 
-  /** Time-series rows after applying global filters. */
+  /**
+   * Time-series rows after applying global filters, including the
+   * `fechaDesde` / `fechaHasta` range.
+   *
+   * The time-series is the ONLY chart with a real time dimension
+   * (anio + trimestre per row). The other charts (pregunta principal,
+   * outliers) aggregate over the whole DW snapshot and have no date
+   * column exposed in their DTOs, so the date filter only narrows the
+   * line chart. When the DW is in snapshot mode (one distinct date)
+   * the filter is a no-op — see `timeRangeIsApplicable`.
+   */
   readonly filteredTimeSeries = computed<TimeSeriesRow[]>(() => {
     const rows = this.timeSeries();
-    const { fuentes } = this.filtros();
+    const { fuentes, fechaDesde, fechaHasta } = this.filtros();
     const fuSet = new Set(fuentes);
-    return rows.filter((r) => !fuSet.size || fuSet.has(r.fuente));
+    const fromTs = fechaDesde ? Date.parse(fechaDesde) : null;
+    const toTs = fechaHasta ? Date.parse(fechaHasta) : null;
+
+    return rows.filter((r) => {
+      if (fuSet.size && !fuSet.has(r.fuente)) return false;
+      // Each (anio, trimestre) maps to the FIRST day of that quarter for
+      // range comparison. Good enough for an axis label; the dashboard
+      // documents the limitation in the filter help-text.
+      const rowTs = new Date(r.anio, (r.trimestre - 1) * 3, 1).getTime();
+      if (fromTs !== null && rowTs < fromTs) return false;
+      if (toTs !== null) {
+        // inclusive end-of-quarter: add 3 months minus 1 day
+        const endOfQuarter = new Date(r.anio, r.trimestre * 3, 0).getTime();
+        if (endOfQuarter < toTs) return false;
+      }
+      return true;
+    });
+  });
+
+  /**
+   * True when the date-range filter has a chance of narrowing the
+   * time-series chart. False when the DW is a single-day snapshot —
+   * the UI disables the date pickers in that case and shows a
+   * help-text explaining why.
+   */
+  readonly timeRangeIsApplicable = computed<boolean>(() => {
+    const snap = this.summary()?.snapshot;
+    return !!snap && snap.fechas_distintas > 1;
+  });
+
+  /** Min/max dates available in the DW (for datepicker bounds). */
+  readonly timeRangeBounds = computed<{ min: string | null; max: string | null }>(() => {
+    const snap = this.summary()?.snapshot;
+    return {
+      min: snap?.fecha_min ?? null,
+      max: snap?.fecha_max ?? null,
+    };
   });
 
   /** Encuesta rows after applying global filters (only fuente mapped to sitio_preferido). */

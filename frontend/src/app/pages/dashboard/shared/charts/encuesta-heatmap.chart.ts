@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { NgApexchartsModule } from 'ng-apexcharts';
+import { ThemeTokenService } from '../../core/theme-token.service';
 import type { ApexAxisChartSeries, ApexChart, ApexXAxis, ApexTitleSubtitle, ApexLegend, ApexGrid, ApexDataLabels, ApexPlotOptions } from 'ng-apexcharts';
 import type { EncuestaRow } from '../../core/dashboard.types';
 
@@ -50,6 +51,7 @@ import type { EncuestaRow } from '../../core/dashboard.types';
   ],
 })
 export class EncuestaHeatmapChartComponent {
+  private readonly theme = inject(ThemeTokenService);
   readonly rows = input.required<EncuestaRow[]>();
   readonly color = input<string>('#3b82f6');
   readonly height = input<number>(380);
@@ -67,7 +69,7 @@ export class EncuestaHeatmapChartComponent {
     animations: { enabled: true, speed: 400 },
     fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif',
     background: 'transparent',
-    foreColor: '#374151',
+    foreColor: this.theme.charts().foreColor,
   }));
 
   readonly series = computed<ApexAxisChartSeries>(() => {
@@ -96,7 +98,7 @@ export class EncuestaHeatmapChartComponent {
 
   readonly dataLabels = computed<ApexDataLabels>(() => ({ enabled: true }));
   readonly legend = computed<ApexLegend>(() => ({ position: 'bottom' as const }));
-  readonly grid = computed<ApexGrid>(() => ({ borderColor: '#e5e7eb' }));
+  readonly grid = computed<ApexGrid>(() => ({ borderColor: this.theme.charts().grid }));
   readonly plotOptions = computed<ApexPlotOptions>(() => ({
     heatmap: {
       shadeIntensity: 0.5,
@@ -115,6 +117,6 @@ export class EncuestaHeatmapChartComponent {
   readonly title = computed<ApexTitleSubtitle>(() => ({
     text: 'Heatmap: Sitio preferido × Gasto promedio',
     align: 'left' as const,
-    style: { fontSize: '14px', fontWeight: 600, color: '#111827' },
+    style: { fontSize: '14px', fontWeight: 600, color: this.theme.charts().labelColor },
   }));
 }

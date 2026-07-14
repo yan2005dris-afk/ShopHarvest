@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { NgApexchartsModule } from 'ng-apexcharts';
+import { ThemeTokenService } from '../../core/theme-token.service';
 import type { ApexAxisChartSeries, ApexChart, ApexXAxis, ApexTitleSubtitle, ApexLegend, ApexGrid, ApexDataLabels, ApexPlotOptions } from 'ng-apexcharts';
 import type { OutlierRow } from '../../core/dashboard.types';
 
@@ -50,6 +51,7 @@ import type { OutlierRow } from '../../core/dashboard.types';
   ],
 })
 export class BoxPlotPorFuenteChartComponent {
+  private readonly theme = inject(ThemeTokenService);
   readonly rows = input.required<OutlierRow[]>();
   readonly colors = input<string[]>(['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6']);
   readonly height = input<number>(320);
@@ -74,7 +76,7 @@ export class BoxPlotPorFuenteChartComponent {
     animations: { enabled: true, speed: 400 },
     fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif',
     background: 'transparent',
-    foreColor: '#374151',
+    foreColor: this.theme.charts().foreColor,
   }));
 
   readonly series = computed<ApexAxisChartSeries>(() => {
@@ -97,7 +99,7 @@ export class BoxPlotPorFuenteChartComponent {
 
   readonly dataLabels = computed<ApexDataLabels>(() => ({ enabled: false }));
   readonly legend = computed<ApexLegend>(() => ({ position: 'bottom' as const }));
-  readonly grid = computed<ApexGrid>(() => ({ borderColor: '#e5e7eb' }));
+  readonly grid = computed<ApexGrid>(() => ({ borderColor: this.theme.charts().grid }));
   readonly plotOptions = computed<ApexPlotOptions>(() => ({
     boxPlot: {
       colors: {
@@ -109,6 +111,6 @@ export class BoxPlotPorFuenteChartComponent {
   readonly title = computed<ApexTitleSubtitle>(() => ({
     text: 'Box plot por fuente — Distribución del rango de precios outliers',
     align: 'left' as const,
-    style: { fontSize: '14px', fontWeight: 600, color: '#111827' },
+    style: { fontSize: '14px', fontWeight: 600, color: this.theme.charts().labelColor },
   }));
 }

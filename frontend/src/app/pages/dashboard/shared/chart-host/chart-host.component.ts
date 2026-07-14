@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { NgApexchartsModule } from 'ng-apexcharts';
 import type {
   ApexAxisChartSeries,
@@ -13,6 +13,7 @@ import type {
   ApexYAxis,
   ChartType,
 } from 'ng-apexcharts';
+import { ThemeTokenService } from '../../core/theme-token.service';
 
 /**
  * Standalone wrapper around the ng-apexcharts `<apx-chart>` element.
@@ -21,8 +22,9 @@ import type {
  *   - Centralises the base chart config (toolbar disabled, animation
  *     defaults, font-family inherit) so every chart on the dashboard
  *     has consistent UX.
- *   - Forwards the dynamic inputs (`series`, `xaxis`, `title`, etc.)
- *     to `<apx-chart>` directly with the proper Apex types.
+ *   - Reads theme tokens (foreColor / grid color / accent) from
+ *     `ThemeTokenService` so charts switch light/dark automatically
+ *     when the user toggles the theme.
  *
  * Usage:
  *   <app-chart-host
@@ -68,6 +70,8 @@ import type {
   ],
 })
 export class ChartHostComponent {
+  private readonly theme = inject(ThemeTokenService);
+
   readonly type = input.required<ChartType>();
   readonly series = input.required<ApexAxisChartSeries | ApexNonAxisChartSeries>();
   readonly xaxis = input<ApexXAxis>({});
@@ -79,20 +83,21 @@ export class ChartHostComponent {
   readonly plotOptions = input<ApexPlotOptions>({});
   readonly dataLabels = input<ApexDataLabels>({ enabled: false });
   readonly yaxis = input<ApexYAxis | ApexYAxis[]>({} as ApexYAxis);
-  readonly grid = input<ApexGrid>({ borderColor: '#e5e7eb' });
+  readonly grid = input<ApexGrid>({});
   readonly legend = input<ApexLegend>({ position: 'bottom' });
 
-  /**
-   * Static-ish base config: only `type` and `height` change at
-   * runtime; everything else is the dashboard's house style.
-   */
-  readonly baseChart = computed<ApexChart>(() => ({
-    type: this.type(),
-    height: this.height(),
-    toolbar: { show: false },
-    animations: { enabled: true, speed: 400 },
-    fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif',
-    background: 'transparent',
-    foreColor: '#374151',
-  }));
+  /** Base chart config — reads theme tokens so charts re-color when the user toggles light/dark. */
+  readonly baseChart = computed<ApexChart>(() => {
+    const tokens = this.theme.charts();
+    return {
+      type: this.type(),
+      height: this.height(),
+      toolbar: { show: false },
+      animations: { enabled: true, speed: 400 },
+      fontFamily:
+        '"Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+      background: 'transparent',
+      foreColor: tokens.foreColor,
+    };
+  });
 }

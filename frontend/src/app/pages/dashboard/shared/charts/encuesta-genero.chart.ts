@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { NgApexchartsModule } from 'ng-apexcharts';
+import { ThemeTokenService } from '../../core/theme-token.service';
 import type { ApexNonAxisChartSeries, ApexChart, ApexTitleSubtitle, ApexLegend, ApexGrid, ApexDataLabels, ApexPlotOptions } from 'ng-apexcharts';
 import type { EncuestaRow } from '../../core/dashboard.types';
 
@@ -49,6 +50,7 @@ import type { EncuestaRow } from '../../core/dashboard.types';
   ],
 })
 export class EncuestaGeneroChartComponent {
+  private readonly theme = inject(ThemeTokenService);
   readonly rows = input.required<EncuestaRow[]>();
   readonly colors = input<string[]>(['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899']);
   readonly height = input<number>(380);
@@ -60,7 +62,7 @@ export class EncuestaGeneroChartComponent {
     animations: { enabled: true, speed: 400 },
     fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif',
     background: 'transparent',
-    foreColor: '#374151',
+    foreColor: this.theme.charts().foreColor,
   }));
 
   readonly series = computed<ApexNonAxisChartSeries>(() => {
@@ -93,6 +95,6 @@ export class EncuestaGeneroChartComponent {
   readonly title = computed<ApexTitleSubtitle>(() => ({
     text: 'Distribución por género en la encuesta',
     align: 'left' as const,
-    style: { fontSize: '14px', fontWeight: 600, color: '#111827' },
+    style: { fontSize: '14px', fontWeight: 600, color: this.theme.charts().labelColor },
   }));
 }
