@@ -6,7 +6,6 @@
   "permissions": ["storage", "activeTab", "scripting", "alarms", "tabs"],
   "host_permissions": [
     "http://localhost:3000/*",
-    "http://localhost:3081/*",
     "https://bi.dihm-muertos.site/*"
   ],
   "externally_connectable": {

@@ -44,7 +44,11 @@ function generateManifestPlugin(): Plugin {
       patch: {
         background: { service_worker: 'background.js', type: 'module' },
         externally_connectable: {
-          matches: ['http://localhost:8080/*', 'http://localhost:4200/*'],
+          matches: [
+            'http://localhost:8080/*',
+            'http://localhost:4200/*',
+            'https://bi.dihm-muertos.site/*',
+          ],
         },
         minimum_chrome_version: '112',
       },
