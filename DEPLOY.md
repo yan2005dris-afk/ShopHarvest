@@ -222,32 +222,71 @@ docker compose up -d
 
 ---
 
-## Actualizaciones (CI/CD vía GitHub Actions)
+## Actualizaciones (CI/CD con self-hosted runner)
 
-Configurá 4 secrets en `Settings → Secrets and variables → Actions`:
+Este proyecto usa un **self-hosted runner** instalado en el VPS. Cada push
+a `develop` dispara el workflow `.github/workflows/deploy.yml` que corre
+DENTRO del VPS — sin SSH, sin secretos en GitHub, con Docker build cache
+caliente (deploys típicos: 30-60 s).
 
-| Secret | Ejemplo | Descripción |
-|---|---|---|
-| `VPS_SSH_KEY` | `-----BEGIN OPENSSH...` | Llave SSH **privada** autorizada en el VPS (sin passphrase) |
-| `VPS_HOST` | `203.0.113.42` | IP del VPS (no el hostname, para evitar dependencia del DNS) |
-| `VPS_USER` | `deploy` | Usuario SSH (miembro del grupo `docker`) |
-| `VPS_DEPLOY_PATH` | `/opt/scraper` | Carpeta donde está clonado el repo |
+### Setup one-time
 
-**Generar el par de llaves** (en tu máquina local):
+**1. Generar el token del runner** (en GitHub, navegador):
+
+   `Settings → Actions → Runners → New self-hosted runner → Linux x64`
+   
+   Copiá el token que aparece (es de un solo uso, válido ~1h).
+
+**2. Instalar el runner en el VPS** (one-shot):
+
+   ```bash
+   ssh user@<vps-ip>
+   cd /opt/scraper  # o donde esté clonado el repo
+   RUNNER_TOKEN=ABC123... RUNNER_NAME=scraper-vps bash deploy/install-runner.sh
+   ```
+
+   El script descarga el runner, lo registra contra GitHub y lo deja como
+   servicio systemd (`actions.runner.*`) que arranca al boot.
+
+**3. Copiar el `.env`** al workspace del runner (sobrevive entre runs gracias
+   a `clean: false`):
+
+   ```bash
+   scp .env user@<vps-ip>:/opt/scraper/.env
+   ```
+
+**4. Verificar** que aparece en GitHub:
+
+   `Settings → Actions → Runners` → debería listar `scraper-vps` con status "Idle".
+
+### Ciclo automático
+
+1. Pusheás un commit a `develop`.
+2. El runner del VPS recibe el job.
+3. Hace `git pull`, `docker compose build`, `docker compose up -d`.
+4. Healthcheck vía `localhost:8080`.
+5. Cleanup de imágenes viejas (`docker image prune -f`).
+
+### Disparar manualmente
+
+`Actions → Deploy to VPS → Run workflow` (útil para probar después del setup).
+
+### Monitorear logs del runner
 
 ```bash
-ssh-keygen -t ed25519 -C "github-actions-deploy" -f ~/.ssh/scraper_deploy -N ""
-ssh-copy-id -i ~/.ssh/scraper_deploy.pub deploy@<vps-ip>
-# Pegar el contenido de la privada en el secret VPS_SSH_KEY:
-cat ~/.ssh/scraper_deploy
+ssh user@<vps-ip>
+journalctl -u actions.runner.* -f
 ```
 
-**Ciclo automático**:
+### Reconfigurar (cambiar labels, repo, etc.)
 
-1. Pusheás un commit a `main`.
-2. GitHub Actions se conecta al VPS por SSH.
-3. Hace `git pull --ff-only`, `docker compose build`, `docker compose up -d`.
-4. Zero-downtime para servicios no tocados.
+```bash
+cd /opt/actions-runner
+./svc.sh stop
+./config.sh remove --token <nuevo-token-de-removal>
+./config.sh --unattended --replace --token <nuevo-token> ...
+./svc.sh start
+```
 
 ---
 
@@ -294,12 +333,12 @@ docker compose restart backend
 docker compose restart cloudflared
 ```
 
-### "CORS error" en la consola del navegador
+### "CORS error" en la consola del navegador (HTTP 500 en login)
 
-`CORS_ORIGIN` no coincide con el dominio actual. Editá `.env`:
+`FRONTEND_ORIGIN` no incluye el dominio público. Editá `.env` y reiniciá:
 
 ```bash
-CORS_ORIGIN=https://bi.example.com   # sin slash final, https incluido
+FRONTEND_ORIGIN=https://bi.example.com,http://localhost:8080,http://localhost:4200
 docker compose up -d --no-deps backend
 ```
 
@@ -345,7 +384,7 @@ Automatizá con cron + rclone a S3, B2, etc.
 | `POSTGRES_DW_PASSWORD` | sí | — | DB DW (auto-gen por vps-init) |
 | `JWT_SECRET` | sí | `change-me-...` | Firma de JWT (rotar antes de prod) |
 | `TUNNEL_TOKEN` | sí para tunnel | vacío | Credenciales del tunnel (modo remoto, ingress rules en dashboard) |
-| `CORS_ORIGIN` | opcional | — | Origins CORS permitidos (vacío = permissive en backend) |
+| `FRONTEND_ORIGIN` | sí | `http://localhost:4200` | Whitelist CORS (comma-separated origins) |
 | `API_BASE_URL` | opcional | `/api` | URL de la API baked en el bundle JS |
 | `NODE_ENV` | — | `production` | Auto-set por el compose |
 | `ETL_CRON_SCHEDULE` | opcional | `0 2 * * *` | Cuándo corre el ETL automático |

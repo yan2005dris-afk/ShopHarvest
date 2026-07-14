@@ -1,104 +1,91 @@
-name: Deploy to VPS
-
-# Auto-deploys the production stack to the configured VPS whenever
-# code lands on `main`. The workflow SSHes into the VPS, pulls the latest
-# commit, rebuilds only the changed images, and recreates the affected
-# containers without downtime for the rest of the stack.
+# ============================================
+#  WebScrapingDinamico-Automatico — Deploy
+# ============================================
+# Runs on the self-hosted runner installed on the VPS
+# (deploy/install-runner.sh). On every push to develop,
+# pulls the latest code, rebuilds only the changed images,
+# and recreates the affected containers without downtime.
 #
-# Required GitHub repository secrets:
-#   VPS_SSH_KEY      — private SSH key authorized in ~/.ssh/authorized_keys on the VPS
-#   VPS_HOST         — public hostname or IP of the VPS (e.g. bi.example.com)
-#   VPS_USER         — SSH user (e.g. deploy)
-#   VPS_DEPLOY_PATH  — absolute path to the clone on the VPS (default /opt/scraper)
+# Requirements:
+#   - Self-hosted runner installed on the VPS (label: self-hosted)
+#   - Docker + Docker Compose v2 installed
+#   - .env placed in the runner workspace (clean: false preserves it)
+#
+# Setup (one-time):
+#   1. Install runner on VPS: deploy/install-runner.sh
+#   2. Copy .env to runner workspace: scp .env user@vps:/opt/scraper/.env
+#   3. Push to develop → this workflow deploys automatically
+# ============================================
+
+name: Deploy to VPS
 
 on:
   push:
-    branches:
-      - main
+    branches: [develop]
   workflow_dispatch:
-    inputs:
-      ref:
-        description: 'Git ref to deploy (default: HEAD of main)'
-        required: false
 
+# Never cancel an in-flight deploy (would leave the stack half-up).
 concurrency:
   group: deploy-vps
-  cancel-in-progress: false  # never cancel an in-flight deploy (would leave half-up)
+  cancel-in-progress: false
 
 permissions:
   contents: read
 
 jobs:
   deploy:
-    name: Pull, build, restart on ${{ vars.VPS_HOST || secrets.VPS_HOST }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
+    name: Pull, build, restart on the VPS
+    runs-on: self-hosted
 
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
+          # clean: false keeps the workspace intact between runs so the
+          # .env file (with secrets) and the previous build cache survive.
+          clean: false
 
-      - name: Set up SSH
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.VPS_SSH_KEY }}
-
-      - name: Add VPS host key to known_hosts (first run)
+      - name: Ensure .env exists
         run: |
-          mkdir -p ~/.ssh
-          ssh-keyscan -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null || true
+          if [ ! -f .env ]; then
+            echo "::error::.env not found in $(pwd)!"
+            echo "Copy your .env to the runner workspace first:"
+            echo "  scp .env user@vps:/opt/scraper/.env"
+            exit 1
+          fi
+          echo "Found .env ($(wc -l < .env) lines)"
 
-      - name: Pull + rebuild + restart on the VPS
+      - name: Pre-pull base images (warms cache)
+        # Pulling postgres/cloudflared/nginx from the registry upfront
+        # means docker compose build can reuse them as layers instead of
+        # redownloading. Big speed-up on the second deploy onward.
+        run: |
+          docker compose pull --ignore-pull-failures || true
+
+      - name: Rebuild and restart services
         env:
-          VPS_HOST: ${{ secrets.VPS_HOST }}
-          VPS_USER: ${{ secrets.VPS_USER }}
-          VPS_DEPLOY_PATH: ${{ secrets.VPS_DEPLOY_PATH || 'deploy' }}
+          DOCKER_BUILDKIT: 1
+          COMPOSE_DOCKER_CLI_BUILD: 1
         run: |
-          set -euo pipefail
+          # --no-deps avoids restarting sibling services. --remove-orphans
+          # cleans up containers for services we removed from compose.yaml
+          # (e.g. the old proxy/certbot pair when we switched to cloudflared).
+          docker compose up -d --build --remove-orphans --no-deps \
+            backend frontend cloudflared
 
-          REMOTE="${VPS_USER}@${VPS_HOST}"
-
-          log() { printf "\033[1;34m[deploy]\033[0m %s\n" "$*"; }
-
-          log "Step 1/5 — Pull latest code on the VPS"
-          ssh "${REMOTE}" "cd '${VPS_DEPLOY_PATH}' && git fetch --all && git reset --hard origin/main"
-
-          log "Step 2/5 — Sync .env if missing (DO NOT overwrite existing)"
-          ssh "${REMOTE}" "
-            cd '${VPS_DEPLOY_PATH}'
-            if [ ! -f .env ]; then
-              echo '[deploy] No .env on the VPS — refusing to deploy.'
-              echo '[deploy] Run deploy/vps-init.sh on the VPS first to bootstrap.'
-              exit 1
-            fi
-          "
-
-          log "Step 3/5 — Build only changed images"
-          ssh "${REMOTE}" "cd '${VPS_DEPLOY_PATH}' && docker compose build --pull"
-
-          log "Step 4/5 — Recreate changed services (rolling)"
-          # --no-deps: don't restart sibling services. --remove-orphans cleans
-          # up services removed from the compose file.
-          ssh "${REMOTE}" "
-            cd '${VPS_DEPLOY_PATH}'
-            docker compose up -d --no-deps --remove-orphans \
-              backend frontend cloudflared
-          "
-
-          log "Step 5/5 — Verify the stack is healthy"
-          ssh "${REMOTE}" "
-            cd '${VPS_DEPLOY_PATH}'
-            docker compose ps
-            echo '---'
-            # Probe via the host-port frontend (8080) since the tunnel is
-            # not directly verifiable from inside the VPS.
-            curl -fsSL -o /dev/null -w 'HTTP %{http_code} in %{time_total}s (via :8080)\n' http://localhost:8080/ || echo 'Local probe failed'
-          "
-
-      - name: Notify on failure
-        if: failure()
+      - name: Health check
         run: |
-          echo "::error::Deployment to ${{ secrets.VPS_HOST }} failed."
-          echo "Check: ssh ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} 'cd ${{ secrets.VPS_DEPLOY_PATH }} && docker compose logs --tail=100'"
+          echo "Waiting 15s for services to settle..."
+          sleep 15
+          echo ""
+          echo "─── Running containers ───"
+          docker compose ps --status running
+          echo ""
+          echo "─── Local API probe (via host port 8080) ───"
+          curl -fsSL -o /dev/null -w "GET / → HTTP %{http_code} in %{time_total}s\n" http://localhost:8080/ \
+            || echo "::warning::Local probe failed — services may still be starting"
+
+      - name: Clean up dangling images
+        # Reclaim disk space from previous <none>-tagged layers after the rebuild.
+        run: docker image prune -f
