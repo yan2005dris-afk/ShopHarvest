@@ -18,6 +18,7 @@ import {
   ProductResponseDto,
   PriceObservationResponseDto,
 } from '@web-scraping/contracts/products';
+import { Public } from '../auth/public.decorator';
 
 @ApiTags('Products')
 @Controller('products')
@@ -45,6 +46,7 @@ export class ProductsController {
     type: ErrorResponseDto,
     description: 'Validation failed',
   })
+  @Public()
   @Get()
   async findAll(@Query() query: ProductQueryDto) {
     const includeHistory = query.includeHistory ?? true;
@@ -89,6 +91,7 @@ export class ProductsController {
     type: ErrorResponseDto,
     description: 'Product not found',
   })
+  @Public()
   @Get(':id')
   async findOne(@Param('id') id: string) {
     const product = await this.productsService.findOne(id);
@@ -121,6 +124,7 @@ export class ProductsController {
     type: ErrorResponseDto,
     description: 'Product not found',
   })
+  @Public()
   @Get(':id/history')
   async getPriceHistory(
     @Param('id') id: string,
@@ -154,6 +158,7 @@ export class ProductsController {
     type: ErrorResponseDto,
     description: 'Domain rule not found',
   })
+  @Public()
   @Get('by-domain/:domainRuleId')
   async findByDomain(@Param('domainRuleId') domainRuleId: string) {
     const rows = await this.productsService.findAllByDomain(domainRuleId);
