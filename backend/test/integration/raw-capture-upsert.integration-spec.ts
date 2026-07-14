@@ -2,12 +2,12 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import { AppModule } from '../../src/app.module';
 import { RawCapturesService } from '../../src/modules/raw-captures/raw-captures.service';
-import { SourcesService } from '../../src/modules/sources/sources.service';
+import { CreateSourceUseCase } from '../../src/modules/sources';
 
 describe('RawCapture Upsert (integration)', () => {
   let app: INestApplication;
   let rawCapturesService: RawCapturesService;
-  let sourcesService: SourcesService;
+  let createSource: CreateSourceUseCase;
 
   let sourceId1: string;
   let sourceId2: string;
@@ -22,17 +22,17 @@ describe('RawCapture Upsert (integration)', () => {
     await app.init();
 
     rawCapturesService = moduleFixture.get(RawCapturesService);
-    sourcesService = moduleFixture.get(SourcesService);
+    createSource = moduleFixture.get(CreateSourceUseCase);
 
     // Create test sources
-    const src1 = await sourcesService.create({
+    const src1 = await createSource.execute({
       code: 'FUZZY_TEST_SRC_1',
       name: 'Fuzzy Test Source 1',
       baseUrl: 'https://test1.example.com',
     });
     sourceId1 = src1.id;
 
-    const src2 = await sourcesService.create({
+    const src2 = await createSource.execute({
       code: 'FUZZY_TEST_SRC_2',
       name: 'Fuzzy Test Source 2',
       baseUrl: 'https://test2.example.com',
