@@ -48,13 +48,43 @@ jobs:
 
       - name: Ensure .env exists
         run: |
-          if [ ! -f .env ]; then
-            echo "::error::.env not found in $(pwd)!"
-            echo "Copy your .env to the runner workspace first:"
-            echo "  scp .env user@vps:/opt/scraper/.env"
+          # The runner workspace path varies by runner config (e.g. GitHub's
+          # default uses _work/<repo>/<repo>). Look in a few likely spots
+          # so we don't fail just because the user cloned to /opt/scraper.
+          # Priority order: current dir → parent → /opt/scraper → runner _work.
+          FOUND=""
+          for candidate in \
+            ".env" \
+            "../.env" \
+            "/opt/scraper/.env" \
+            "$RUNNER_TEMP/../_work/WebScrapingDinamico-Automatico/WebScrapingDinamico-Automatico/.env"
+          do
+            if [ -f "$candidate" ]; then
+              FOUND="$candidate"
+              break
+            fi
+          done
+
+          if [ -z "$FOUND" ]; then
+            echo "::error::.env not found!"
+            echo "Searched in: $(pwd), $(dirname $(pwd)), /opt/scraper, \$RUNNER_TEMP/_work/..."
+            echo ""
+            echo "Fix: copy or symlink your .env into the runner workspace:"
+            echo "  ln -sf /opt/scraper/.env /path/to/runner/workspace/.env"
+            echo ""
+            echo "Current workspace: $(pwd)"
+            echo "Runner temp dir:   ${RUNNER_TEMP:-not set}"
             exit 1
           fi
-          echo "Found .env ($(wc -l < .env) lines)"
+
+          # If the .env is not in the current dir (e.g. it lives in /opt/scraper),
+          # symlink it so subsequent docker compose commands find it automatically.
+          if [ "$FOUND" != ".env" ]; then
+            echo "Found .env at $FOUND — symlinking into $(pwd)/.env"
+            ln -sf "$(realpath "$FOUND")" .env
+          else
+            echo "Found .env in workspace root ($(wc -l < .env) lines)"
+          fi
 
       - name: Pre-pull base images (warms cache)
         # Pulling postgres/cloudflared/nginx from the registry upfront
