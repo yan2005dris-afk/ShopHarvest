@@ -1,9 +1,16 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
-import { MappingSessionService } from '../services/mapping-session.service';
+import { ChangeDetectionStrategy, Component, input, output, computed } from '@angular/core';
+import { MappingSessionService, ExtractedFieldOption } from '../services/mapping-session.service';
 
 const IMAGE_FIELD_PATTERNS = /^(image|img|foto|photo|picture|thumbnail|icon|imagen)/i;
 const TITLE_FIELD_PATTERNS = /^(title|name|nombre|titulo|producto?)/i;
 const PRICE_FIELD_PATTERNS = /^(price|cost|precio|pricing|amount)/i;
+
+const CANONICAL_NAMES = {
+  title: ['titulo', 'title', 'nombre', 'name', 'producto'],
+  price: ['precio', 'price', 'precio_oferta'],
+  image: ['imagen', 'image', 'foto', 'img'],
+  url: ['url', 'url_producto', 'link'],
+};
 
 /**
  * Maps a canonical field name to its badge label and CSS class.
@@ -21,7 +28,131 @@ function fieldTypeBadge(name: string): { label: string; cls: string } | null {
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    @if (session().extractedProducts().length > 0) {
+    @if (session().extractAllMode() && session().availableFields().length > 0) {
+      <!-- ExtractAll Mode: Always show field picker + products preview -->
+      <div class="vm-extractall-layout">
+        <!-- Left: Field picker -->
+        <div class="vm-extractall-panel">
+          <div class="vm-panel-header">
+            <h3>📦 {{ session().extractedProducts().length }} product(s)</h3>
+            <p class="vm-extractall-hint">Select which extracted fields to use</p>
+          </div>
+
+          <!-- Field selector for canonical names -->
+          <div class="vm-field-picker">
+            @for (field of session().availableFields(); track field.key) {
+              <div class="vm-extractall-field">
+                <div class="vm-extractall-field-header">
+                  <span class="vm-extractall-field-label">{{ field.label }}</span>
+                  <select
+                    class="vm-canonical-select"
+                    (change)="onCanonicalChange(field.key, $event)">
+                    <option value="">-- Skip --</option>
+                    @for (canon of canonicalNames; track canon.key) {
+                      <option [value]="canon.key" [selected]="isMappedTo(field.key, canon.key)">
+                        {{ canon.label }}
+                      </option>
+                    }
+                  </select>
+                </div>
+                <div class="vm-extractall-values">
+                  @for (val of field.values; track $index) {
+                    <span class="vm-extractall-value"
+                      [class.selected]="val === field.selectedValue"
+                      [class.is-image]="isImageValue(val)"
+                      [class.is-price]="isPriceValue(val)">
+                      @if (isImageValue(val)) {
+                        <img [src]="val" alt="" class="vm-value-thumb" />
+                      } @else {
+                        {{ truncate(val) }}
+                      }
+                    </span>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+
+          <!-- Selected mappings summary -->
+          @if (session().fieldMappings().length > 0) {
+            <div class="vm-mapping-summary">
+              <h4>Selected:</h4>
+              <div class="vm-mapping-list">
+                @for (mapping of session().fieldMappings(); track mapping.canonicalField) {
+                  <span class="vm-mapping-chip">
+                    {{ mapping.canonicalField }}
+                  </span>
+                }
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Right: Products preview -->
+        <div class="vm-products-panel">
+          <div class="vm-panel-header">
+            <h3>Preview</h3>
+          </div>
+          <div class="vm-product-cards">
+            @for (prod of session().extractedProducts(); track $index) {
+              <div class="vm-product-card">
+                <!-- Image -->
+                @if (imageField(); as imgKey) {
+                  @if (prod[imgKey]) {
+                    <div class="vm-prod-image-wrap">
+                      <img [src]="prod[imgKey]" alt="" class="vm-prod-image" loading="lazy" />
+                    </div>
+                  }
+                }
+
+                <div class="vm-prod-body">
+                  <!-- Title (prominent) -->
+                  @if (titleField(); as titleKey) {
+                    @if (prod[titleKey]) {
+                      <div class="vm-prod-title">{{ prod[titleKey] }}</div>
+                    }
+                  }
+
+                  <!-- Price (highlighted) -->
+                  @if (priceField(); as priceKey) {
+                    @if (prod[priceKey]) {
+                      <div class="vm-prod-price">{{ prod[priceKey] }}</div>
+                    }
+                  }
+
+                  <!-- Remaining fields (compact) with type badges -->
+                  <div class="vm-prod-grid">
+                    @for (field of session().fieldMappings(); track field.canonicalField) {
+                      @if (
+                        !isImageField(field.canonicalField) &&
+                        !isTitleField(field.canonicalField) &&
+                        !isPriceField(field.canonicalField)
+                      ) {
+                        @if (prod[field.canonicalField] != null) {
+                          <div class="vm-prod-field">
+                            <span class="vm-prod-label">{{ field.canonicalField }}</span>
+                            <span class="vm-prod-value">{{ prod[field.canonicalField] }}</span>
+                          </div>
+                        }
+                      }
+                    }
+                  </div>
+
+                  <!-- Field-type badges for this product -->
+                  <div class="vm-prod-badges">
+                    @for (field of session().fieldMappings(); track field.canonicalField) {
+                      @if (badgeLabel(field.canonicalField); as badge) {
+                        <span class="vm-badge {{ badge.cls }}">{{ badge.label }}</span>
+                      }
+                    }
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    } @else if (session().extractedProducts().length > 0) {
       <div class="vm-products-panel">
         <div class="vm-panel-header">
           <h3>{{ session().extractedProducts().length }} product(s) extracted</h3>
@@ -116,6 +247,24 @@ function fieldTypeBadge(name: string): { label: string; cls: string } | null {
     .vm-products-panel { flex: 1; overflow-y: auto; }
     .vm-panel-header { margin: 0 0 0.75rem; font-size: 0.875rem; font-weight: 600; color: var(--text-2); }
 
+    .vm-extractall-layout { display: flex; gap: 1rem; height: 100%; overflow: hidden; }
+    .vm-extractall-layout .vm-extractall-panel { width: 320px; min-width: 320px; overflow-y: auto; padding: 0.5rem 1rem; }
+    .vm-extractall-layout .vm-products-panel { flex: 1; overflow-y: auto; }
+    .vm-extractall-hint { margin: 0.25rem 0 0; font-size: 0.8125rem; color: var(--text-3); font-weight: 400; }
+    .vm-extractall-field { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.75rem; margin-bottom: 0.75rem; }
+    .vm-extractall-field-header { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.5rem; }
+    .vm-extractall-field-label { font-size: 0.8125rem; font-weight: 600; color: var(--text-1); }
+    .vm-canonical-select { background: var(--surface-2); border: 1px solid var(--border); border-radius: 0.25rem; padding: 0.25rem 0.5rem; font-size: 0.75rem; color: var(--text-1); cursor: pointer; }
+    .vm-extractall-values { display: flex; flex-wrap: wrap; gap: 0.375rem; }
+    .vm-extractall-value { display: inline-flex; align-items: center; padding: 0.25rem 0.5rem; background: var(--surface-2); border: 1px solid var(--border); border-radius: 0.25rem; font-size: 0.6875rem; color: var(--text-2); max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .vm-extractall-value.selected { border-color: var(--accent); background: var(--accent-dim); color: var(--accent); }
+    .vm-extractall-value.is-price { color: var(--success); border-color: var(--success-border); }
+    .vm-value-thumb { width: 24px; height: 24px; object-fit: cover; border-radius: 2px; }
+    .vm-mapping-summary { margin-top: 1rem; padding: 0.75rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+    .vm-mapping-summary h4 { margin: 0 0 0.5rem; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-3); }
+    .vm-mapping-list { display: flex; flex-wrap: wrap; gap: 0.375rem; }
+    .vm-mapping-chip { display: inline-flex; padding: 0.25rem 0.5rem; background: var(--accent-dim); color: var(--accent); border-radius: 999px; font-size: 0.75rem; font-weight: 600; }
+
     .vm-product-cards { display: flex; flex-direction: column; gap: 1rem; }
 
     .vm-product-card {
@@ -186,6 +335,13 @@ export class ExtractedPreviewComponent {
   readonly domainRuleSaved = input.required<boolean>();
   readonly onTryAgain = output<void>();
 
+  readonly canonicalNames = [
+    { key: 'titulo', label: '📝 Título' },
+    { key: 'precio', label: '💰 Precio' },
+    { key: 'imagen', label: '📸 Imagen' },
+    { key: 'url_producto', label: '🔗 URL' },
+  ];
+
   /** Name of the first field that looks like an image source. */
   imageField(): string | null {
     return this.findFirst(IMAGE_FIELD_PATTERNS);
@@ -211,6 +367,33 @@ export class ExtractedPreviewComponent {
 
   isPriceField(name: string): boolean {
     return PRICE_FIELD_PATTERNS.test(name.trim());
+  }
+
+  isImageValue(val: string | number | null): boolean {
+    return typeof val === 'string' && (val.startsWith('http') || val.includes('data:image'));
+  }
+
+  isPriceValue(val: string | number | null): boolean {
+    return typeof val === 'number' || (typeof val === 'string' && /^[\$\€\£]?[\d.,]+$/.test(val.trim()));
+  }
+
+  truncate(val: string | number | null): string {
+    if (val === null) return '';
+    const s = String(val);
+    return s.length > 40 ? s.substring(0, 40) + '…' : s;
+  }
+
+  isMappedTo(extractedKey: string, canonicalName: string): boolean {
+    const mappings = this.session().fieldMappings();
+    return mappings.some(m => m.canonicalField === canonicalName && m.extractedKey === extractedKey);
+  }
+
+  onCanonicalChange(extractedKey: string, event: Event): void {
+    const select = event.target as HTMLSelectElement;
+    const canonicalName = select.value;
+    if (canonicalName) {
+      this.session().selectFieldForMapping(extractedKey, canonicalName);
+    }
   }
 
   private findFirst(pattern: RegExp): string | null {

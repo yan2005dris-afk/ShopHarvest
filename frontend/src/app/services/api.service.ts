@@ -75,7 +75,16 @@ export class ApiService {
   ): Observable<{ ingested: number; domainRuleId: string }> {
     const body: Record<string, unknown> = { domain, pageUrl, products };
     if (fieldMappings && fieldMappings.length > 0) {
-      body['fieldMappings'] = fieldMappings;
+      // Transform ExtensionFieldMapping to FieldMappingDto for backend
+      // - Remove extractedKey (frontend-only)
+      // - Replace empty selector with placeholder (backend requires non-empty)
+      const dtoMappings: FieldMappingDto[] = fieldMappings.map(m => ({
+        canonicalField: m.canonicalField,
+        selector: m.selector || '[extractAll]',
+        type: m.type,
+        attribute: m.attribute,
+      }));
+      body['fieldMappings'] = dtoMappings;
     }
     if (categoryId) body['categoryId'] = categoryId;
     return this.http.post<{ ingested: number; domainRuleId: string }>(

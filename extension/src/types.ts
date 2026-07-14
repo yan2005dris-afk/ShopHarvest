@@ -29,7 +29,7 @@ export interface DomainRule {
 }
 
 export interface ExtractedProduct {
-  [key: string]: string | number | null;
+  [key: string]: string | number | null | string[] | number[];
 }
 
 // ─── Messaging ──────────────────────────────────────────────────────────────

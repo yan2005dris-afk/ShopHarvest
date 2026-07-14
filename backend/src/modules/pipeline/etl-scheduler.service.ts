@@ -60,6 +60,8 @@ export class EtlSchedulerService implements OnModuleInit {
     const sourceParam = options?.source ?? 'all';
 
     // Define source label for etlRun table
+    // For 'local' action, source is 'pending' (all pending captures)
+    // For 'full' action, source is the actual source parameter
     const source = action === 'local' ? 'pending' : sourceParam;
 
     // 1. Idempotency gate: skip if a previous RUNNING run exists.

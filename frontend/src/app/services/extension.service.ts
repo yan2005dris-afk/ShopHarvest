@@ -6,6 +6,8 @@ export interface ExtensionFieldMapping {
   selector: string;
   type: 'text' | 'attribute' | 'html';
   attribute?: string;
+  /** In extractAll mode: the key from the extracted data (e.g., 'precio', 'imagen') */
+  extractedKey?: string;
 }
 
 export interface MappingCompletePayload {
@@ -13,7 +15,9 @@ export interface MappingCompletePayload {
   containerSelector: string | null;
   domain: string;
   pageTitle: string;
-  products: Record<string, string | number | null>[];
+  products: Record<string, string | number | null | string[] | number[] | null>[];
+  /** True when user selected container without manual field mapping */
+  extractAll?: boolean;
 }
 
 export type ExtensionEvent =

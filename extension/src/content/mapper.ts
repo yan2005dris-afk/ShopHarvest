@@ -450,12 +450,13 @@ function renderPanel(): void {
   Object.assign(separator.style, { border: 'none', borderTop: '1px solid #0f3460', margin: '10px 0' });
   panelEl.appendChild(separator);
 
-  // Can finish if container + at least one field assigned
+  // Can finish if container is set — with OR without field mappings
+  // (without mappings = extractAll mode, user picks fields in frontend preview)
   const hasFields = Object.keys(assignedFields).length > 0;
-  const canFinish = hasFields && !!containerSelector;
+  const canFinish = !!containerSelector;
 
   const finishBtn = document.createElement('button');
-  finishBtn.textContent = 'Finish Mapping';
+  finishBtn.textContent = hasFields ? 'Finish Mapping' : 'Finish — Extract All';
   Object.assign(finishBtn.style, {
     width: '100%',
     background: canFinish ? '#0f3460' : '#2a2a3e',
@@ -474,6 +475,19 @@ function renderPanel(): void {
     });
   }
   panelEl.appendChild(finishBtn);
+
+  // Hint when no fields mapped (extractAll mode)
+  if (!hasFields) {
+    const hint = document.createElement('p');
+    hint.textContent = '💡 All fields will be auto-detected — pick in preview';
+    Object.assign(hint.style, {
+      margin: '0 0 6px',
+      fontSize: '10px',
+      color: '#4a9eff',
+      textAlign: 'center',
+    });
+    panelEl.appendChild(hint);
+  }
 
   const cancelBtn = document.createElement('button');
   cancelBtn.textContent = 'Cancel';
@@ -505,11 +519,13 @@ function removePanel(): void {
 }
 
 function finishMapping(): void {
-  // Extraer productos usando los selectores elegidos
+  const hasFieldMappings = Object.keys(assignedFields).length > 0;
+
+  // Extraer productos — si hay mappings definidos úsalos, si no extrae todo
   const products = extractProducts({
     domain: location.hostname,
     containerSelector: containerSelector ?? '',
-    fieldMappings: Object.values(assignedFields),
+    fieldMappings: hasFieldMappings ? Object.values(assignedFields) : [],
     createdAt: 0,
     updatedAt: 0,
   } as DomainRule);
@@ -520,6 +536,8 @@ function finishMapping(): void {
     domain: location.hostname,
     pageTitle: document.title,
     products,
+    // Indica si se extrajo todo automáticamente (sin mapeo manual)
+    extractAll: !hasFieldMappings,
   };
   chrome.runtime.sendMessage({ type: 'MAPPING_COMPLETE', payload });
   stopMapping();
@@ -806,12 +824,135 @@ function extractProductsGlobal(mappings: FieldMapping[]): ExtractedProduct[] {
   return products;
 }
 
+/**
+ * Extract ALL possible data from a container element — every text, price,
+ * image URL, and link. Returns an object with multiple values per category
+ * so the user can pick which one to use in the preview.
+ */
+export function extractAllFromContainer(container: Element): ExtractedProduct {
+  const result: ExtractedProduct = {};
+
+  // Helper: get all text content from elements matching a selector
+  const getAllText = (selector: string): string[] => {
+    try {
+      return Array.from(container.querySelectorAll(selector))
+        .map(el => el.textContent?.trim())
+        .filter((t): t is string => !!t && t.length > 0);
+    } catch {
+      return [];
+    }
+  };
+
+  // Helper: get all image src attributes
+  const getAllImages = (selector: string): string[] => {
+    try {
+      return Array.from(container.querySelectorAll(selector))
+        .map(el => (el as HTMLImageElement).src)
+        .filter((src): src is string => !!src && src.length > 0);
+    } catch {
+      return [];
+    }
+  };
+
+  // Helper: get all href attributes
+  const getAllLinks = (selector: string): string[] => {
+    try {
+      return Array.from(container.querySelectorAll(selector))
+        .map(el => (el as HTMLAnchorElement).href)
+        .filter((href): href is string => !!href && href.length > 0);
+    } catch {
+      return [];
+    }
+  };
+
+  // Prices: extract all numeric values, sort ascending, take lowest
+  const priceSelectors = [
+    '[class*="price"]',
+    '[class*="Precio"]',
+    '[class*="precio"]',
+    '[data-price]',
+    '[class*="Amount"]',
+    '[class*="amount"]',
+    'span',
+    'div',
+  ];
+  const allPrices: number[] = [];
+  for (const sel of priceSelectors) {
+    const texts = getAllText(sel);
+    for (const text of texts) {
+      const parsed = parseLocalizedPrice(text);
+      if (parsed !== null && parsed > 0) {
+        allPrices.push(parsed);
+      }
+    }
+  }
+  // Deduplicate and sort
+  const uniquePrices = [...new Set(allPrices)].sort((a, b) => a - b);
+  if (uniquePrices.length > 0) {
+    result['_all_prices'] = uniquePrices;
+    result['precio'] = uniquePrices[0]; // lowest price as default (lowercase key)
+  }
+
+  // Titles: get all text from heading-like elements
+  const titleSelectors = [
+    'h1', 'h2', 'h3', 'h4',
+    '[class*="title"]',
+    '[class*="titulo"]',
+    '[class*="name"]',
+    '[class*="product"]',
+    'a',
+  ];
+  const allTitles = titleSelectors.flatMap(sel => getAllText(sel));
+  // Filter out very short strings and URLs (min 3 chars to include short product names)
+  const validTitles = allTitles.filter(t => t.length > 3 && !t.startsWith('http'));
+  if (validTitles.length > 0) {
+    result['_all_titles'] = validTitles;
+    result['titulo'] = validTitles[0];
+    result['title'] = validTitles[0];
+  }
+
+  // Images
+  const imageSelectors = ['img', 'picture source', '[class*="image"]', '[class*="img"]'];
+  const allImages = imageSelectors.flatMap(sel => getAllImages(sel));
+  // Filter out tiny icons and base64 images (min 20 chars for URLs)
+  const validImages = allImages.filter(src =>
+    src && !src.includes('data:image') && src.length > 20
+  );
+  if (validImages.length > 0) {
+    result['_all_images'] = validImages;
+    result['imagen'] = validImages[0];
+    result['image'] = validImages[0];
+  }
+
+  // URLs (product links)
+  const linkSelectors = ['a', '[href]'];
+  const allLinks = linkSelectors.flatMap(sel => getAllLinks(sel));
+  const productLinks = allLinks.filter(href =>
+    href && !href.includes('javascript') && href.length > 20
+  );
+  if (productLinks.length > 0) {
+    result['_all_urls'] = productLinks;
+    result['url'] = productLinks[0];
+    result['url_producto'] = productLinks[0];
+  }
+
+  // Any other text that might be useful
+  const allText = container.textContent?.trim() ?? '';
+  if (allText.length > 0) {
+    result['_raw_text'] = allText;
+  }
+
+  return result;
+}
+
+/**
+ * Extract products using field mappings. When no mappings are defined,
+ * falls back to extractAllFromContainer for each container child.
+ */
 function extractProducts(rule: DomainRule): ExtractedProduct[] {
   const products: ExtractedProduct[] = [];
 
   // ── 1. Container-child iteration ────────────────────────────────
-  // Try extracting fields relative to each child of the container.
-  // Works well when selectors are relative paths within each card.
   const containers = document.querySelectorAll(rule.containerSelector);
   containers.forEach((container) => {
     const items = Array.from(container.children).filter(
@@ -820,30 +961,26 @@ function extractProducts(rule: DomainRule): ExtractedProduct[] {
 
     if (items.length > 0) {
       for (const item of items) {
-        const p = extractFieldsFromElement(item, rule.fieldMappings);
-        if (p) products.push(p);
+        // If we have field mappings, use them; otherwise extract all
+        const p = rule.fieldMappings.length > 0
+          ? extractFieldsFromElement(item, rule.fieldMappings)
+          : extractAllFromContainer(item);
+        if (p && Object.keys(p).length > 0) products.push(p);
       }
     } else {
-      // Direct product pattern — the container IS the product
-      const p = extractFieldsFromElement(container, rule.fieldMappings);
-      if (p) products.push(p);
+      const p = rule.fieldMappings.length > 0
+        ? extractFieldsFromElement(container, rule.fieldMappings)
+        : extractAllFromContainer(container);
+      if (p && Object.keys(p).length > 0) products.push(p);
     }
   });
 
   // ── 2. Global index grouping ────────────────────────────────────
-  // The extension generates absolute CSS selectors (from document root).
-  // When queried relative to a child element they rarely match, so we
-  // fall back to querying each selector globally and grouping results
-  // by DOM position: element[N] of every field → product[N].
-  //
-  // Run this ALWAYS (not only when step 1 yields 0) because global
-  // queries handle the real multi-product extraction while step 1 may
-  // accidentally grab a single product via the container itself.
-  const globals = extractProductsGlobal(rule.fieldMappings);
+  if (rule.fieldMappings.length > 0) {
+    const globals = extractProductsGlobal(rule.fieldMappings);
+    if (globals.length > 0) return globals;
+  }
 
-  // Merge: prefer global results (they capture all products), but keep
-  // container results as a fallback when global returns nothing.
-  if (globals.length > 0) return globals;
   return products;
 }
 
