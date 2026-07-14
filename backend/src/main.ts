@@ -4,34 +4,34 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
 /**
- * --smoke-run: boot the app, resolve every provider (DI graph +
- * lifecycle hooks), then exit 0 without opening a real port or
- * triggering the ETL cron tick. Used by CI to catch DI wiring
- * regressions without a live listener.
+ * --smoke-run: arranca la app, resuelve todos los providers (grafo
+ * de DI + lifecycle hooks) y sale con código 0 sin abrir un puerto
+ * real ni disparar el tick del cron de ETL. Lo usa CI para detectar
+ * regresiones de cableado de DI sin necesidad de un listener vivo.
  *
- * NestJS 11 doesn't emit a built-in "bootstrapped" log line (older
- * versions did) — logging our own confirmation line instead.
+ * ¿Por qué existe este flag? En CI se necesita validar que la
+ * aplicación "anda" antes de gastar 30+ segundos levantándola de
+ * verdad (con Postgres, Redis y un puerto). Los tests unit cubren
+ * lógica puntual pero no garantizan que todo el grafo de providers
+ * cablea y que los `onModuleInit` corren sin reventar.
+ *
+ * NestJS 11 ya no emite la línea "bootstrapped" que sí tenían las
+ * versiones viejas, por eso logueamos nuestra propia confirmación.
  */
 const SMOKE_RUN = process.argv.includes('--smoke-run');
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Global route prefix `/api`. The legacy controllers (auth, products,
-  // domains) ship without `/api/` baked into the `@Controller('…')`
-  // decorator, so this single `setGlobalPrefix` call lifts every route
-  // to `/api/*`. Documented in docs/PLAN_Entregable5_Dashboard_Reporte.md §2.2
-  // (the analytics surface was always advertised as `/api/analytics/*`).
+  // Prefijo global de rutas `/api`. Ningún controller embebe `api/` en su
+  // propio `@Controller('…')` decorator; este setGlobalPrefix es el único
+  // punto del sistema que materializa el prefijo. La superficie de
+  // analytics quedó documentada como `/api/analytics/*` en
+  // docs/PLAN_Entregable5_Dashboard_Reporte.md §2.2 y este prefijo la cumple.
   app.setGlobalPrefix('api');
 
-  // CORS whitelist: local dev origins + the production frontend.
-  //
-  // Cambio SDD: bi-dashboard-analytics. Production frontend lives on
-  // Vercel (`https://upse-bi-dashboard.vercel.app`). The origin is
-  // sourced from `FRONTEND_ORIGIN` so a future domain swap doesn't
-  // require a code change — only an env-var update on Render.
-  const defaultFrontendOrigin = 'http://localhost:4200';
-  const frontendOrigins = (process.env.FRONTEND_ORIGIN ?? defaultFrontendOrigin)
+  // Lista blanca CORS: orígenes de dev local + el frontend de producción.
+  const frontendOrigins = (process.env.FRONTEND_ORIGIN ?? 'http://localhost:4200')
     .split(',')
     .map((s) => s.trim())
     .filter(Boolean);
@@ -39,8 +39,6 @@ async function bootstrap() {
   app.enableCors({
     origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
       const allowed = [
-        'http://localhost:8080',
-        'http://localhost:4200',
         ...frontendOrigins,
       ];
       if (!origin || allowed.includes(origin) || /^(moz|chrome)-extension:\/\//.test(origin)) {
@@ -61,10 +59,8 @@ async function bootstrap() {
     }),
   );
 
-  // Slice 3 / Spec 3 REQ-SW-3, REQ-SW-4: Swagger UI is gated on
-  // NODE_ENV !== 'production'. In production, /api/docs and
-  // /api/docs-json are not registered, so any request there returns 404
-  // (verified by the e2e suite).
+  // Swagger UI
+
   if (process.env.NODE_ENV !== 'production') {
     const config = new DocumentBuilder()
       .setTitle('WebScrapingDinamico API')
