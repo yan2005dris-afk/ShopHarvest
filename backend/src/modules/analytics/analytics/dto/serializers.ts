@@ -68,7 +68,11 @@ export function serializeValue(value: unknown): unknown {
     // safe and matches the DTO contract (`type: Number`).
     return Number(value);
   }
-  if (typeof value === 'number' || typeof value === 'string' || typeof value === 'boolean') {
+  if (
+    typeof value === 'number' ||
+    typeof value === 'string' ||
+    typeof value === 'boolean'
+  ) {
     return value;
   }
   if (value instanceof Date) {
@@ -91,7 +95,7 @@ export function serializeValue(value: unknown): unknown {
   }
   if (typeof value === 'object') {
     const out: Record<string, unknown> = {};
-    const entries = Object.entries(value as Record<string, unknown>);
+    const entries = Object.entries(value);
     for (const [k, v] of entries) {
       out[k] = serializeValue(v);
     }

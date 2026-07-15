@@ -27,7 +27,9 @@ describe('AnalyticsQueryService', () => {
    * must convert.
    */
   const fakeBigInt = (v: number) => BigInt(v);
-  const fakeDecimal = (s: string): { toString(): string } => ({ toString: () => s });
+  const fakeDecimal = (s: string): { toString(): string } => ({
+    toString: () => s,
+  });
 
   beforeEach(async () => {
     queryRawUnsafeMock = jest.fn();
@@ -210,7 +212,9 @@ describe('AnalyticsQueryService', () => {
     const sql = String(queryRawUnsafeMock.mock.calls[0][0]);
     expect(sql).toContain('dw.dim_tiempo');
     expect(sql).toContain('dw.dim_fuente');
-    expect(sql).toContain('GROUP BY dt.anio, dt.trimestre, dt.nombre_mes, df.nombre_fuente');
+    expect(sql).toContain(
+      'GROUP BY dt.anio, dt.trimestre, dt.nombre_mes, df.nombre_fuente',
+    );
     expect(result.series[0].anio).toBe(2026);
     expect(result.series[0].precio_max).toBeCloseTo(199.99, 2);
     expect(result.snapshot.fecha_min).toBe('2026-06-30');
@@ -223,8 +227,12 @@ describe('AnalyticsQueryService', () => {
       .mockResolvedValueOnce(undefined);
     const result = await service.refreshMaterializedView();
     expect(executeRawUnsafeMock).toHaveBeenCalledTimes(2);
-    expect(String(executeRawUnsafeMock.mock.calls[0][0])).toContain('CONCURRENTLY');
-    expect(String(executeRawUnsafeMock.mock.calls[1][0])).not.toContain('CONCURRENTLY');
+    expect(String(executeRawUnsafeMock.mock.calls[0][0])).toContain(
+      'CONCURRENTLY',
+    );
+    expect(String(executeRawUnsafeMock.mock.calls[1][0])).not.toContain(
+      'CONCURRENTLY',
+    );
     expect(result.refreshed).toBe(true);
     expect(result.view).toBe('dw.mv_resumen_precios');
     expect(typeof result.ms).toBe('number');

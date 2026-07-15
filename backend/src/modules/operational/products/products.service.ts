@@ -146,7 +146,11 @@ export class ProductsService {
         const needsCategoryBackfill =
           dto.categoryId != null && domainRule.categoryId == null;
 
-        if (needsMappingsBackfill || needsSourceBackfill || needsCategoryBackfill) {
+        if (
+          needsMappingsBackfill ||
+          needsSourceBackfill ||
+          needsCategoryBackfill
+        ) {
           domainRule = await tx.domainRule.update({
             where: { id: domainRule.id },
             data: {
@@ -165,7 +169,8 @@ export class ProductsService {
       // mappings when provided, falling back to the stored rule.
       const mappings =
         incomingMappings ??
-        ((domainRule.fieldMappings as unknown as FieldMappingDto[]) ?? []);
+        (domainRule.fieldMappings as unknown as FieldMappingDto[]) ??
+        [];
 
       // Hoist the "no title mapping" warning so a 500-product ingest does
       // not log 500 lines.
@@ -265,12 +270,12 @@ export class ProductsService {
             create: {
               offerId: offer.id,
               sourceId: source.id,
-              payload: product as Prisma.InputJsonValue,
+              payload: product,
               status: RawCaptureStatus.UNPROCESSED,
               attempts: 0,
             },
             update: {
-              payload: product as Prisma.InputJsonValue,
+              payload: product,
               capturedAt: new Date(),
               status: RawCaptureStatus.UNPROCESSED,
               attempts: 0,
@@ -347,7 +352,9 @@ export class ProductsService {
     const asString = (v: unknown): string | undefined =>
       typeof v === 'string' && v.trim() ? v.trim() : undefined;
 
-    const imageUrl = asString(valueFor(/^image$|^img$|^foto$|^picture$|^imagen$/i));
+    const imageUrl = asString(
+      valueFor(/^image$|^img$|^foto$|^picture$|^imagen$/i),
+    );
     const sku = asString(valueFor(/^sku$/i));
     const description = asString(valueFor(/^desc/i));
 

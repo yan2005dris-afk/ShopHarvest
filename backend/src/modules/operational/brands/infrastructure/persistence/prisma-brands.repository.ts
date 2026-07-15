@@ -97,7 +97,7 @@ export class PrismaBrandsRepository implements BrandsRepository {
           aliases: row.aliases,
           createdAt: row.createdAt,
           updatedAt: row.updatedAt,
-        } as never),
+        }),
         similarity: Number(similarity.toFixed(4)),
         lowConfidence:
           similarity > LOW_CONFIDENCE_LO && similarity < LOW_CONFIDENCE_HI,

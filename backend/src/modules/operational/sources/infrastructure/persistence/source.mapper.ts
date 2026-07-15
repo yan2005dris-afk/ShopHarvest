@@ -9,7 +9,7 @@ export class SourceMapper {
       code: row.code,
       name: row.name,
       baseUrl: row.baseUrl,
-      status: row.status as SourceStatus,
+      status: row.status,
       config: (row.config as Record<string, unknown> | null) ?? null,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,

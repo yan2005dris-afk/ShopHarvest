@@ -89,67 +89,119 @@ export class DwLoaderService implements IDwLoader {
   /**
    * Normalize source names from staging data to match dim_fuente keys.
    * 'ec.shein.com' → 'shein', 'temu.com' → 'temu', 'mercadolibre.com.ec' → 'mercadolibre', 'csv_dataset' → 'csv_dataset'
-   * 
+   *
    * Smart extraction: strips known public suffixes (.com, .com.ec, .org, etc.)
    * and country codes (ec, ar, mx, etc.) to find the brand name.
    */
   private normalizeSourceName(raw: string): string {
     const clean = raw.toLowerCase().trim();
-    
+
     // Handle non-domain sources (e.g. 'csv_dataset', 'manual')
     if (!clean.includes('.')) {
       // Check if it's a known brand name directly
-      const knownBrands = ['mercadolibre', 'aliexpress', 'temu', 'shein', 'amazon', 'ebay'];
+      const knownBrands = [
+        'mercadolibre',
+        'aliexpress',
+        'temu',
+        'shein',
+        'amazon',
+        'ebay',
+      ];
       if (knownBrands.includes(clean)) return clean;
       return clean;
     }
 
     // Split domain into parts
     const parts = clean.split('.');
-    
+
     // Known public suffixes (TLDs + country-code TLDs) to skip
     const publicSuffixes = new Set([
-      'com', 'org', 'net', 'edu', 'gov', 'io', 'co',
+      'com',
+      'org',
+      'net',
+      'edu',
+      'gov',
+      'io',
+      'co',
       // Country-code TLDs
-      'ec', 'ar', 'mx', 'cl', 'co', 'br', 'pe', 'uy', 'py', 've', 'gt', 'cr', 'pa', 'do', 'hn', 'ni', 'sv',
-      'es', 'pt', 'fr', 'de', 'it', 'uk', 'ru', 'cn', 'jp', 'kr', 'in', 'au', 'nz', 'ca',
+      'ec',
+      'ar',
+      'mx',
+      'cl',
+      'co',
+      'br',
+      'pe',
+      'uy',
+      'py',
+      've',
+      'gt',
+      'cr',
+      'pa',
+      'do',
+      'hn',
+      'ni',
+      'sv',
+      'es',
+      'pt',
+      'fr',
+      'de',
+      'it',
+      'uk',
+      'ru',
+      'cn',
+      'jp',
+      'kr',
+      'in',
+      'au',
+      'nz',
+      'ca',
     ]);
-    
+
     // Known brand name parts that might appear in domains (skip these too)
     const knownBrandParts = new Set(['www', 'm', 'mobile', 'api', 'app']);
 
     // Strategy: find the first part that's NOT a known suffix or known brand part
     // But for country-code TLDs like .com.ec, .com.ar, we need 2-level TLD handling
-    // Algorithm: 
+    // Algorithm:
     // 1. If last part is a country code and second-to-last is 'com' or 'org', skip both
     // 2. Otherwise, skip the last part if it's a public suffix
     // 3. Take the first non-skipped part
-    
+
     let skipCount = 0;
     const n = parts.length;
-    
+
     if (n >= 2) {
       const last = parts[n - 1];
       const secondLast = parts[n - 2];
-      
+
       // Handle 2-level TLDs like .com.ec, .com.ar, .com.mx
-      if (publicSuffixes.has(last) && (secondLast === 'com' || secondLast === 'org' || secondLast === 'co')) {
+      if (
+        publicSuffixes.has(last) &&
+        (secondLast === 'com' || secondLast === 'org' || secondLast === 'co')
+      ) {
         skipCount = 2;
       } else if (publicSuffixes.has(last)) {
         skipCount = 1;
       }
     }
-    
+
     // Find the first part that's not a known skip or brand part
     for (let i = 0; i < n - skipCount; i++) {
       const part = parts[i];
-      if (!publicSuffixes.has(part) && !knownBrandParts.has(part) && part.length > 1) {
+      if (
+        !publicSuffixes.has(part) &&
+        !knownBrandParts.has(part) &&
+        part.length > 1
+      ) {
         return part;
       }
     }
-    
+
     // Fallback: take the first non-skipped part
-    const effectiveParts = parts.slice(0, n > 0 ? Math.max(1, n - skipCount) : 1);
+    const effectiveParts = parts.slice(
+      0,
+      n > 0 ? Math.max(1, n - skipCount) : 1,
+    );
     return effectiveParts[0] || clean;
   }
 
@@ -188,13 +240,16 @@ export class DwLoaderService implements IDwLoader {
       let encuestas: EncuestaRow[];
 
       if (opts?.inMemoryData) {
-        productos = (opts.inMemoryData.productos || []) as ProductRow[];
-        encuestas = (opts.inMemoryData.encuestas || []) as EncuestaRow[];
+        productos = opts.inMemoryData.productos || [];
+        encuestas = opts.inMemoryData.encuestas || [];
       } else {
         const envVal = this.configService.get<string>('PIPELINE_STAGING_DIR');
         const stagingDir = envVal
           ? envVal
-          : path.join(path.resolve(__dirname, '../../../../'), 'pipeline/staging');
+          : path.join(
+              path.resolve(__dirname, '../../../../'),
+              'pipeline/staging',
+            );
         productos = await this.readJsonArray<ProductRow>(
           path.join(stagingDir, 'all_products.json'),
         );
@@ -441,7 +496,10 @@ export class DwLoaderService implements IDwLoader {
       });
 
       // Normalize domain-based source codes: 'ec.shein.com' → 'shein', 'temu.com' → 'temu'
-      const rawFuente = toSafeString(item['_fuente'], 'csv_dataset').toLowerCase();
+      const rawFuente = toSafeString(
+        item['_fuente'],
+        'csv_dataset',
+      ).toLowerCase();
       const nombreFuente = this.normalizeSourceName(rawFuente);
       const nombreCategoria = toSafeString(
         item['categoria_normalizada'] ?? item['_categoria'],
@@ -464,10 +522,10 @@ export class DwLoaderService implements IDwLoader {
         // Debug logging for skipped products
         this.logger.warn(
           `Skipping product due to missing dims: titulo=${String(titulo).slice(0, 30)}, ` +
-          `idFuente=${idFuente}(wanted=${nombreFuente}), ` +
-          `idCategoria=${idCategoria}(wanted=${nombreCategoria}), ` +
-          `idTiempo=${idTiempo}(fecha=${fechaStr}), ` +
-          `idMoneda=${idMoneda}(wanted=${codigoMoneda})`
+            `idFuente=${idFuente}(wanted=${nombreFuente}), ` +
+            `idCategoria=${idCategoria}(wanted=${nombreCategoria}), ` +
+            `idTiempo=${idTiempo}(fecha=${fechaStr}), ` +
+            `idMoneda=${idMoneda}(wanted=${codigoMoneda})`,
         );
         skipped++;
         continue;
@@ -501,7 +559,10 @@ export class DwLoaderService implements IDwLoader {
           },
         });
         inserted++;
-        if (typeof item['_offerId'] === 'string' && typeof item['_sourceId'] === 'string') {
+        if (
+          typeof item['_offerId'] === 'string' &&
+          typeof item['_sourceId'] === 'string'
+        ) {
           loadedRecords.push({
             offerId: item['_offerId'],
             sourceId: item['_sourceId'],
@@ -580,13 +641,17 @@ export class DwLoaderService implements IDwLoader {
   }
 }
 
-/* eslint-disable @typescript-eslint/no-unnecessary-condition */
 if (require.main === module) {
   const configService = new ConfigService();
   const prisma = new AnalyticsPrismaService();
   const operationalPrisma = new OperationalPrismaService();
   const truncateFirst = process.argv.includes('--truncate');
-  new DwLoaderService(prisma, configService, new QualityService(), operationalPrisma)
+  new DwLoaderService(
+    prisma,
+    configService,
+    new QualityService(),
+    operationalPrisma,
+  )
     .load({ truncateFirst })
     .then(async (result) => {
       console.log(
@@ -603,4 +668,3 @@ if (require.main === module) {
       process.exit(1);
     });
 }
-/* eslint-enable @typescript-eslint/no-unnecessary-condition */

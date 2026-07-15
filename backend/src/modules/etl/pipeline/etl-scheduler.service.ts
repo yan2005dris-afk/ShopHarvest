@@ -55,7 +55,10 @@ export class EtlSchedulerService implements OnModuleInit {
    * 4-state `EtlRun` lifecycle (ETL-5): `queued` has no row yet,
    * `running` on create, `success`/`failed` on completion.
    */
-  async runEtlTick(options?: { action: 'full' | 'local'; source?: string }): Promise<void> {
+  async runEtlTick(options?: {
+    action: 'full' | 'local';
+    source?: string;
+  }): Promise<void> {
     const action = options?.action ?? 'full';
     const sourceParam = options?.source ?? 'all';
 
@@ -79,7 +82,9 @@ export class EtlSchedulerService implements OnModuleInit {
     const run = await this.prisma.etlRun.create({
       data: { source, status: 'RUNNING' },
     });
-    this.logger.log(`ETL run ${run.id} started (action: ${action}, source: ${source}).`);
+    this.logger.log(
+      `ETL run ${run.id} started (action: ${action}, source: ${source}).`,
+    );
 
     try {
       let rowsScraped = 0;
@@ -88,8 +93,12 @@ export class EtlSchedulerService implements OnModuleInit {
 
       if (action === 'local') {
         // Run only Staging & DW Load (process pending operational captures)
-        this.logger.log(`ETL run ${run.id}: running Staging for source ${sourceParam}...`);
-        const stagingResult = await this.pipelineService.runStaging({ source: sourceParam });
+        this.logger.log(
+          `ETL run ${run.id}: running Staging for source ${sourceParam}...`,
+        );
+        const stagingResult = await this.pipelineService.runStaging({
+          source: sourceParam,
+        });
         this.logger.log(`ETL run ${run.id}: running DW Loader...`);
         loadResult = await this.pipelineService.loadDw({
           inMemoryData: {
@@ -99,9 +108,12 @@ export class EtlSchedulerService implements OnModuleInit {
         });
       } else {
         // Run Scraping + Staging + DW Load (either all or specific source)
-        const runOpts = sourceParam !== 'all' ? { sources: [sourceParam as PipelineSource] } : undefined;
+        const runOpts =
+          sourceParam !== 'all'
+            ? { sources: [sourceParam as PipelineSource] }
+            : undefined;
         const summary = await this.pipelineService.runAll(runOpts);
-        
+
         rowsScraped = summary.scrapeResults.reduce(
           (acc, r) => acc + r.totalScraped,
           0,
@@ -109,7 +121,7 @@ export class EtlSchedulerService implements OnModuleInit {
         scrapeErrors = summary.scrapeResults
           .filter((r) => r.errors.length > 0)
           .map((r) => `${r.source}: ${r.errors.join('; ')}`);
-          
+
         for (const r of summary.scrapeResults) {
           this.logger.log(
             `  scrape ${r.source}: items=${r.totalScraped} errors=${r.errors.length}`,
@@ -128,7 +140,9 @@ export class EtlSchedulerService implements OnModuleInit {
             .filter(Boolean)
             .join(' | ')
             .slice(0, 2000)
-        : (scrapeErrors.length > 0 ? scrapeErrors.join(' | ').slice(0, 2000) : undefined);
+        : scrapeErrors.length > 0
+          ? scrapeErrors.join(' | ').slice(0, 2000)
+          : undefined;
 
       await this.prisma.etlRun.update({
         where: { id: run.id },

@@ -138,7 +138,11 @@ describe('PipelineController', () => {
       prisma.etlRun.findMany.mockResolvedValueOnce([mockRuns[0]]);
       prisma.etlRun.count.mockResolvedValueOnce(1);
 
-      await controller.listEtlRuns({ page: 1, limit: 10, status: 'SUCCESS' as any });
+      await controller.listEtlRuns({
+        page: 1,
+        limit: 10,
+        status: 'SUCCESS',
+      });
 
       expect(prisma.etlRun.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -152,7 +156,8 @@ describe('PipelineController', () => {
       prisma.etlRun.count.mockResolvedValueOnce(1);
 
       await controller.listEtlRuns({
-        page: 1, limit: 10,
+        page: 1,
+        limit: 10,
         from: '2026-07-10T00:00:00Z',
         to: '2026-07-11T00:00:00Z',
       });

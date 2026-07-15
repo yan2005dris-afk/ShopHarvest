@@ -31,17 +31,24 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
 
   // Lista blanca CORS: orígenes de dev local + el frontend de producción.
-  const frontendOrigins = (process.env.FRONTEND_ORIGIN ?? 'http://localhost:4200')
+  const frontendOrigins = (
+    process.env.FRONTEND_ORIGIN ?? 'http://localhost:4200'
+  )
     .split(',')
     .map((s) => s.trim())
     .filter(Boolean);
 
   app.enableCors({
-    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-      const allowed = [
-        ...frontendOrigins,
-      ];
-      if (!origin || allowed.includes(origin) || /^(moz|chrome)-extension:\/\//.test(origin)) {
+    origin: (
+      origin: string | undefined,
+      callback: (err: Error | null, allow?: boolean) => void,
+    ) => {
+      const allowed = [...frontendOrigins];
+      if (
+        !origin ||
+        allowed.includes(origin) ||
+        /^(moz|chrome)-extension:\/\//.test(origin)
+      ) {
         callback(null, true);
       } else {
         callback(new Error('Not allowed by CORS'));

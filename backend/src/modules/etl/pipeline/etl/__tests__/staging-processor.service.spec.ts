@@ -45,7 +45,7 @@ describe('StagingProcessorService', () => {
         PIPELINE_RAW_DIR: rawDir,
         PIPELINE_STAGING_DIR: stagingDir,
       }),
-      prismaMock as any,
+      prismaMock,
     );
   });
 
@@ -233,22 +233,24 @@ describe('StagingProcessorService', () => {
 
     // Force transformProduct to throw on the first call
     let callCount = 0;
-    jest.spyOn(service as any, 'transformProduct').mockImplementation((record: any) => {
-      callCount++;
-      if (callCount === 1) {
-        throw new Error('Forced transform error');
-      }
-      // Standard minimal transformation for the second one
-      return {
-        titulo_oferta: record.titulo,
-        precio_raw: record.precio,
-        precio_usd: 10,
-        url_producto: record.url_producto ?? 'https://x/2',
-        categoria_normalizada: 'otros',
-        _extraido_en: '2026-07-10',
-        _fuente: 'mercadolibre',
-      };
-    });
+    jest
+      .spyOn(service as any, 'transformProduct')
+      .mockImplementation((record: any) => {
+        callCount++;
+        if (callCount === 1) {
+          throw new Error('Forced transform error');
+        }
+        // Standard minimal transformation for the second one
+        return {
+          titulo_oferta: record.titulo,
+          precio_raw: record.precio,
+          precio_usd: 10,
+          url_producto: record.url_producto ?? 'https://x/2',
+          categoria_normalizada: 'otros',
+          _extraido_en: '2026-07-10',
+          _fuente: 'mercadolibre',
+        };
+      });
 
     const result = await service.run({
       inputDir: rawDir,

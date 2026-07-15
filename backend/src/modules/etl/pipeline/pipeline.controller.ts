@@ -14,7 +14,19 @@ import {
 } from '@nestjs/common';
 import * as path from 'path';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { interval, Observable, from, map, switchMap, takeWhile, tap, catchError, of, concatMap, mergeMap } from 'rxjs';
+import {
+  interval,
+  Observable,
+  from,
+  map,
+  switchMap,
+  takeWhile,
+  tap,
+  catchError,
+  of,
+  concatMap,
+  mergeMap,
+} from 'rxjs';
 import { ErrorResponseDto } from '@web-scraping/contracts/errors';
 import {
   PipelineSource,
@@ -188,7 +200,10 @@ export class PipelineController {
       }),
     ]);
 
-    const sourcesSummary: Record<string, { pending: number; failed: number; total: number; name: string }> = {};
+    const sourcesSummary: Record<
+      string,
+      { pending: number; failed: number; total: number; name: string }
+    > = {};
     for (const src of sources) {
       sourcesSummary[src.code] = {
         pending: 0,
@@ -226,9 +241,10 @@ export class PipelineController {
   @ApiOperation({ summary: 'List ETL runs with pagination and filters.' })
   @ApiResponse({ status: 200, type: EtlRunResponseDto, isArray: true })
   @Get('etl-runs')
-  async listEtlRuns(
-    @Query() filters: ListEtlRunsQueryDto,
-  ): Promise<{ data: EtlRunResponseDto[]; meta: { page: number; limit: number; total: number; totalPages: number } }> {
+  async listEtlRuns(@Query() filters: ListEtlRunsQueryDto): Promise<{
+    data: EtlRunResponseDto[];
+    meta: { page: number; limit: number; total: number; totalPages: number };
+  }> {
     const page = filters.page ?? 1;
     const limit = filters.limit ?? 20;
     const skip = (page - 1) * limit;
@@ -290,7 +306,10 @@ export class PipelineController {
    * that run's id instead of starting a new one (idempotency).
    */
   @ApiOperation({ summary: 'Trigger a manual ETL run.' })
-  @ApiResponse({ status: 201, description: 'Run triggered or existing RUNNING run returned.' })
+  @ApiResponse({
+    status: 201,
+    description: 'Run triggered or existing RUNNING run returned.',
+  })
   @HttpCode(201)
   @Post('etl-runs/trigger')
   async triggerEtlRun(
@@ -376,7 +395,9 @@ export class PipelineController {
                     data: { event: 'error', message: 'Run not found' },
                   } as MessageEvent;
                 }
-                return { data: { ...this.toDto(latest), event: 'progress' } } as MessageEvent;
+                return {
+                  data: { ...this.toDto(latest), event: 'progress' },
+                } as MessageEvent;
               }),
               catchError((err) =>
                 of({
@@ -388,18 +409,22 @@ export class PipelineController {
           // Emit progress event AND heartbeat event every 5 ticks (15s)
           mergeMap((event, index) => {
             if (index > 0 && index % 5 === 0) {
-              return of(
-                event,
-                { data: { event: 'heartbeat', ts: Date.now() } } as MessageEvent
-              );
+              return of(event, {
+                data: { event: 'heartbeat', ts: Date.now() },
+              } as MessageEvent);
             }
             return of(event);
           }),
           // Stop when terminal or error
           takeWhile((event) => {
             const d = event.data as Record<string, unknown>;
-            if (d['event'] === 'error' || d['event'] === 'complete') return false;
-            if (d['status'] && TERMINAL_STATUSES.includes(d['status'] as string)) return false;
+            if (d['event'] === 'error' || d['event'] === 'complete')
+              return false;
+            if (
+              d['status'] &&
+              TERMINAL_STATUSES.includes(d['status'] as string)
+            )
+              return false;
             tickCount++;
             return tickCount < 120; // max 6 minutes safety
           }, true),
@@ -409,7 +434,9 @@ export class PipelineController {
         if (err instanceof NotFoundException) {
           throw err;
         }
-        this.logger.error(`SSE stream error for run ${id}: ${(err as Error).message}`);
+        this.logger.error(
+          `SSE stream error for run ${id}: ${(err as Error).message}`,
+        );
         return of({
           data: { event: 'error', message: 'Stream error occurred' },
         } as MessageEvent);

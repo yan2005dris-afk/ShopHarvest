@@ -7,7 +7,7 @@ export class BrandMapper {
     const props: BrandProps = {
       id: row.id,
       name: row.name,
-      aliases: (row.aliases ?? []) as string[],
+      aliases: row.aliases ?? [],
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     };

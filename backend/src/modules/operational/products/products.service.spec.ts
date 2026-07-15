@@ -67,7 +67,13 @@ function buildPrismaStub() {
   }> = [];
   const rawCaptures = new Map<
     string,
-    { offerId: string; sourceId: string; payload: unknown; status?: string; attempts?: number }
+    {
+      offerId: string;
+      sourceId: string;
+      payload: unknown;
+      status?: string;
+      attempts?: number;
+    }
   >();
 
   let nextProductId = 0;
@@ -235,7 +241,13 @@ function buildPrismaStub() {
           update,
         }: {
           where: { offerId_sourceId: { offerId: string; sourceId: string } };
-          create: { offerId: string; sourceId: string; payload: unknown; status?: string; attempts?: number };
+          create: {
+            offerId: string;
+            sourceId: string;
+            payload: unknown;
+            status?: string;
+            attempts?: number;
+          };
           update: { payload: unknown; status?: string; attempts?: number };
         }) => {
           const k = rawCaptureKey(
@@ -417,11 +429,12 @@ describe('ProductsService.ingestFromExtension', () => {
 
     const offer = prisma.__state.offers.get('offer_1')!;
     const source = prisma.__state.sources.get('temu.com')!;
-    const capture = prisma.__state.rawCaptures.get(
-      `${offer.id}::${source.id}`,
-    );
+    const capture = prisma.__state.rawCaptures.get(`${offer.id}::${source.id}`);
     expect(capture).toBeDefined();
-    expect(capture!.payload).toEqual({ title: 'Zapatilla Nike', price: '29.99' });
+    expect(capture!.payload).toEqual({
+      title: 'Zapatilla Nike',
+      price: '29.99',
+    });
     expect(capture!.status).toBe('UNPROCESSED');
     expect(capture!.attempts).toBe(0);
   });

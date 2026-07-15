@@ -58,10 +58,9 @@ export class AnalyticsQueryService {
       GROUP BY df.nombre_fuente, dc.nombre_categoria
       ORDER BY precio_promedio_usd DESC
     `;
-    const rows = await this.prisma.$queryRawUnsafe<PreguntaPrincipalRowDto[]>(sql);
-    return serializeKpiRows<PreguntaPrincipalRowDto>(
-      rows as unknown as Record<string, unknown>[],
-    );
+    const rows =
+      await this.prisma.$queryRawUnsafe<PreguntaPrincipalRowDto[]>(sql);
+    return serializeKpiRows<PreguntaPrincipalRowDto>(rows);
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -100,9 +99,7 @@ export class AnalyticsQueryService {
       ORDER BY fuente, tipo DESC
     `;
     const rows = await this.prisma.$queryRawUnsafe<RankedProductRowDto[]>(sql);
-    return serializeKpiRows<RankedProductRowDto>(
-      rows as unknown as Record<string, unknown>[],
-    );
+    return serializeKpiRows<RankedProductRowDto>(rows);
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -121,10 +118,9 @@ export class AnalyticsQueryService {
       GROUP BY dc.nombre_categoria
       ORDER BY total_productos DESC
     `;
-    const rows = await this.prisma.$queryRawUnsafe<CategoryDistributionRowDto[]>(sql);
-    return serializeKpiRows<CategoryDistributionRowDto>(
-      rows as unknown as Record<string, unknown>[],
-    );
+    const rows =
+      await this.prisma.$queryRawUnsafe<CategoryDistributionRowDto[]>(sql);
+    return serializeKpiRows<CategoryDistributionRowDto>(rows);
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -148,9 +144,7 @@ export class AnalyticsQueryService {
       ORDER BY media DESC
     `;
     const rows = await this.prisma.$queryRawUnsafe<PercentileRowDto[]>(sql);
-    return serializeKpiRows<PercentileRowDto>(
-      rows as unknown as Record<string, unknown>[],
-    );
+    return serializeKpiRows<PercentileRowDto>(rows);
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -183,9 +177,7 @@ export class AnalyticsQueryService {
       ORDER BY fp.precio_usd DESC
     `;
     const rows = await this.prisma.$queryRawUnsafe<OutlierRowDto[]>(sql);
-    return serializeKpiRows<OutlierRowDto>(
-      rows as unknown as Record<string, unknown>[],
-    );
+    return serializeKpiRows<OutlierRowDto>(rows);
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -206,9 +198,7 @@ export class AnalyticsQueryService {
       ORDER BY total_encuestados DESC
     `;
     const rows = await this.prisma.$queryRawUnsafe<EncuestaRowDto[]>(sql);
-    return serializeKpiRows<EncuestaRowDto>(
-      rows as unknown as Record<string, unknown>[],
-    );
+    return serializeKpiRows<EncuestaRowDto>(rows);
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -238,9 +228,7 @@ export class AnalyticsQueryService {
     const rows = await this.prisma.$queryRawUnsafe<TimeSeriesRowDto[]>(sql);
     const snapshot = await this.analyticsService.getSnapshot();
     return {
-      series: serializeKpiRows<TimeSeriesRowDto>(
-        rows as unknown as Record<string, unknown>[],
-      ),
+      series: serializeKpiRows<TimeSeriesRowDto>(rows),
       snapshot,
     };
   }
@@ -265,7 +253,11 @@ export class AnalyticsQueryService {
   // without shelling out to psql. CONCURRENTLY requires the MV to have
   // a UNIQUE index — documented in E4 §3.
   // ─────────────────────────────────────────────────────────────
-  async refreshMaterializedView(): Promise<{ refreshed: true; view: string; ms: number }> {
+  async refreshMaterializedView(): Promise<{
+    refreshed: true;
+    view: string;
+    ms: number;
+  }> {
     const start = Date.now();
     // CONCURRENTLY is wrapped in a try/catch because if a previous
     // REFRESH left the MV in an inconsistent state, Postgres refuses the
@@ -279,8 +271,14 @@ export class AnalyticsQueryService {
       this.logger.warn(
         `REFRESH CONCURRENTLY failed (${(err as Error).message?.slice(0, 200)}); falling back to exclusive refresh`,
       );
-      await this.prisma.$executeRawUnsafe('REFRESH MATERIALIZED VIEW dw.mv_resumen_precios');
+      await this.prisma.$executeRawUnsafe(
+        'REFRESH MATERIALIZED VIEW dw.mv_resumen_precios',
+      );
     }
-    return { refreshed: true, view: 'dw.mv_resumen_precios', ms: Date.now() - start };
+    return {
+      refreshed: true,
+      view: 'dw.mv_resumen_precios',
+      ms: Date.now() - start,
+    };
   }
 }

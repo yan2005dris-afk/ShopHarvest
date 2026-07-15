@@ -24,9 +24,7 @@ import type { IDwLoader, LoadResult } from '../../etl/pipeline/interfaces';
 export class DwLoaderService {
   private readonly logger = new Logger(DwLoaderService.name);
 
-  constructor(
-    @Inject(DW_LOADER) private readonly dwLoader: IDwLoader,
-  ) {}
+  constructor(@Inject(DW_LOADER) private readonly dwLoader: IDwLoader) {}
 
   /**
    * Run the staging → DW ETL pipeline.

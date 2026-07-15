@@ -97,7 +97,8 @@ describe('AnalyticsService', () => {
     // inspecting the SQL literally to keep the spec resilient to
     // comment/whitespace edits inside the SQL string.
     queryRawUnsafeMock.mockImplementation(async (sql: string) => {
-      if (sql.includes('v_kpi_precio_promedio_categoria')) return precioCategoriaRows;
+      if (sql.includes('v_kpi_precio_promedio_categoria'))
+        return precioCategoriaRows;
       if (sql.includes('v_kpi_distribucion_fuentes')) return distribucionRows;
       if (sql.includes('v_kpi_completitud_datos')) return completitudRows;
       if (sql.includes('v_kpi_rango_precios_fuente')) return rangoRows;
@@ -130,11 +131,21 @@ describe('AnalyticsService', () => {
       expect(queryRawUnsafeMock).toHaveBeenCalledTimes(5);
       // Every $queryRawUnsafe call must target one of the dw.v_kpi_* views.
       const calledSqls = queryRawUnsafeMock.mock.calls.map((c) => String(c[0]));
-      expect(calledSqls.some((s) => s.includes('v_kpi_precio_promedio_categoria'))).toBe(true);
-      expect(calledSqls.some((s) => s.includes('v_kpi_distribucion_fuentes'))).toBe(true);
-      expect(calledSqls.some((s) => s.includes('v_kpi_completitud_datos'))).toBe(true);
-      expect(calledSqls.some((s) => s.includes('v_kpi_rango_precios_fuente'))).toBe(true);
-      expect(calledSqls.some((s) => s.includes('v_kpi_preferencia_plataformas'))).toBe(true);
+      expect(
+        calledSqls.some((s) => s.includes('v_kpi_precio_promedio_categoria')),
+      ).toBe(true);
+      expect(
+        calledSqls.some((s) => s.includes('v_kpi_distribucion_fuentes')),
+      ).toBe(true);
+      expect(
+        calledSqls.some((s) => s.includes('v_kpi_completitud_datos')),
+      ).toBe(true);
+      expect(
+        calledSqls.some((s) => s.includes('v_kpi_rango_precios_fuente')),
+      ).toBe(true);
+      expect(
+        calledSqls.some((s) => s.includes('v_kpi_preferencia_plataformas')),
+      ).toBe(true);
 
       expect(result.precio_categoria).toHaveLength(1);
       expect(result.distribucion_fuentes).toHaveLength(1);
@@ -145,7 +156,10 @@ describe('AnalyticsService', () => {
 
     it('coerces BigInt counts and Decimal prices to JS numbers on the wire', async () => {
       const result = await service.getAllKpis();
-      const row = result.precio_categoria[0] as unknown as Record<string, unknown>;
+      const row = result.precio_categoria[0] as unknown as Record<
+        string,
+        unknown
+      >;
       expect(typeof row['total_productos']).toBe('number');
       expect(row['total_productos']).toBe(42);
       expect(typeof row['precio_promedio_usd']).toBe('number');
@@ -155,11 +169,17 @@ describe('AnalyticsService', () => {
       expect(typeof row['precio_maximo']).toBe('number');
       expect(row['precio_maximo']).toBeCloseTo(199.99, 2);
 
-      const dist = result.distribucion_fuentes[0] as unknown as Record<string, unknown>;
+      const dist = result.distribucion_fuentes[0] as unknown as Record<
+        string,
+        unknown
+      >;
       expect(typeof dist['total_productos']).toBe('number');
       expect(dist['pct_contribucion']).toBe(33.1);
 
-      const rango = result.rango_precios[0] as unknown as Record<string, unknown>;
+      const rango = result.rango_precios[0] as unknown as Record<
+        string,
+        unknown
+      >;
       expect(typeof rango['n']).toBe('number');
       expect(rango['rango_total']).toBe(498);
     });
@@ -170,11 +190,15 @@ describe('AnalyticsService', () => {
       const rows = await service.getKpi('precio-categoria');
       expect(rows).toHaveLength(1);
       // Coercion still happens through serializeKpiRows.
-      expect(typeof (rows[0] as Record<string, unknown>)['total_productos']).toBe('number');
+      expect(
+        typeof (rows[0] as Record<string, unknown>)['total_productos'],
+      ).toBe('number');
     });
 
     it('throws NotFoundException for an unknown KPI name', async () => {
-      await expect(service.getKpi('not-a-kpi')).rejects.toBeInstanceOf(NotFoundException);
+      await expect(service.getKpi('not-a-kpi')).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
     });
 
     it('lists all five valid KPI names in the NotFoundException message', async () => {
@@ -236,7 +260,9 @@ describe('serializers (BigInt / Decimal coercion)', () => {
 
   it('serializeValue recurses into arrays and nested objects', () => {
     const input = { rows: [{ n: 5n, d: { toString: () => '1.5' } }] };
-    const out = serializeValue(input) as { rows: Array<{ n: number; d: number }> };
+    const out = serializeValue(input) as {
+      rows: Array<{ n: number; d: number }>;
+    };
     expect(out.rows[0].n).toBe(5);
     expect(out.rows[0].d).toBe(1.5);
   });

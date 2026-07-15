@@ -113,7 +113,11 @@ export class ProductsController {
   @ApiOperation({
     summary: 'Get the price history for a product, across all its offers',
   })
-  @ApiResponse({ status: 200, type: PriceObservationResponseDto, isArray: true })
+  @ApiResponse({
+    status: 200,
+    type: PriceObservationResponseDto,
+    isArray: true,
+  })
   @ApiResponse({
     status: 400,
     type: ErrorResponseDto,

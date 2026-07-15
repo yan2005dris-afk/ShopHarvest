@@ -79,7 +79,9 @@ export class StagingProcessorService implements IStagingProcessor {
     });
   }
 
-  async run(opts?: StagingOptions & { source?: string }): Promise<StagingResult> {
+  async run(
+    opts?: StagingOptions & { source?: string },
+  ): Promise<StagingResult> {
     const start = Date.now();
     const rawDir = this.resolveDir(
       opts?.inputDir,
@@ -99,7 +101,8 @@ export class StagingProcessorService implements IStagingProcessor {
     const rawCaptures = await this.extractRawPayloads(opts?.source);
 
     for (const rawCapture of rawCaptures) {
-      const sourceCode = (rawCapture.source?.code || PipelineSource.MERCADOLIBRE) as PipelineSource;
+      const sourceCode = (rawCapture.source?.code ||
+        PipelineSource.MERCADOLIBRE) as PipelineSource;
       const payload = rawCapture.payload;
       if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
         this.logger.error(
@@ -109,24 +112,35 @@ export class StagingProcessorService implements IStagingProcessor {
       }
       try {
         const record = { ...payload } as Record<string, unknown>;
-        
+
         // Backfill URL from Offer when missing in the raw payload
-        if (!record['url'] && !record['link'] && !record['url_producto'] && (rawCapture as any).offer) {
+        if (
+          !record['url'] &&
+          !record['link'] &&
+          !record['url_producto'] &&
+          (rawCapture as any).offer
+        ) {
           record['url_producto'] = (rawCapture as any).offer.url;
         }
 
         // Backfill extraction date from DB capturedAt when missing in the raw payload
-        const hasDate = record['_extraido_en'] || record['fecha'] || record['date'] || record['extractedAt'];
+        const hasDate =
+          record['_extraido_en'] ||
+          record['fecha'] ||
+          record['date'] ||
+          record['extractedAt'];
         if (!hasDate && rawCapture.capturedAt) {
-          record['_extraido_en'] = rawCapture.capturedAt.toISOString().slice(0, 10);
+          record['_extraido_en'] = rawCapture.capturedAt
+            .toISOString()
+            .slice(0, 10);
         }
 
         const transformed = this.transformProduct(record, sourceCode, rates);
-        
+
         // Retain metadata properties _offerId and _sourceId mapped from the matching RawCapture record
         transformed['_offerId'] = rawCapture.offerId;
         transformed['_sourceId'] = rawCapture.sourceId;
-        
+
         allRecords.push(transformed);
       } catch (err) {
         this.logger.error(
@@ -155,7 +169,11 @@ export class StagingProcessorService implements IStagingProcessor {
       }
     }
 
-    const REQUIRED_STAGING_FIELDS = ['titulo_oferta', 'url_producto', '_fuente'] as const;
+    const REQUIRED_STAGING_FIELDS = [
+      'titulo_oferta',
+      'url_producto',
+      '_fuente',
+    ] as const;
     const validRecords: Record<string, unknown>[] = [];
     for (const rec of allRecords) {
       const missing = REQUIRED_STAGING_FIELDS.filter(

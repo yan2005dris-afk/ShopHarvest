@@ -40,21 +40,30 @@ describe('Brand entity', () => {
     });
 
     it('is a no-op when name is unchanged and aliases omitted', () => {
-      const brand = Brand.create(baseCreateInput, new Date('2026-01-01T00:00:00Z'));
+      const brand = Brand.create(
+        baseCreateInput,
+        new Date('2026-01-01T00:00:00Z'),
+      );
       const before = brand.updatedAt;
       brand.update({}, new Date('2026-02-01T00:00:00Z'));
       expect(brand.updatedAt).toBe(before);
     });
 
     it('treats an unchanged name as a no-op for the field (does not bump updatedAt unless something else changes)', () => {
-      const brand = Brand.create(baseCreateInput, new Date('2026-01-01T00:00:00Z'));
+      const brand = Brand.create(
+        baseCreateInput,
+        new Date('2026-01-01T00:00:00Z'),
+      );
       const before = brand.updatedAt;
       brand.update({ name: 'Samsung' }, new Date('2026-02-01T00:00:00Z'));
       expect(brand.updatedAt).toBe(before);
     });
 
     it('bumps updatedAt only when aliases are explicitly changed', () => {
-      const brand = Brand.create(baseCreateInput, new Date('2026-01-01T00:00:00Z'));
+      const brand = Brand.create(
+        baseCreateInput,
+        new Date('2026-01-01T00:00:00Z'),
+      );
       brand.update({ aliases: ['SE'] }, new Date('2026-02-01T00:00:00Z'));
       expect(brand.updatedAt).toEqual(new Date('2026-02-01T00:00:00Z'));
     });
@@ -68,7 +77,10 @@ describe('Brand entity', () => {
 
   describe('toJSON()', () => {
     it('returns a shallow copy of the props with a copied aliases array', () => {
-      const brand = Brand.create(baseCreateInput, new Date('2026-01-01T00:00:00Z'));
+      const brand = Brand.create(
+        baseCreateInput,
+        new Date('2026-01-01T00:00:00Z'),
+      );
       const json = brand.toJSON();
       expect(json).toEqual({
         id: 'brd_1',

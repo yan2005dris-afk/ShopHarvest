@@ -263,7 +263,7 @@ describe('DwLoaderService', () => {
 
     const result = await service.load({
       inMemoryData: {
-        productos: [VALID_PRODUCT] as any,
+        productos: [VALID_PRODUCT],
         encuestas: [],
       },
     });

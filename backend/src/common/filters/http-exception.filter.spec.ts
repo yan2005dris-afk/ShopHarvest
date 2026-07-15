@@ -210,7 +210,7 @@ describe('HttpExceptionFilter', () => {
       process.env.NODE_ENV = 'production';
       try {
         const body = filter.toBody(new Error('SECRET STACK TRACE'), instance);
-expect(body.status).toBe(500);
+        expect(body.status).toBe(500);
         expect(body.detail).toBe(RFC7807_MESSAGES.UNEXPECTED);
         expect(body.detail).not.toContain('SECRET');
       } finally {

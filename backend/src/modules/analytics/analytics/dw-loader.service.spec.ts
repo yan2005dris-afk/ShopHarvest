@@ -25,12 +25,16 @@ describe('DwLoaderService (thin wrapper around IDwLoader)', () => {
   let errorSpy: jest.SpyInstance;
 
   beforeEach(async () => {
-    logSpy = jest.spyOn(Logger.prototype, 'log').mockImplementation(() => undefined);
-    errorSpy = jest.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
+    logSpy = jest
+      .spyOn(Logger.prototype, 'log')
+      .mockImplementation(() => undefined);
+    errorSpy = jest
+      .spyOn(Logger.prototype, 'error')
+      .mockImplementation(() => undefined);
 
     dwLoaderMock = {
       load: jest.fn(),
-    } as unknown as jest.Mocked<IDwLoader>;
+    };
 
     const moduleRef: TestingModule = await Test.createTestingModule({
       providers: [

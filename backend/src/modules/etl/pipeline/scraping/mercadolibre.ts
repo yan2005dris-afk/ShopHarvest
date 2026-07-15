@@ -203,7 +203,10 @@ async function scrapeCategoryWithRetry(
       // indicate a blocked page. The `ui-search` class is absent on the ML
       // home page (a valid page), so checking for it causes false positives.
       const pageContent = await page.content();
-      if (pageContent.includes('account-verification') || pageContent.includes('captcha')) {
+      if (
+        pageContent.includes('account-verification') ||
+        pageContent.includes('captcha')
+      ) {
         throw new Error(`Blocked by anti-bot: redirected to verification page`);
       }
       const items = await extractItems(page, maxItems);
@@ -250,9 +253,15 @@ async function extractItems(
         if (cards.length > 0) {
           return cards.slice(0, cap).map((card) => {
             const el = card as HTMLElement;
-            const titleEl = el.querySelector('.poly-component__title, .ui-search-item__title, h2 a, [class*="poly-title"]');
-            const priceEl = el.querySelector('.andes-money-amount__fraction, .poly-price__current .andes-money-amount__fraction');
-            const urlEl = el.querySelector('.poly-component__title a, a.ui-search-item__group__element') as HTMLAnchorElement | null;
+            const titleEl = el.querySelector(
+              '.poly-component__title, .ui-search-item__title, h2 a, [class*="poly-title"]',
+            );
+            const priceEl = el.querySelector(
+              '.andes-money-amount__fraction, .poly-price__current .andes-money-amount__fraction',
+            );
+            const urlEl = el.querySelector(
+              '.poly-component__title a, a.ui-search-item__group__element',
+            );
             return {
               titulo: titleEl?.textContent?.trim() ?? null,
               precio: priceEl?.textContent?.trim() ?? null,

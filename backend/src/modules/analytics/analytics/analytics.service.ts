@@ -8,10 +8,7 @@ import {
   KpiRangoPreciosDto,
   KpiPreferenciaDto,
 } from '@web-scraping/contracts/analytics';
-import {
-  serializeKpiRow,
-  serializeKpiRows,
-} from './dto/serializers';
+import { serializeKpiRow, serializeKpiRows } from './dto/serializers';
 
 /**
  * AnalyticsService — KPI card endpoints backed by `dw.v_kpi_*` views.
@@ -40,15 +37,16 @@ export class AnalyticsService {
   ] as const;
 
   /** Map KPI name → SQL statement. Centralized to avoid string drift. */
-  private static readonly KPI_SQL: Record<(typeof AnalyticsService.KPI_NAMES)[number], string> =
-    {
-      'precio-categoria': 'SELECT * FROM dw.v_kpi_precio_promedio_categoria',
-      'distribucion-fuentes':
-        'SELECT * FROM dw.v_kpi_distribucion_fuentes',
-      completitud: 'SELECT * FROM dw.v_kpi_completitud_datos',
-      'rango-precios': 'SELECT * FROM dw.v_kpi_rango_precios_fuente',
-      preferencia: 'SELECT * FROM dw.v_kpi_preferencia_plataformas',
-    };
+  private static readonly KPI_SQL: Record<
+    (typeof AnalyticsService.KPI_NAMES)[number],
+    string
+  > = {
+    'precio-categoria': 'SELECT * FROM dw.v_kpi_precio_promedio_categoria',
+    'distribucion-fuentes': 'SELECT * FROM dw.v_kpi_distribucion_fuentes',
+    completitud: 'SELECT * FROM dw.v_kpi_completitud_datos',
+    'rango-precios': 'SELECT * FROM dw.v_kpi_rango_precios_fuente',
+    preferencia: 'SELECT * FROM dw.v_kpi_preferencia_plataformas',
+  };
 
   constructor(private readonly prisma: AnalyticsPrismaService) {}
 
@@ -63,24 +61,29 @@ export class AnalyticsService {
    * dashboard.
    */
   async getAllKpis(): Promise<AllKpisResponseDto> {
-    const [precioCategoria, distribucionFuentes, completitud, rangoPrecios, preferencia] =
-      await Promise.all([
-        this.prisma.$queryRawUnsafe<KpiPrecioCategoriaDto[]>(
-          AnalyticsService.KPI_SQL['precio-categoria'],
-        ),
-        this.prisma.$queryRawUnsafe<KpiDistribucionFuentesDto[]>(
-          AnalyticsService.KPI_SQL['distribucion-fuentes'],
-        ),
-        this.prisma.$queryRawUnsafe<KpiCompletitudDto[]>(
-          AnalyticsService.KPI_SQL['completitud'],
-        ),
-        this.prisma.$queryRawUnsafe<KpiRangoPreciosDto[]>(
-          AnalyticsService.KPI_SQL['rango-precios'],
-        ),
-        this.prisma.$queryRawUnsafe<KpiPreferenciaDto[]>(
-          AnalyticsService.KPI_SQL['preferencia'],
-        ),
-      ]);
+    const [
+      precioCategoria,
+      distribucionFuentes,
+      completitud,
+      rangoPrecios,
+      preferencia,
+    ] = await Promise.all([
+      this.prisma.$queryRawUnsafe<KpiPrecioCategoriaDto[]>(
+        AnalyticsService.KPI_SQL['precio-categoria'],
+      ),
+      this.prisma.$queryRawUnsafe<KpiDistribucionFuentesDto[]>(
+        AnalyticsService.KPI_SQL['distribucion-fuentes'],
+      ),
+      this.prisma.$queryRawUnsafe<KpiCompletitudDto[]>(
+        AnalyticsService.KPI_SQL['completitud'],
+      ),
+      this.prisma.$queryRawUnsafe<KpiRangoPreciosDto[]>(
+        AnalyticsService.KPI_SQL['rango-precios'],
+      ),
+      this.prisma.$queryRawUnsafe<KpiPreferenciaDto[]>(
+        AnalyticsService.KPI_SQL['preferencia'],
+      ),
+    ]);
 
     return {
       precio_categoria: serializeKpiRows(precioCategoria),
@@ -98,13 +101,15 @@ export class AnalyticsService {
    * controller (e.g. calls the service directly from another module).
    */
   async getKpi(name: string): Promise<unknown[]> {
-    const sql = AnalyticsService.KPI_SQL[name as keyof typeof AnalyticsService.KPI_SQL];
+    const sql =
+      AnalyticsService.KPI_SQL[name as keyof typeof AnalyticsService.KPI_SQL];
     if (!sql) {
       throw new NotFoundException(
         `Unknown KPI "${name}". Valid names: ${AnalyticsService.KPI_NAMES.join(', ')}`,
       );
     }
-    const rows = await this.prisma.$queryRawUnsafe<Record<string, unknown>[]>(sql);
+    const rows =
+      await this.prisma.$queryRawUnsafe<Record<string, unknown>[]>(sql);
     return serializeKpiRows(rows);
   }
 
@@ -119,15 +124,29 @@ export class AnalyticsService {
     fechas_distintas: number;
   }> {
     const rows = await this.prisma.$queryRawUnsafe<
-      Array<{ fecha_min: Date | null; fecha_max: Date | null; fechas_distintas: bigint }>
+      Array<{
+        fecha_min: Date | null;
+        fecha_max: Date | null;
+        fechas_distintas: bigint;
+      }>
     >(
       'SELECT MIN(fecha_completa) AS fecha_min, MAX(fecha_completa) AS fecha_max, ' +
         'COUNT(*) AS fechas_distintas FROM dw.dim_tiempo',
     );
-    const row = rows[0] ?? { fecha_min: null, fecha_max: null, fechas_distintas: 0n };
+    const row = rows[0] ?? {
+      fecha_min: null,
+      fecha_max: null,
+      fechas_distintas: 0n,
+    };
     return serializeKpiRow({
-      fecha_min: row.fecha_min instanceof Date ? row.fecha_min.toISOString().slice(0, 10) : null,
-      fecha_max: row.fecha_max instanceof Date ? row.fecha_max.toISOString().slice(0, 10) : null,
+      fecha_min:
+        row.fecha_min instanceof Date
+          ? row.fecha_min.toISOString().slice(0, 10)
+          : null,
+      fecha_max:
+        row.fecha_max instanceof Date
+          ? row.fecha_max.toISOString().slice(0, 10)
+          : null,
       fechas_distintas: Number(row.fechas_distintas ?? 0),
     });
   }
@@ -149,9 +168,10 @@ export class AnalyticsService {
       UNION ALL SELECT 'fact_encuesta_consumo', COUNT(*) FROM dw.fact_encuesta_consumo
       ORDER BY tabla
     `;
-    const rows = await this.prisma.$queryRawUnsafe<
-      Array<{ tabla: string; registros: bigint }>
-    >(sql);
+    const rows =
+      await this.prisma.$queryRawUnsafe<
+        Array<{ tabla: string; registros: bigint }>
+      >(sql);
     return rows.map((r) => ({
       tabla: r.tabla,
       registros: Number(r.registros ?? 0n),

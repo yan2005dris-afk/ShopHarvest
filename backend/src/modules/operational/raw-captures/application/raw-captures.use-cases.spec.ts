@@ -138,9 +138,9 @@ describe('FindRawCaptureUseCase', () => {
     repository.findByKey.mockResolvedValue(null);
     const useCase = new FindRawCaptureUseCase(repository);
 
-    await expect(
-      useCase.execute('missing', 'src_001'),
-    ).rejects.toBeInstanceOf(RawCaptureNotFoundError);
+    await expect(useCase.execute('missing', 'src_001')).rejects.toBeInstanceOf(
+      RawCaptureNotFoundError,
+    );
   });
 });
 

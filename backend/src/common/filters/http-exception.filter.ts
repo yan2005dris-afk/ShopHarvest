@@ -63,7 +63,9 @@ const toTitleCase = (snake: string): string =>
   snake
     .toLowerCase()
     .split('_')
-    .map((word) => (word.length > 0 ? word[0].toUpperCase() + word.slice(1) : word))
+    .map((word) =>
+      word.length > 0 ? word[0].toUpperCase() + word.slice(1) : word,
+    )
     .join(' ');
 
 const reasonFor = (status: number): string =>

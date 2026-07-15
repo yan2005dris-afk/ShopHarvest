@@ -1,7 +1,5 @@
 import { Source, UpdateSourceInput } from './source.entity';
-import {
-  InvalidSourceStatusTransitionError,
-} from './source.errors';
+import { InvalidSourceStatusTransitionError } from './source.errors';
 
 describe('Source entity', () => {
   const baseCreateInput = {
@@ -13,7 +11,10 @@ describe('Source entity', () => {
 
   describe('create()', () => {
     it('creates a source with inactive status by default', () => {
-      const source = Source.create(baseCreateInput, new Date('2026-01-01T00:00:00Z'));
+      const source = Source.create(
+        baseCreateInput,
+        new Date('2026-01-01T00:00:00Z'),
+      );
       expect(source.id).toBe('src_1');
       expect(source.code).toBe('ML_AR');
       expect(source.name).toBe('Mercado Libre Argentina');
@@ -139,7 +140,10 @@ describe('Source entity', () => {
 
   describe('toJSON()', () => {
     it('returns a shallow copy of the props', () => {
-      const source = Source.create(baseCreateInput, new Date('2026-01-01T00:00:00Z'));
+      const source = Source.create(
+        baseCreateInput,
+        new Date('2026-01-01T00:00:00Z'),
+      );
       const json = source.toJSON();
       expect(json).toEqual({
         id: 'src_1',

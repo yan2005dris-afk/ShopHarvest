@@ -13,12 +13,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import {
-  ApiOperation,
-  ApiQuery,
-  ApiResponse,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ErrorResponseDto } from '@web-scraping/contracts/errors';
 import {
   BrandResponseDto,
@@ -45,17 +40,25 @@ import {
 @Controller('brands')
 export class BrandsHttpController {
   constructor(
-    @Inject(CreateBrandUseCase) private readonly createUseCase: CreateBrandUseCase,
+    @Inject(CreateBrandUseCase)
+    private readonly createUseCase: CreateBrandUseCase,
     @Inject(FindBrandUseCase) private readonly findUseCase: FindBrandUseCase,
-    @Inject(FuzzyMatchBrandsUseCase) private readonly fuzzyMatchUseCase: FuzzyMatchBrandsUseCase,
+    @Inject(FuzzyMatchBrandsUseCase)
+    private readonly fuzzyMatchUseCase: FuzzyMatchBrandsUseCase,
     @Inject(ListBrandsUseCase) private readonly listUseCase: ListBrandsUseCase,
-    @Inject(UpdateBrandUseCase) private readonly updateUseCase: UpdateBrandUseCase,
-    @Inject(DeleteBrandUseCase) private readonly deleteUseCase: DeleteBrandUseCase,
+    @Inject(UpdateBrandUseCase)
+    private readonly updateUseCase: UpdateBrandUseCase,
+    @Inject(DeleteBrandUseCase)
+    private readonly deleteUseCase: DeleteBrandUseCase,
   ) {}
 
   @ApiOperation({ summary: 'List all brands' })
   @ApiResponse({ status: 200, type: BrandResponseDto, isArray: true })
-  @ApiResponse({ status: 400, type: ErrorResponseDto, description: 'Validation failed' })
+  @ApiResponse({
+    status: 400,
+    type: ErrorResponseDto,
+    description: 'Validation failed',
+  })
   @Get()
   async findAll(): Promise<BrandResponseDto[]> {
     const brands = await this.listUseCase.execute();
@@ -66,10 +69,24 @@ export class BrandsHttpController {
   // match `:id="fuzzy"`. Route order matters: GET /:id eats everything else
   // when declared first.
   @ApiOperation({ summary: 'Fuzzy-match brands by name' })
-  @ApiQuery({ name: 'q', required: true, type: String, description: 'Search query' })
-  @ApiQuery({ name: 'threshold', required: false, type: Number, description: 'Minimum similarity (default 0.6)' })
+  @ApiQuery({
+    name: 'q',
+    required: true,
+    type: String,
+    description: 'Search query',
+  })
+  @ApiQuery({
+    name: 'threshold',
+    required: false,
+    type: Number,
+    description: 'Minimum similarity (default 0.6)',
+  })
   @ApiResponse({ status: 200, type: FuzzyMatchResultDto, isArray: true })
-  @ApiResponse({ status: 400, type: ErrorResponseDto, description: 'Validation failed' })
+  @ApiResponse({
+    status: 400,
+    type: ErrorResponseDto,
+    description: 'Validation failed',
+  })
   @Get('fuzzy')
   async fuzzyMatch(
     @Query('q') q: string,
@@ -83,8 +100,16 @@ export class BrandsHttpController {
 
   @ApiOperation({ summary: 'Get a single brand by id' })
   @ApiResponse({ status: 200, type: BrandResponseDto })
-  @ApiResponse({ status: 400, type: ErrorResponseDto, description: 'Validation failed' })
-  @ApiResponse({ status: 404, type: ErrorResponseDto, description: 'Brand not found' })
+  @ApiResponse({
+    status: 400,
+    type: ErrorResponseDto,
+    description: 'Validation failed',
+  })
+  @ApiResponse({
+    status: 404,
+    type: ErrorResponseDto,
+    description: 'Brand not found',
+  })
   @Get(':id')
   async findOne(@Param('id') id: string): Promise<BrandResponseDto> {
     const brand = await this.findUseCase.execute(id);
@@ -93,8 +118,16 @@ export class BrandsHttpController {
 
   @ApiOperation({ summary: 'Create a new brand' })
   @ApiResponse({ status: 201, type: BrandResponseDto })
-  @ApiResponse({ status: 400, type: ErrorResponseDto, description: 'Validation failed' })
-  @ApiResponse({ status: 409, type: ErrorResponseDto, description: 'Duplicate brand name' })
+  @ApiResponse({
+    status: 400,
+    type: ErrorResponseDto,
+    description: 'Validation failed',
+  })
+  @ApiResponse({
+    status: 409,
+    type: ErrorResponseDto,
+    description: 'Duplicate brand name',
+  })
   @Post()
   async create(@Body() dto: CreateBrandDto): Promise<BrandResponseDto> {
     try {
@@ -110,8 +143,16 @@ export class BrandsHttpController {
 
   @ApiOperation({ summary: 'Update a brand' })
   @ApiResponse({ status: 200, type: BrandResponseDto })
-  @ApiResponse({ status: 400, type: ErrorResponseDto, description: 'Validation failed' })
-  @ApiResponse({ status: 404, type: ErrorResponseDto, description: 'Brand not found' })
+  @ApiResponse({
+    status: 400,
+    type: ErrorResponseDto,
+    description: 'Validation failed',
+  })
+  @ApiResponse({
+    status: 404,
+    type: ErrorResponseDto,
+    description: 'Brand not found',
+  })
   @Patch(':id')
   async update(
     @Param('id') id: string,
@@ -131,8 +172,16 @@ export class BrandsHttpController {
 
   @ApiOperation({ summary: 'Delete a brand' })
   @ApiResponse({ status: 200, description: 'Brand deleted' })
-  @ApiResponse({ status: 400, type: ErrorResponseDto, description: 'Validation failed' })
-  @ApiResponse({ status: 404, type: ErrorResponseDto, description: 'Brand not found' })
+  @ApiResponse({
+    status: 400,
+    type: ErrorResponseDto,
+    description: 'Validation failed',
+  })
+  @ApiResponse({
+    status: 404,
+    type: ErrorResponseDto,
+    description: 'Brand not found',
+  })
   @Delete(':id')
   async remove(@Param('id') id: string): Promise<{ deleted: true }> {
     try {
