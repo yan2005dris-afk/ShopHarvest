@@ -6,6 +6,15 @@ import { EtlRunsTableComponent } from './components/etl-runs-table.component';
 import { KeyValuePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
+/**
+ * EtlManagementPage — operator surface for monitoring and manually
+ * triggering ETL runs.
+ *
+ * Sprint 4: tokens migrated to Insight Flow (Material 3 + Tailwind v4
+ * utility classes). The page keeps all logic intact — only the
+ * template/styling changes. Components imported below still consume
+ * legacy tokens and will be migrated in subsequent sprints.
+ */
 @Component({
   selector: 'app-etl-management-page',
   standalone: true,
@@ -17,92 +26,144 @@ import { FormsModule } from '@angular/forms';
     FormsModule,
   ],
   template: `
-    <div class="page-container">
-      <header class="page-header">
-        <div class="header-title">
-          <h2>Gestión de Pipeline ETL</h2>
-          <p class="subtitle">Monitoreo y ejecución manual de procesos de extracción y carga</p>
+    <div class="flex flex-col gap-5 p-6">
+      <header class="flex items-center justify-between">
+        <div>
+          <h2 class="text-headline-md mb-1 m-0 font-bold text-on-surface">
+            Gestión de Pipeline ETL
+          </h2>
+          <p class="text-body-md m-0 text-on-surface-variant">
+            Monitoreo y ejecución manual de procesos de extracción y carga
+          </p>
         </div>
-        <div class="header-actions">
-          <button 
-            class="btn-trigger" 
+        <div>
+          <button
+            type="button"
+            class="flex items-center gap-2 rounded-md bg-primary px-4 py-2.5 text-body-md font-semibold text-on-primary transition-colors hover:bg-primary-container disabled:cursor-not-allowed disabled:opacity-50"
             [disabled]="store.loading() || selectedPendingSources().size === 0"
-            [title]="selectedPendingSources().size === 0 ? 'Seleccioná fuentes pendientes para ejecutar' : 'Ejecutar ETL'"
+            [title]="
+              selectedPendingSources().size === 0
+                ? 'Seleccioná fuentes pendientes para ejecutar'
+                : 'Ejecutar ETL'
+            "
             (click)="onOpenTriggerModal()"
+            data-testid="btn-trigger"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polygon points="5 3 19 12 5 21 5 3"/>
-            </svg>
+            <span class="material-symbols-outlined" style="font-size: 18px">play_arrow</span>
             <span>Ejecutar ETL</span>
           </button>
         </div>
       </header>
 
       @if (store.error(); as err) {
-        <div class="alert alert-danger">
-          <span class="alert-icon">⚠️</span>
-          <div class="alert-content">
+        <div
+          class="flex items-center gap-3 rounded-md border border-outline-variant bg-danger-dim p-3 text-body-md text-danger relative"
+          role="alert"
+        >
+          <span class="material-symbols-outlined" style="font-size: 20px" aria-hidden="true"
+            >error</span
+          >
+          <div>
             <strong>Error:</strong> {{ err }}
           </div>
-          <button class="alert-close" (click)="store.clearError()">&times;</button>
+          <button
+            type="button"
+            class="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-danger transition-colors hover:bg-danger-dim"
+            (click)="store.clearError()"
+            aria-label="Cerrar alerta"
+          >
+            <span class="material-symbols-outlined" style="font-size: 18px">close</span>
+          </button>
         </div>
       }
 
       <!-- Pending Queue Summary with Multi-Select -->
       @if (store.pendingSummary(); as pending) {
-        <div class="pending-summary">
-          <div class="pending-header">
-            <h3>Lotes de Ingesta Pendientes</h3>
-            <div class="pending-actions">
-              <span class="pending-badge" [class.badge-clean]="pending.total === 0">
-                {{ selectedPendingSources().size }} de {{ pending.total }} items seleccionados
+        <section
+          class="flex flex-col gap-4 rounded-xl border border-outline-variant bg-surface p-5"
+          aria-label="Lotes pendientes"
+        >
+          <header class="flex items-center justify-between">
+            <h3 class="text-headline-sm m-0 font-semibold text-on-surface">
+              Lotes de Ingesta Pendientes
+            </h3>
+            <div class="flex items-center gap-3">
+              <span
+                class="rounded-full px-2.5 py-1 text-[11px] font-bold tracking-wider uppercase"
+                [class.bg-success-dim]="pending.total === 0"
+                [class.text-success]="pending.total === 0"
+                [class.bg-warning-dim]="pending.total > 0"
+                [class.text-warning]="pending.total > 0"
+              >
+                {{ selectedPendingSources().size }} de {{ pending.total }} items
+                seleccionados
               </span>
             </div>
-          </div>
-          <div class="pending-grid">
+          </header>
+          <div
+            class="grid gap-4"
+            style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr))"
+          >
             @for (item of pending.sources | keyvalue; track item.key) {
-              <div 
-                class="pending-card"
-                [class.selected]="selectedPendingSources().has(toKey(item.key))"
+              <div
+                class="flex cursor-pointer gap-3 rounded-md border p-4 transition-all"
+                [class.border-outline-variant]="!selectedPendingSources().has(toKey(item.key))"
+                [class.bg-surface-container-low]="!selectedPendingSources().has(toKey(item.key))"
+                [class.border-primary]="selectedPendingSources().has(toKey(item.key))"
+                [class.bg-primary-fixed]="selectedPendingSources().has(toKey(item.key))"
                 (click)="togglePendingSource(toKey(item.key))"
               >
-                <div class="card-checkbox">
-                  <input type="checkbox" 
-                         [checked]="selectedPendingSources().has(toKey(item.key))"
-                         (click)="$event.stopPropagation()"
-                         (change)="togglePendingSource(toKey(item.key))" />
+                <div class="flex items-start pt-0.5">
+                  <input
+                    type="checkbox"
+                    class="size-4.5 cursor-pointer accent-primary"
+                    [checked]="selectedPendingSources().has(toKey(item.key))"
+                    (click)="$event.stopPropagation()"
+                    (change)="togglePendingSource(toKey(item.key))"
+                  />
                 </div>
-                <div class="card-content">
-                  <div class="card-title-row">
-                    <span class="source-name">{{ item.value.name }}</span>
-                    <span class="source-code">{{ item.key }}</span>
+                <div class="flex flex-1 flex-col gap-3">
+                  <div class="flex items-baseline justify-between">
+                    <span class="text-body-md font-semibold text-on-surface">{{
+                      item.value.name
+                    }}</span>
+                    <span
+                      class="text-[11px] font-bold tracking-wider text-on-surface-variant uppercase"
+                      >{{ item.key }}</span
+                    >
                   </div>
-                  <div class="card-stats">
-                    <div class="stat-group">
-                      <span class="stat-label">Nuevos</span>
-                      <span class="stat-val pending-count">{{ item.value.pending }}</span>
+                  <div class="flex gap-6">
+                    <div class="flex flex-col gap-1">
+                      <span class="text-label-caps text-on-surface-variant">Nuevos</span>
+                      <span class="text-xl font-bold text-on-surface">{{
+                        item.value.pending
+                      }}</span>
                     </div>
-                    <div class="stat-group">
-                      <span class="stat-label">Fallidos</span>
-                      <span class="stat-val failed-count" [class.has-failed]="item.value.failed > 0">{{ item.value.failed }}</span>
+                    <div class="flex flex-col gap-1">
+                      <span class="text-label-caps text-on-surface-variant">Fallidos</span>
+                      <span
+                        class="text-xl font-bold text-on-surface"
+                        [class.text-danger]="item.value.failed > 0"
+                        >{{ item.value.failed }}</span
+                      >
                     </div>
                   </div>
                 </div>
               </div>
             }
           </div>
-        </div>
+        </section>
       }
 
-      <div class="page-content">
+      <div class="flex flex-col gap-5">
         <!-- Live SSE stream panel -->
         <app-etl-load-preview [run]="store.selectedRun()" />
 
         <!-- Paginated Runs Table -->
-        <app-etl-runs-table 
-          [runs]="store.runs()" 
-          [meta]="store.meta()" 
-          [selectedRunId]="store.selectedRun()?.id" 
+        <app-etl-runs-table
+          [runs]="store.runs()"
+          [meta]="store.meta()"
+          [selectedRunId]="store.selectedRun()?.id"
           [loading]="store.loading()"
           (pageChange)="store.setPage($event)"
           (rowSelect)="store.selectRun($event)"
@@ -112,7 +173,7 @@ import { FormsModule } from '@angular/forms';
       </div>
 
       <!-- Trigger ETL confirm modal -->
-      <app-confirm-modal 
+      <app-confirm-modal
         [isOpen]="isConfirmOpen()"
         [pendingSources]="pendingSourceOptions()"
         title="Ejecutar Pipeline ETL"
@@ -124,196 +185,13 @@ import { FormsModule } from '@angular/forms';
       />
     </div>
   `,
-  styles: [`
-    .page-container {
-      padding: 24px;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
-    .page-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .header-title h2 {
-      margin: 0 0 4px 0;
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: var(--text-1);
-    }
-    .header-title .subtitle {
-      margin: 0;
-      font-size: 0.875rem;
-      color: var(--text-2);
-    }
-    .pending-summary {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-    .pending-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .pending-header h3 {
-      margin: 0;
-      font-size: 1.1rem;
-      font-weight: 600;
-      color: var(--text-1);
-    }
-    .pending-actions {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .pending-badge {
-      font-size: 0.75rem;
-      font-weight: 700;
-      background: var(--warning-dim, rgba(245, 158, 11, 0.1));
-      color: var(--warning);
-      padding: 4px 10px;
-      border-radius: 999px;
-    }
-    .pending-badge.badge-clean {
-      background: var(--success-dim);
-      color: var(--success);
-    }
-    .pending-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 16px;
-    }
-    .pending-card {
-      background: var(--surface-2);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 16px;
-      display: flex;
-      gap: 12px;
-      cursor: pointer;
-      transition: all 0.15s ease;
-    }
-    .pending-card:hover {
-      background: var(--surface-3);
-      border-color: var(--accent);
-    }
-    .pending-card.selected {
-      background: var(--accent-dim);
-      border-color: var(--accent);
-    }
-    .card-checkbox {
-      display: flex;
-      align-items: flex-start;
-      padding-top: 2px;
-    }
-    .card-checkbox input[type="checkbox"] {
-      width: 18px;
-      height: 18px;
-      cursor: pointer;
-      accent-color: var(--accent);
-    }
-    .card-content {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-    .card-title-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-    }
-    .source-name {
-      font-size: 0.95rem;
-      font-weight: 600;
-      color: var(--text-1);
-    }
-    .source-code {
-      font-size: 0.75rem;
-      color: var(--text-3);
-      text-transform: uppercase;
-      font-weight: 700;
-    }
-    .card-stats {
-      display: flex;
-      gap: 24px;
-    }
-    .stat-group {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-    .stat-label {
-      font-size: 0.75rem;
-      color: var(--text-2);
-      font-weight: 500;
-    }
-    .stat-val {
-      font-size: 1.2rem;
-      font-weight: 700;
-      color: var(--text-1);
-    }
-    .failed-count.has-failed {
-      color: var(--danger);
-    }
-    .btn-trigger {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 18px;
-      background: #1abc9c;
-      color: #ffffff;
-      border: none;
-      border-radius: 6px;
-      font-weight: 600;
-      cursor: pointer;
-      font-size: 0.9rem;
-      transition: background-color 0.15s ease, opacity 0.15s ease;
-    }
-    .btn-trigger:hover:not(:disabled) {
-      background: #16a085;
-    }
-    .btn-trigger:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-    .alert {
-      padding: 12px 16px;
-      border-radius: 6px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      font-size: 0.9rem;
-      position: relative;
-    }
-    .alert-danger {
-      background: rgba(246, 78, 96, 0.1);
-      border: 1px solid rgba(246, 78, 96, 0.2);
-      color: #f64e60;
-    }
-    .alert-close {
-      background: none;
-      border: none;
-      color: inherit;
-      font-size: 1.25rem;
-      cursor: pointer;
-      position: absolute;
-      right: 12px;
-      top: 50%;
-      transform: translateY(-50%);
-    }
-    .page-content {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
-  `]
+  styles: [
+    `
+      :host {
+        display: block;
+      }
+    `,
+  ],
 })
 export class EtlManagementPage implements OnInit {
   readonly store = inject(EtlManagementStore);
@@ -337,7 +215,7 @@ export class EtlManagementPage implements OnInit {
   }
 
   togglePendingSource(code: string): void {
-    this.selectedPendingSources.update(set => {
+    this.selectedPendingSources.update((set) => {
       const newSet = new Set(set);
       if (newSet.has(code)) {
         newSet.delete(code);
@@ -362,14 +240,14 @@ export class EtlManagementPage implements OnInit {
 
   onConfirmTrigger(evt: { action: 'full' | 'local'; source: string }): void {
     this.isConfirmOpen.set(false);
-    
+
     if (evt.action === 'local' && evt.source === 'all') {
       evt = {
         ...evt,
         source: Array.from(this.selectedPendingSources()).join(','),
       };
     }
-    
+
     this.store.triggerRun(evt);
   }
 

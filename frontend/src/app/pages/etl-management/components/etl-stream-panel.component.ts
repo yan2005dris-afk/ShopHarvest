@@ -10,59 +10,117 @@ export interface StreamedProduct {
   estado: string;
 }
 
+/**
+ * EtlStreamPanelComponent — detail view for a selected ETL run.
+ *
+ * Renders one of three states:
+ *   1. Placeholder (no run selected).
+ *   2. Live stream (RUNNING + streamActive=true): spinner + product
+ *      table updating in real time.
+ *   3. Detail (terminal status OR RUNNING + streamActive=false):
+ *      metric grid + run metadata + optional error block.
+ *
+ * Sprint 4: tokens migrated to Insight Flow (--color-* + Material 3
+ * surface tones). Status badges use semantic tokens (primary for
+ * RUNNING, success for SUCCESS, danger for FAILED).
+ */
 @Component({
   selector: 'app-etl-stream-panel',
   standalone: true,
   imports: [DatePipe, DecimalPipe],
   template: `
     @if (run(); as selectedRun) {
-      <div class="stream-panel" [class.collapsed]="collapsed()">
-        <div class="panel-header" (click)="toggleCollapse()">
-          <div class="header-left">
-            <span class="pulse-indicator" [class.active]="selectedRun.status === 'RUNNING'"></span>
-            <h4>Detalle de Ejecución: {{ selectedRun.source }}</h4>
-            <span class="status-badge" [attr.data-status]="selectedRun.status">
+      <section
+        class="mb-5 overflow-hidden rounded-xl border border-outline-variant bg-surface text-on-surface"
+        [class.collapsed]="collapsed()"
+        data-testid="stream-panel"
+      >
+        <header
+          class="flex cursor-pointer items-center justify-between border-b border-outline-variant bg-surface-container-low px-4 py-3.5 select-none"
+          (click)="toggleCollapse()"
+        >
+          <div class="flex items-center gap-3">
+            <span
+              class="h-2.5 w-2.5 rounded-full bg-on-surface-variant"
+              [class.bg-primary]="selectedRun.status === 'RUNNING'"
+              [class.pulse-active]="selectedRun.status === 'RUNNING'"
+              aria-hidden="true"
+            ></span>
+            <h4 class="m-0 text-base font-semibold">
+              Detalle de Ejecución: {{ selectedRun.source }}
+            </h4>
+            <span
+              class="rounded-xs px-2 py-0.5 text-[11px] font-bold tracking-wider uppercase"
+              [class.bg-primary-fixed]="selectedRun.status === 'RUNNING'"
+              [class.text-primary-container]="selectedRun.status === 'RUNNING'"
+              [class.bg-success-dim]="selectedRun.status === 'SUCCESS'"
+              [class.text-success]="selectedRun.status === 'SUCCESS'"
+              [class.bg-danger-dim]="selectedRun.status === 'FAILED'"
+              [class.text-danger]="selectedRun.status === 'FAILED'"
+              data-testid="status-badge"
+              [attr.data-status]="selectedRun.status"
+            >
               {{ selectedRun.status }}
             </span>
           </div>
-          <div class="header-right">
+          <div class="flex items-center gap-3">
             @if (selectedRun.status === 'RUNNING' && streamActive()) {
-              <span class="transfer-count">{{ streamedProducts().length }} transferidos</span>
+              <span class="text-body-md font-semibold text-primary">
+                {{ streamedProducts().length }} transferidos
+              </span>
             }
-            <button class="collapse-btn">
-              {{ collapsed() ? '▲ Mostrar' : '▼ Contraer' }}
+            <button
+              type="button"
+              class="rounded-md px-2 py-1 text-body-md text-on-surface-variant transition-colors hover:bg-surface-container hover:text-on-surface"
+            >
+              <span class="material-symbols-outlined align-middle" style="font-size: 16px">
+                {{ collapsed() ? 'expand_more' : 'expand_less' }}
+              </span>
             </button>
           </div>
-        </div>
+        </header>
 
         @if (!collapsed()) {
-          <div class="panel-body">
+          <div class="space-y-4 p-4">
             @if (selectedRun.status === 'RUNNING' && streamActive()) {
-              <div class="stream-indicator">
-                <div class="spinner-small"></div>
+              <div class="mb-3 flex items-center gap-2.5 text-body-md font-semibold text-primary">
+                <span
+                  class="inline-block h-3.5 w-3.5 rounded-full border-2 border-outline-variant border-t-primary"
+                  style="animation: spin 0.8s linear infinite"
+                ></span>
                 <span>Transfiriendo...</span>
               </div>
-              
-              <div class="product-table-container">
-                <table class="product-table">
+
+              <div
+                class="max-h-96 overflow-y-auto rounded-md border border-outline-variant"
+              >
+                <table class="w-full border-collapse text-body-md">
                   <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>Producto</th>
-                      <th>Precio</th>
-                      <th>Fuente</th>
-                      <th>Estado</th>
+                    <tr class="bg-surface-container-low">
+                      <th class="px-3 py-2.5 text-left font-semibold text-on-surface-variant">#</th>
+                      <th class="px-3 py-2.5 text-left font-semibold text-on-surface-variant">Producto</th>
+                      <th class="px-3 py-2.5 text-left font-semibold text-on-surface-variant">Precio</th>
+                      <th class="px-3 py-2.5 text-left font-semibold text-on-surface-variant">Fuente</th>
+                      <th class="px-3 py-2.5 text-left font-semibold text-on-surface-variant">Estado</th>
                     </tr>
                   </thead>
                   <tbody>
                     @for (product of streamedProducts(); track product.seq) {
-                      <tr>
-                        <td class="seq-col">{{ product.seq }}</td>
-                        <td class="product-col">{{ product.producto }}</td>
-                        <td class="price-col">{{ product.precio }}</td>
-                        <td class="source-col">{{ product.fuente }}</td>
-                        <td class="status-col">
-                          <span class="product-status" [attr.data-estado]="product.estado">
+                      <tr class="border-b border-outline-variant transition-colors hover:bg-surface-container-low">
+                        <td class="w-12 px-3 py-2 text-on-surface-variant">{{ product.seq }}</td>
+                        <td class="max-w-xs overflow-hidden px-3 py-2 text-ellipsis whitespace-nowrap">{{ product.producto }}</td>
+                        <td class="w-24 px-3 py-2">{{ product.precio }}</td>
+                        <td class="w-24 px-3 py-2">{{ product.fuente }}</td>
+                        <td class="w-20 px-3 py-2">
+                          <span
+                            class="rounded-xs px-1.5 py-0.5 text-[11px] font-bold"
+                            [class.bg-success-dim]="product.estado === 'OK'"
+                            [class.text-success]="product.estado === 'OK'"
+                            [class.bg-warning-dim]="product.estado === 'PENDING'"
+                            [class.text-warning]="product.estado === 'PENDING'"
+                            [class.bg-danger-dim]="product.estado === 'ERROR'"
+                            [class.text-danger]="product.estado === 'ERROR'"
+                          >
                             {{ product.estado }}
                           </span>
                         </td>
@@ -72,344 +130,120 @@ export interface StreamedProduct {
                 </table>
               </div>
             } @else {
-              <div class="metric-grid">
-                <div class="metric-card">
-                  <span class="metric-label">Filas Extraídas</span>
-                  <span class="metric-value">{{ selectedRun.rowsScraped | number }}</span>
+              <div class="mb-4 grid grid-cols-3 gap-4">
+                <div class="flex flex-col items-center rounded-md border border-outline-variant bg-surface-container-low p-3">
+                  <span class="mb-1 text-label-caps text-on-surface-variant">Filas Extraídas</span>
+                  <span class="text-xl font-bold">{{ selectedRun.rowsScraped | number }}</span>
                 </div>
-                <div class="metric-card">
-                  <span class="metric-label">Filas Persistidas</span>
-                  <span class="metric-value">{{ selectedRun.rowsPersisted | number }}</span>
+                <div class="flex flex-col items-center rounded-md border border-outline-variant bg-surface-container-low p-3">
+                  <span class="mb-1 text-label-caps text-on-surface-variant">Filas Persistidas</span>
+                  <span class="text-xl font-bold">{{ selectedRun.rowsPersisted | number }}</span>
                 </div>
-                <div class="metric-card">
-                  <span class="metric-label">Duración</span>
-                  <span class="metric-value">
-                    {{ selectedRun.durationMs ? (selectedRun.durationMs / 1000 | number:'1.1-2') + 's' : 'En progreso...' }}
+                <div class="flex flex-col items-center rounded-md border border-outline-variant bg-surface-container-low p-3">
+                  <span class="mb-1 text-label-caps text-on-surface-variant">Duración</span>
+                  <span class="text-xl font-bold">
+                    {{
+                      selectedRun.durationMs
+                        ? (selectedRun.durationMs / 1000 | number: '1.1-2') + 's'
+                        : 'En progreso...'
+                    }}
                   </span>
                 </div>
               </div>
 
-              <div class="detail-list">
-                <div class="detail-item">
-                  <span class="label">ID de Ejecución:</span>
-                  <span class="value">{{ selectedRun.id }}</span>
+              <div class="mb-4 flex flex-col gap-2 text-body-md">
+                <div class="flex justify-between border-b border-dashed border-outline-variant pb-1.5">
+                  <span class="text-on-surface-variant">ID de Ejecución:</span>
+                  <span class="font-medium">{{ selectedRun.id }}</span>
                 </div>
-                <div class="detail-item">
-                  <span class="label">Inicio:</span>
-                  <span class="value">{{ selectedRun.startedAt | date:'medium' }}</span>
+                <div class="flex justify-between border-b border-dashed border-outline-variant pb-1.5">
+                  <span class="text-on-surface-variant">Inicio:</span>
+                  <span class="font-medium">{{ selectedRun.startedAt | date: 'medium' }}</span>
                 </div>
                 @if (selectedRun.finishedAt) {
-                  <div class="detail-item">
-                    <span class="label">Fin:</span>
-                    <span class="value">{{ selectedRun.finishedAt | date:'medium' }}</span>
+                  <div class="flex justify-between border-b border-dashed border-outline-variant pb-1.5">
+                    <span class="text-on-surface-variant">Fin:</span>
+                    <span class="font-medium">{{ selectedRun.finishedAt | date: 'medium' }}</span>
                   </div>
                 }
               </div>
 
               @if (selectedRun.errorSummary) {
-                <div class="error-box">
-                  <h5>Detalle del Error</h5>
-                  <pre>{{ selectedRun.errorSummary }}</pre>
+                <div
+                  class="mb-4 rounded-md border border-outline-variant bg-danger-dim p-3"
+                  data-testid="error-box"
+                >
+                  <h5 class="m-0 mb-2 text-body-md font-semibold text-danger">
+                    Detalle del Error
+                  </h5>
+                  <pre class="m-0 font-mono text-body-md text-danger whitespace-pre-wrap break-all">{{ selectedRun.errorSummary }}</pre>
                 </div>
               }
 
               @if (selectedRun.status === 'RUNNING' && !streamActive()) {
-                <div class="stream-status">
-                  <div class="spinner"></div>
+                <div
+                  class="flex items-center justify-center gap-2.5 rounded-md bg-surface-container-low p-2 text-body-md text-on-surface-variant"
+                  data-testid="stream-status"
+                >
+                  <span
+                    class="inline-block h-4 w-4 rounded-full border-2 border-outline-variant border-t-primary"
+                    style="animation: spin 0.8s linear infinite"
+                  ></span>
                   <span>Escuchando eventos en tiempo real...</span>
                 </div>
               }
             }
           </div>
         }
-      </div>
+      </section>
     } @else {
-      <div class="placeholder-panel">
+      <div
+        class="mb-5 rounded-xl border border-dashed border-outline-variant bg-surface p-6 text-center text-body-md text-on-surface-variant"
+        data-testid="placeholder-panel"
+      >
         <p>Seleccione una ejecución de la tabla para ver su progreso en tiempo real.</p>
       </div>
     }
   `,
-  styles: [`
-    .stream-panel {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      margin-bottom: 20px;
-      overflow: hidden;
-      color: var(--text-1);
-    }
-    .panel-header {
-      padding: 14px 16px;
-      background: rgba(255, 255, 255, 0.02);
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      cursor: pointer;
-      user-select: none;
-    }
-    .stream-panel.collapsed .panel-header {
-      border-bottom: none;
-    }
-    .header-left {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .header-left h4 {
-      margin: 0;
-      font-size: 1rem;
-      font-weight: 600;
-    }
-    .header-right {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .transfer-count {
-      font-size: 0.8rem;
-      color: var(--accent);
-      font-weight: 600;
-    }
-    .pulse-indicator {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: var(--text-3);
-    }
-    .pulse-indicator.active {
-      background: var(--accent);
-      box-shadow: 0 0 0 0 var(--accent-border);
-      animation: pulse 1.6s infinite;
-    }
-    @keyframes pulse {
-      0% {
-        transform: scale(0.95);
-        box-shadow: 0 0 0 0 var(--accent-border);
+  styles: [
+    `
+      :host {
+        display: block;
       }
-      70% {
-        transform: scale(1);
-        box-shadow: 0 0 0 6px rgba(124, 111, 205, 0);
+
+      /* Pulse + spin animations kept in component CSS — Tailwind has
+         no primitive for these keyframes. */
+      .pulse-active {
+        box-shadow: 0 0 0 0 var(--color-primary);
+        animation: pulse 1.6s infinite;
       }
-      100% {
-        transform: scale(0.95);
-        box-shadow: 0 0 0 0 rgba(124, 111, 205, 0);
+
+      @keyframes pulse {
+        0% {
+          transform: scale(0.95);
+          box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-primary) 50%, transparent);
+        }
+        70% {
+          transform: scale(1);
+          box-shadow: 0 0 0 8px color-mix(in srgb, var(--color-primary) 0%, transparent);
+        }
+        100% {
+          transform: scale(0.95);
+          box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-primary) 0%, transparent);
+        }
       }
-    }
-    .status-badge {
-      font-size: 0.75rem;
-      padding: 2px 8px;
-      border-radius: 4px;
-      font-weight: 600;
-      text-transform: uppercase;
-    }
-    .status-badge[data-status="RUNNING"] {
-      background: var(--accent-dim);
-      color: var(--accent);
-    }
-    .status-badge[data-status="SUCCESS"] {
-      background: var(--success-dim);
-      color: var(--success);
-    }
-    .status-badge[data-status="FAILED"] {
-      background: var(--danger-dim);
-      color: var(--danger);
-    }
-    .collapse-btn {
-      background: none;
-      border: none;
-      color: var(--text-2);
-      font-size: 0.85rem;
-      cursor: pointer;
-    }
-    .collapse-btn:hover {
-      color: var(--text-1);
-    }
-    .panel-body {
-      padding: 16px;
-    }
-    .stream-indicator {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 0.85rem;
-      color: var(--accent);
-      margin-bottom: 12px;
-      font-weight: 600;
-    }
-    .spinner-small {
-      width: 14px;
-      height: 14px;
-      border: 2px solid var(--border);
-      border-top-color: var(--accent);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
-    .product-table-container {
-      max-height: 400px;
-      overflow-y: auto;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-    }
-    .product-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.85rem;
-    }
-    .product-table th {
-      background: var(--surface-2);
-      padding: 10px 12px;
-      text-align: left;
-      font-weight: 600;
-      color: var(--text-2);
-      border-bottom: 1px solid var(--border);
-      position: sticky;
-      top: 0;
-    }
-    .product-table td {
-      padding: 8px 12px;
-      border-bottom: 1px solid var(--border);
-    }
-    .product-table tbody tr:last-child td {
-      border-bottom: none;
-    }
-    .product-table tbody tr:hover {
-      background: var(--surface-2);
-    }
-    .seq-col {
-      width: 50px;
-      color: var(--text-3);
-    }
-    .product-col {
-      max-width: 250px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    .price-col {
-      width: 100px;
-    }
-    .source-col {
-      width: 100px;
-    }
-    .status-col {
-      width: 80px;
-    }
-    .product-status {
-      font-size: 0.7rem;
-      padding: 2px 6px;
-      border-radius: 3px;
-      font-weight: 600;
-    }
-    .product-status[data-estado="OK"] {
-      background: var(--success-dim);
-      color: var(--success);
-    }
-    .product-status[data-estado="PENDING"] {
-      background: var(--warning-dim, rgba(245, 158, 11, 0.1));
-      color: var(--warning);
-    }
-    .product-status[data-estado="ERROR"] {
-      background: var(--danger-dim);
-      color: var(--danger);
-    }
-    .metric-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 16px;
-      margin-bottom: 16px;
-    }
-    .metric-card {
-      background: var(--surface-2);
-      padding: 12px;
-      border-radius: var(--radius);
-      border: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    .metric-label {
-      font-size: 0.75rem;
-      color: var(--text-2);
-      margin-bottom: 4px;
-    }
-    .metric-value {
-      font-size: 1.25rem;
-      font-weight: 700;
-    }
-    .detail-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin-bottom: 16px;
-      font-size: 0.875rem;
-    }
-    .detail-item {
-      display: flex;
-      justify-content: space-between;
-      padding-bottom: 6px;
-      border-bottom: 1px dashed var(--border);
-    }
-    .detail-item .label {
-      color: var(--text-2);
-    }
-    .detail-item .value {
-      font-weight: 500;
-    }
-    .error-box {
-      background: var(--danger-dim);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 12px;
-      margin-bottom: 16px;
-    }
-    .error-box h5 {
-      color: var(--danger);
-      margin: 0 0 8px 0;
-      font-size: 0.9rem;
-      font-weight: 600;
-    }
-    .error-box pre {
-      margin: 0;
-      font-family: var(--font-mono);
-      font-size: 0.8rem;
-      white-space: pre-wrap;
-      word-break: break-all;
-      color: var(--danger);
-    }
-    .stream-status {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      font-size: 0.85rem;
-      color: var(--text-2);
-      padding: 8px;
-      background: var(--surface-2);
-      border-radius: var(--radius);
-    }
-    .spinner {
-      width: 16px;
-      height: 16px;
-      border: 2px solid var(--border);
-      border-top-color: var(--accent);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-    .placeholder-panel {
-      background: var(--surface);
-      border: 1px dashed var(--border);
-      border-radius: var(--radius-lg);
-      padding: 24px;
-      text-align: center;
-      color: var(--text-2);
-      font-size: 0.9rem;
-      margin-bottom: 20px;
-    }
-  `]
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .collapsed header {
+        border-bottom: none;
+      }
+    `,
+  ],
 })
 export class EtlStreamPanelComponent {
   run = input<EtlRunDto | null>(null);
@@ -427,6 +261,6 @@ export class EtlStreamPanelComponent {
   });
 
   toggleCollapse(): void {
-    this.collapsed.update(c => !c);
+    this.collapsed.update((c) => !c);
   }
 }
