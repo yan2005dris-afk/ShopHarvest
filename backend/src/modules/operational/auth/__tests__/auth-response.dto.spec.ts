@@ -5,7 +5,9 @@ import {
   AuthUserDto,
   RegisterDto,
 } from '@web-scraping/contracts/auth';
-import { AuthController } from '../auth.controller';
+import { AuthHttpController } from '../infrastructure/http/auth-http.controller';
+import { RegisterUseCase } from '../application/register.use-case';
+import { LoginUseCase } from '../application/login.use-case';
 
 /**
  * RED-first regression for decision D2.
@@ -51,20 +53,24 @@ describe('AuthResponseDto (RED regression for D2)', () => {
 
   it('controller.register() returns an AuthResponseDto with only the whitelisted fields', async () => {
     // Drive the controller directly and assert the wire shape.
-    // AuthService is replaced by a stub that returns a known shape with
-    // an extra "leaked" field; the controller must strip it via
-    // plainToInstance(..., { excludeExtraneousValues: true }).
-    const fakeService = {
-      register: () =>
+    // RegisterUseCase is replaced by a stub that returns a known shape with
+    // an extra "leaked" field; the controller must strip it.
+    const registerUseCase = {
+      execute: () =>
         Promise.resolve({
           accessToken: 'tok',
           user: { id: 'u1', email: 'a@b.com' },
           passwordHash: 'should-not-leak',
-        }),
-      login: () => Promise.resolve({} as never),
+        } as never),
+    };
+    const loginUseCase = {
+      execute: () => Promise.resolve({} as never),
     };
 
-    const controller = new AuthController(fakeService as never);
+    const controller = new AuthHttpController(
+      registerUseCase as unknown as RegisterUseCase,
+      loginUseCase as unknown as LoginUseCase,
+    );
     const dto = plainToInstance(RegisterDto, {
       email: 'a@b.com',
       password: 'password123',
