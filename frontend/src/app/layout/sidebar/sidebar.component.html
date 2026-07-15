@@ -1,0 +1,102 @@
+<!--
+  SidebarComponent template.
+
+  Layout follows DESIGN.md §Components/Sidebar:
+    - 240px expanded, 64px collapsed (transition handled via
+      width utilities bound to ThemeService.sidebarCollapsed()).
+    - Brand row at the top, nav in the middle (flex-1), footer
+      (theme toggle + extension status) at the bottom.
+    - Active link: secondary-container background + primary
+      left-border + on-secondary-container text.
+
+  Sub-components used:
+    - <app-theme-toggle>     — light/dark theme switch (sidebar footer)
+    - <app-extension-status> — /setup link with ON/OFF badge
+-->
+<aside
+  class="sticky top-0 flex h-dvh shrink-0 flex-col border-r border-outline-variant bg-surface py-4 transition-[width] duration-200"
+  [class.w-sidebar]="!themeService.sidebarCollapsed()"
+  [class.w-16]="themeService.sidebarCollapsed()"
+  [attr.aria-label]="'Primary navigation'"
+>
+  <!-- Brand row -->
+  <header
+    class="mb-3 flex items-center gap-2 border-b border-outline-variant px-3 pb-3"
+    [class.justify-center]="themeService.sidebarCollapsed()"
+  >
+    <span
+      class="material-symbols-outlined text-primary"
+      style="font-size: 22px"
+      aria-hidden="true"
+      >radar</span
+    >
+    @if (!themeService.sidebarCollapsed()) {
+      <div class="flex flex-col leading-tight">
+        <span class="text-headline-sm font-bold text-primary"
+          >Scraper Studio</span
+        >
+        <span
+          class="text-[10px] uppercase tracking-wider text-on-surface-variant/70"
+          >BI Analytics Engine</span
+        >
+      </div>
+    }
+  </header>
+
+  <!-- Collapse toggle (top-right of the brand row, always visible on lg+) -->
+  <button
+    type="button"
+    class="absolute right-2 top-3 hidden items-center justify-center rounded-md p-1 text-on-surface-variant transition-colors hover:bg-surface-container-high hover:text-on-surface lg:flex"
+    (click)="themeService.toggleSidebar()"
+    [attr.aria-label]="
+      themeService.sidebarCollapsed() ? 'Expand sidebar' : 'Collapse sidebar'
+    "
+    [attr.aria-expanded]="!themeService.sidebarCollapsed()"
+    data-testid="btn-collapse-sidebar"
+  >
+    <span class="material-symbols-outlined" style="font-size: 18px">
+      {{
+        themeService.sidebarCollapsed() ? 'right_panel_open' : 'left_panel_close'
+      }}
+    </span>
+  </button>
+
+  <!-- Primary navigation -->
+  <nav class="flex-1 space-y-1 px-2" aria-label="Main">
+    @for (item of navItems; track item.routerLink) {
+      @if (isVisible(item)) {
+        <a
+          [routerLink]="item.routerLink"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="
+            item.exact ? { exact: true } : { exact: false }
+          "
+          class="nav-item group"
+          [class.nav-item--collapsed]="themeService.sidebarCollapsed()"
+          [attr.data-nav]="item.routerLink"
+        >
+          <span
+            class="material-symbols-outlined nav-item__icon"
+            aria-hidden="true"
+            >{{ item.icon }}</span
+          >
+          @if (!themeService.sidebarCollapsed()) {
+            <span class="nav-item__label">{{ item.label }}</span>
+          }
+        </a>
+      }
+    }
+  </nav>
+
+  <!-- Footer: theme toggle + extension status -->
+  <footer
+    class="mt-2 space-y-1 border-t border-outline-variant px-2 pt-3"
+    aria-label="Sidebar footer"
+  >
+    <app-theme-toggle [collapsed]="themeService.sidebarCollapsed()" />
+    <app-extension-status
+      [available]="extensionAvailable()"
+      [collapsed]="themeService.sidebarCollapsed()"
+    />
+  </footer>
+</aside>

@@ -1,17 +1,13 @@
 /*
- * Component-level styles for the shell (app.html).
+ * Component-level styles for the App (shell root).
  *
- * Tailwind v4 utility classes already handle layout, spacing, colors
- * and typography. This file owns the few rules that can't be expressed
- * cleanly as utilities:
- *   - The `.nav-item` family (active/hover state, the lavender
- *     background + indigo left-border described in DESIGN.md
- *     §Components/Sidebar).
- *   - The Material Symbols icon filled-state trick used on active
- *     nav items.
- *   - The small color tints that come from the legacy tokens
- *     (--success-dim, --danger-dim) — exposed as Tailwind utility
- *     classes via the @theme block in styles.css.
+ * The shell composition is just a flex container; all
+ * component-level rules for nav items, theme-toggle, etc. live
+ * in src/app/layout/layout.css (declared in app.ts `styleUrls`).
+ *
+ * `.app-stage` is the only App-specific rule: it gives the routed
+ * page area a min-width so wide content can scroll horizontally
+ * without pushing the sidebar off-screen on narrow viewports.
  */
 
 :host {
@@ -19,93 +15,8 @@
   min-height: 100dvh;
 }
 
-/* ── Sidebar nav item ─────────────────────────────────────── */
-
-.nav-item {
-  position: relative;
+.app-stage {
   display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.625rem 0.75rem;
-  border-radius: var(--radius-md);
-  color: var(--color-on-surface-variant);
-  text-decoration: none;
-  font-size: var(--text-body-md);
-  font-weight: 500;
-  line-height: 1;
-  transition:
-    background-color 150ms ease,
-    color 150ms ease,
-    border-color 150ms ease;
-  border-left: 4px solid transparent;
-}
-
-.nav-item:hover {
-  color: var(--color-on-surface);
-  background-color: var(--color-surface-container-high);
-}
-
-/* Active state — DESIGN.md §Components/Sidebar:
-   "soft Lavender background with an Indigo left-border" */
-.nav-item.active {
-  color: var(--color-on-secondary-container);
-  background-color: var(--color-secondary-container);
-  border-left-color: var(--color-primary);
-  font-weight: 600;
-}
-
-/* Filled icon variant when active — visually anchors the selection */
-.nav-item.active .nav-item__icon {
-  font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24;
-}
-
-/* ── Collapsed state ──────────────────────────────────────── */
-
-.nav-item--collapsed {
-  justify-content: center;
-  padding: 0.625rem 0;
-  border-left-width: 3px;
-}
-
-/* ── Icon sizing inside nav items ──────────────────────────── */
-
-.nav-item__icon {
-  font-size: 20px;
-  flex-shrink: 0;
-  line-height: 1;
-}
-
-.nav-item__label {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* ── Theme toggle (button-styled nav item) ────────────────── */
-
-.nav-item--button {
-  background: transparent;
-  border: 1px solid transparent;
-  cursor: pointer;
-  font-family: inherit;
-  width: 100%;
-  text-align: left;
-}
-
-.nav-item--button:hover {
-  border-color: var(--color-outline-variant);
-}
-
-/* ── Extension "ON/OFF" badge tints ─────────────────────────
- *
- * These depend on the dim-tint tokens defined in styles.css.
- * Kept as a safety net in case Tailwind v4 doesn't auto-generate
- * bg-success-dim/bg-danger-dim utility classes (they come from the
- * @theme block but are non-standard names).
- */
-.bg-success-dim {
-  background-color: color-mix(in srgb, var(--color-success) 12%, transparent);
-}
-.bg-danger-dim {
-  background-color: color-mix(in srgb, var(--color-danger) 12%, transparent);
+  flex-direction: column;
+  min-width: 0;
 }

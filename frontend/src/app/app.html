@@ -1,218 +1,27 @@
 <!--
-  Scraper Studio shell — Insight Flow / Material 3.
+  App shell template.
 
-  Layout: fixed left sidebar (240px expanded / 64px collapsed) +
-  fluid main stage. Tokens come from styles.css @theme block and are
-  consumed via Tailwind utility classes (bg-surface-container-low,
-  text-on-surface-variant, border-outline-variant, etc.).
+  Composes the layout primitives (sidebar on the left, main stage
+  on the right) and overlays the global toast host. The layout
+  primitives each live under src/app/layout/ and own their own
+  templates + CSS.
 
-  Icons: Material Symbols Outlined (loaded in index.html). Filled
-  variant on active nav items via `style="font-variation-settings:'FILL'1"`.
-
-  Active nav: secondary-container background + primary left-border +
-  on-secondary-container text. Matches DESIGN.md §Components/Sidebar.
+  Component-level CSS (.nav-item family + dim tints) lives in
+  src/app/layout/layout.css and is bundled with this template via
+  app.ts `styleUrls`.
 -->
 <div class="flex min-h-dvh bg-background text-on-surface">
+  <!-- Left side-nav. Owns collapse state via ThemeService.sidebar. -->
+  <app-sidebar
+    [extensionAvailable]="extensionAvailable"
+    class="block"
+  />
 
-  <!-- ── Sidebar ───────────────────────────────────────────── -->
-  <aside
-    class="sticky top-0 flex h-dvh shrink-0 flex-col border-r border-outline-variant bg-surface py-4 transition-[width] duration-200"
-    [class.w-sidebar]="!themeService.sidebarCollapsed()"
-    [class.w-16]="themeService.sidebarCollapsed()"
-    [attr.aria-label]="'Primary navigation'"
-  >
-    <!-- Brand -->
-    <div
-      class="mb-3 flex items-center gap-2 border-b border-outline-variant px-3 pb-3"
-      [class.justify-center]="themeService.sidebarCollapsed()"
-    >
-      <span
-        class="material-symbols-outlined text-primary"
-        style="font-size: 22px"
-        aria-hidden="true"
-        >radar</span
-      >
-      @if (!themeService.sidebarCollapsed()) {
-        <div class="flex flex-col leading-tight">
-          <span class="text-headline-sm font-bold text-primary"
-            >Scraper Studio</span
-          >
-          <span class="text-[10px] uppercase tracking-wider text-on-surface-variant/70"
-            >BI Analytics Engine</span
-          >
-        </div>
-      }
-    </div>
-
-    <!-- Collapse toggle (visible always, lives at the top-right of the brand) -->
-    <button
-      type="button"
-      class="absolute right-2 top-3 hidden items-center justify-center rounded-md p-1 text-on-surface-variant transition-colors hover:bg-surface-container-high hover:text-on-surface lg:flex"
-      (click)="themeService.toggleSidebar()"
-      [attr.aria-label]="
-        themeService.sidebarCollapsed() ? 'Expand sidebar' : 'Collapse sidebar'
-      "
-      [attr.aria-expanded]="!themeService.sidebarCollapsed()"
-    >
-      <span class="material-symbols-outlined" style="font-size: 18px">
-        {{
-          themeService.sidebarCollapsed() ? 'right_panel_open' : 'left_panel_close'
-        }}
-      </span>
-    </button>
-
-    <!-- Main nav -->
-    <nav class="flex-1 space-y-1 px-2" aria-label="Main">
-      <a
-        routerLink="/"
-        routerLinkActive="active"
-        [routerLinkActiveOptions]="{ exact: true }"
-        class="nav-item group"
-        [class.nav-item--collapsed]="themeService.sidebarCollapsed()"
-      >
-        <span class="material-symbols-outlined nav-item__icon" aria-hidden="true"
-          >account_tree</span
-        >
-        @if (!themeService.sidebarCollapsed()) {
-          <span class="nav-item__label">Visual Mapper</span>
-        }
-      </a>
-
-      <a
-        routerLink="/dashboard"
-        routerLinkActive="active"
-        class="nav-item group"
-        [class.nav-item--collapsed]="themeService.sidebarCollapsed()"
-      >
-        <span class="material-symbols-outlined nav-item__icon" aria-hidden="true"
-          >dashboard</span
-        >
-        @if (!themeService.sidebarCollapsed()) {
-          <span class="nav-item__label">Dashboard</span>
-        }
-      </a>
-
-      <a
-        routerLink="/products"
-        routerLinkActive="active"
-        class="nav-item group"
-        [class.nav-item--collapsed]="themeService.sidebarCollapsed()"
-      >
-        <span class="material-symbols-outlined nav-item__icon" aria-hidden="true"
-          >inventory_2</span
-        >
-        @if (!themeService.sidebarCollapsed()) {
-          <span class="nav-item__label">Productos</span>
-        }
-      </a>
-
-      <a
-        routerLink="/sources"
-        routerLinkActive="active"
-        class="nav-item group"
-        [class.nav-item--collapsed]="themeService.sidebarCollapsed()"
-      >
-        <span class="material-symbols-outlined nav-item__icon" aria-hidden="true"
-          >settings_input_component</span
-        >
-        @if (!themeService.sidebarCollapsed()) {
-          <span class="nav-item__label">Fuentes</span>
-        }
-      </a>
-
-      <a
-        routerLink="/categories"
-        routerLinkActive="active"
-        class="nav-item group"
-        [class.nav-item--collapsed]="themeService.sidebarCollapsed()"
-      >
-        <span class="material-symbols-outlined nav-item__icon" aria-hidden="true"
-          >category</span
-        >
-        @if (!themeService.sidebarCollapsed()) {
-          <span class="nav-item__label">Categorías</span>
-        }
-      </a>
-
-      @if (auth.isAuthenticated()) {
-        <a
-          routerLink="/etl-management"
-          routerLinkActive="active"
-          class="nav-item group"
-          [class.nav-item--collapsed]="themeService.sidebarCollapsed()"
-        >
-          <span
-            class="material-symbols-outlined nav-item__icon"
-            aria-hidden="true"
-            >memory</span
-          >
-          @if (!themeService.sidebarCollapsed()) {
-            <span class="nav-item__label">ETL</span>
-          }
-        </a>
-      }
-    </nav>
-
-    <!-- Footer: theme toggle + extension link -->
-    <div
-      class="mt-2 space-y-1 border-t border-outline-variant px-2 pt-3"
-      aria-label="Sidebar footer"
-    >
-      <button
-        type="button"
-        class="nav-item nav-item--button w-full"
-        [class.nav-item--collapsed]="themeService.sidebarCollapsed()"
-        (click)="themeService.toggleTheme()"
-        [attr.aria-label]="
-          themeService.isDark() ? 'Switch to light mode' : 'Switch to dark mode'
-        "
-      >
-        <span class="material-symbols-outlined nav-item__icon" aria-hidden="true">{{
-          themeService.themeIcon()
-        }}</span>
-        @if (!themeService.sidebarCollapsed()) {
-          <span class="nav-item__label">{{
-            themeService.isDark() ? 'Modo claro' : 'Modo oscuro'
-          }}</span>
-        }
-      </button>
-
-      <a
-        routerLink="/setup"
-        routerLinkActive="active"
-        class="nav-item"
-        [class.nav-item--collapsed]="themeService.sidebarCollapsed()"
-      >
-        <span class="material-symbols-outlined nav-item__icon" aria-hidden="true"
-          >extension</span
-        >
-        @if (!themeService.sidebarCollapsed()) {
-          <span class="nav-item__label">Extensión</span>
-          <span
-            class="ml-auto rounded-xs px-1.5 py-0.5 text-[10px] font-bold tracking-wider"
-            [class.bg-success-dim]="extensionAvailable"
-            [class.text-success]="extensionAvailable"
-            [class.bg-danger-dim]="!extensionAvailable"
-            [class.text-danger]="!extensionAvailable"
-            >{{ extensionAvailable ? 'ON' : 'OFF' }}</span
-          >
-        } @else {
-          <span
-            class="absolute right-1 top-1 h-2 w-2 rounded-full"
-            [class.bg-success]="extensionAvailable"
-            [class.bg-danger]="!extensionAvailable"
-            [attr.aria-label]="extensionAvailable ? 'Extension active' : 'Extension off'"
-          ></span>
-        }
-      </a>
-    </div>
-  </aside>
-
-  <!-- ── Main stage ───────────────────────────────────────── -->
-  <main class="min-w-0 flex-1 overflow-auto">
+  <!-- Main stage — host for the routed page. -->
+  <main class="app-stage min-w-0 flex-1 overflow-auto">
     <router-outlet />
   </main>
 
-  <!-- Global toast host — slice 3 -->
+  <!-- Global non-blocking toast overlay. -->
   <app-toast-host />
 </div>

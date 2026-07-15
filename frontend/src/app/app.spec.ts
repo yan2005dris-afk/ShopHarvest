@@ -79,7 +79,9 @@ describe('App', () => {
     await fixture.whenStable();
 
     const compiled = fixture.nativeElement as HTMLElement;
-    const etlLink = compiled.querySelector('a[routerLink="/etl-management"]');
+    // Sprint 8: sidebar lives under <app-sidebar>; nav links carry
+    // data-nav="<routerLink>" instead of the raw routerLink attribute.
+    const etlLink = compiled.querySelector('[data-nav="/etl-management"]');
     expect(etlLink).toBeNull();
   });
 
@@ -90,9 +92,9 @@ describe('App', () => {
     await fixture.whenStable();
 
     const compiled = fixture.nativeElement as HTMLElement;
-    const etlLink = compiled.querySelector('a[routerLink="/etl-management"]');
+    const etlLink = compiled.querySelector('[data-nav="/etl-management"]');
     expect(etlLink).toBeTruthy();
-    // Sprint 2: the nav item now contains a Material Symbols icon
+    // Sprint 8: nav-item now contains a Material Symbols icon
     // ('memory') followed by the label 'ETL', so textContent is no
     // longer just 'ETL'. Assert on the label child instead.
     expect(etlLink?.querySelector('.nav-item__label')?.textContent?.trim()).toBe(
