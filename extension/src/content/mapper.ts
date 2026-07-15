@@ -504,6 +504,18 @@ const CURRENCY_RE = /[$€£¥₹]|USD|EUR|GBP|COP|MXN|ARS|PEN|CLP|S\/\.?|Bs\.?|
 const RATING_HINT_RE = /rating|stars?|review|puntuaci[oó]n|calificaci[oó]n|estrella/i;
 
 /**
+ * Matches class/attribute hints for a number that IS a currency amount
+ * but ISN'T the product's price — shipping, a per-unit breakdown,
+ * an installment amount, taxes. A card can legitimately show
+ * "$20.00" (price) next to "$1.00" (shipping) or "12x $1.67"
+ * (installment) — both parse fine and both have a currency symbol,
+ * so Math.min() over every currency-tagged number picks whichever is
+ * smallest, which is very often NOT the price.
+ */
+const NON_PRICE_AMOUNT_HINT_RE =
+  /shipping|envio|env[ií]o|flete|delivery|entrega|installment|cuota|financ|unit[- ]?price|per[- ]?unit|precio[- ]?unit|por[- ]?unidad|tax|impuesto|fee|discount|descuento|ahorro|off\b/i;
+
+/**
  * True when `el` (or a close ancestor) looks like a star-rating widget
  * rather than a price. Star ratings are almost always a small number
  * (0–5 or 0–10) with no currency symbol, and they parse as valid numbers
@@ -517,6 +529,16 @@ function isRatingElement(el: Element): boolean {
   if (el.getAttribute('itemprop') === 'ratingValue') return true;
   return !!el.closest(
     '[class*="rating" i], [class*="stars" i], [class*="review" i], [itemprop="ratingValue"]',
+  );
+}
+
+/** True when `el` (or a close ancestor) looks like shipping/fee/installment, not the price. */
+function isNonPriceAmountElement(el: Element): boolean {
+  if (NON_PRICE_AMOUNT_HINT_RE.test(el.className)) return true;
+  const ariaLabel = el.getAttribute('aria-label');
+  if (ariaLabel && NON_PRICE_AMOUNT_HINT_RE.test(ariaLabel)) return true;
+  return !!el.closest(
+    '[class*="shipping" i], [class*="envio" i], [class*="delivery" i], [class*="installment" i], [class*="cuota" i], [class*="discount" i], [class*="descuento" i]',
   );
 }
 
@@ -611,13 +633,14 @@ function extractFieldsFromElement(
 
     if (isPriceField) {
       // For price fields: query all matches, parse all prices, pick the
-      // lowest. Skip star-rating widgets — a broad selector can catch a
-      // "4.5" rating alongside the real price, and being the smaller
-      // number it would otherwise win the Math.min() below.
+      // lowest. Skip star-rating widgets and shipping/fee/installment
+      // amounts — a broad selector can catch one of those alongside the
+      // real price, and being the smaller number it would otherwise win
+      // the Math.min() below.
       const allEls = root.querySelectorAll(mapping.selector);
       const prices: number[] = [];
       for (const el of allEls) {
-        if (isRatingElement(el)) continue;
+        if (isRatingElement(el) || isNonPriceAmountElement(el)) continue;
         const raw = el.textContent?.trim() ?? '';
         const parsed = parseLocalizedPrice(raw);
         if (parsed !== null && parsed > 0) {
@@ -783,20 +806,26 @@ export function extractAllFromContainer(container: Element): ExtractedProduct {
     }
   };
 
-  // Prices: two passes, both skipping star-rating widgets (a "4.5"
-  // rating parses as a valid number too, and being smaller than the
-  // real price it would otherwise win the Math.min() below).
+  // Prices: every pass skips star-rating widgets (a "4.5" rating parses
+  // as a valid number too, and being smaller than the real price it
+  // would otherwise win the Math.min() below) AND shipping/fee/
+  // installment amounts (a card can legitimately show "$20.00" next to
+  // "$1.00" shipping — both have a currency symbol, so requiring one
+  // alone doesn't rule this out).
   //
-  //   Pass A — specific price classes/attrs. Trusted on their own,
-  //   no currency symbol required (many themes show bare numbers).
-  //   Pass B — fallback only if Pass A found nothing: generic
-  //   span/div scan, but a currency symbol is REQUIRED so a bare
-  //   rating number can't masquerade as a price.
+  //   Pass A  — specific price classes/attrs, currency symbol REQUIRED.
+  //             The strongest signal: an element classed as "price"
+  //             whose text has a $/€/etc is almost always the price.
+  //   Pass A′ — only if Pass A found nothing: same specific classes,
+  //             no currency required (some themes show bare numbers).
+  //   Pass B  — only if both above are empty: generic span/div scan,
+  //             currency symbol REQUIRED (a bare number anywhere on
+  //             the card is too weak a signal without one).
   const collectPrices = (selectors: string[], requireCurrency: boolean): number[] => {
     const found: number[] = [];
     for (const sel of selectors) {
       for (const { el, text } of getAllTextEls(sel)) {
-        if (isRatingElement(el)) continue;
+        if (isRatingElement(el) || isNonPriceAmountElement(el)) continue;
         if (requireCurrency && !CURRENCY_RE.test(text)) continue;
         const parsed = parseLocalizedPrice(text);
         if (parsed !== null && parsed > 0) found.push(parsed);
@@ -811,7 +840,10 @@ export function extractAllFromContainer(container: Element): ExtractedProduct {
     '[data-price]',
     '[class*="amount" i]',
   ];
-  let allPrices = collectPrices(specificPriceSelectors, false);
+  let allPrices = collectPrices(specificPriceSelectors, true);
+  if (allPrices.length === 0) {
+    allPrices = collectPrices(specificPriceSelectors, false);
+  }
   if (allPrices.length === 0) {
     allPrices = collectPrices(['span', 'div'], true);
   }
@@ -865,6 +897,75 @@ export function extractAllFromContainer(container: Element): ExtractedProduct {
     result['url'] = productLinks[0];
     result['url_producto'] = productLinks[0];
   }
+
+  // Extra discovery fields — brand, SKU, availability, discount, rating.
+  // Best-effort like everything above: a miss just means the key is
+  // absent from this product, same as price/title/image/url. These
+  // aren't preset canonical roles (see CANONICAL_FIELDS on the
+  // frontend) — they show up in the "All Detected Fields" panel so
+  // the user can see what else is available to map, even though
+  // there's no dedicated dropdown slot for them yet.
+  const MAX_SHORT_FIELD_LEN = 60;
+
+  /** First non-empty, reasonably-short text match across `selectors`. */
+  const firstShortText = (selectors: string[]): string | null => {
+    for (const sel of selectors) {
+      for (const { text } of getAllTextEls(sel)) {
+        if (text.length > 0 && text.length <= MAX_SHORT_FIELD_LEN) return text;
+      }
+    }
+    return null;
+  };
+
+  // Rating needs its own scan (not firstShortText): the value is often
+  // conveyed via aria-label ("4.2 out of 5 stars") on an element whose
+  // visible text is empty (icon-only star widgets), so text content
+  // alone would miss it.
+  const ratingSelectors = [
+    '[itemprop="ratingValue"]',
+    '[class*="rating" i]',
+    '[class*="stars" i]',
+    '[aria-label*="star" i]',
+  ];
+  let ratingText: string | null = null;
+  for (const sel of ratingSelectors) {
+    for (const el of Array.from(container.querySelectorAll(sel))) {
+      const text = el.textContent?.trim() ?? '';
+      const aria = el.getAttribute('aria-label')?.trim() ?? '';
+      const candidate = text.length > 0 ? text : aria;
+      if (candidate.length > 0 && candidate.length <= MAX_SHORT_FIELD_LEN) {
+        ratingText = candidate;
+        break;
+      }
+    }
+    if (ratingText) break;
+  }
+  if (ratingText) {
+    const parsedRating = parseLocalizedPrice(ratingText);
+    // Sanity range — a star rating is 0–10; anything outside that is
+    // almost certainly a mis-matched selector picking up something else.
+    if (parsedRating !== null && parsedRating >= 0 && parsedRating <= 10) {
+      result['rating'] = parsedRating;
+    }
+  }
+
+  const marca = firstShortText(['[itemprop="brand"]', '[class*="brand" i]', '[class*="marca" i]']);
+  if (marca) result['marca'] = marca;
+
+  const skuAttr = container.querySelector('[data-sku]')?.getAttribute('data-sku')?.trim();
+  const sku = skuAttr || firstShortText(['[itemprop="sku"]', '[class*="sku" i]']);
+  if (sku) result['sku'] = sku;
+
+  const disponibilidad = firstShortText([
+    '[itemprop="availability"]',
+    '[class*="stock" i]',
+    '[class*="disponib" i]',
+    '[class*="availability" i]',
+  ]);
+  if (disponibilidad) result['disponibilidad'] = disponibilidad;
+
+  const descuento = firstShortText(['[class*="discount" i]', '[class*="descuento" i]']);
+  if (descuento) result['descuento'] = descuento;
 
   // Any other text that might be useful
   const allText = container.textContent?.trim() ?? '';

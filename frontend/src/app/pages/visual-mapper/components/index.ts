@@ -5,5 +5,6 @@ export { SavingStateComponent } from './saving-state.component';
 export { DoneStateComponent } from './done-state.component';
 export { ErrorStateComponent } from './error-state.component';
 export { FieldAssignmentPanelComponent } from './field-assignment-panel.component';
-export { ExtractedPreviewComponent } from './extracted-preview.component';
 export { SaveActionsComponent } from './save-actions.component';
+export { FieldConfigPanelComponent } from './field-config-panel.component';
+export { ProductPreviewCardComponent } from './product-preview-card.component';

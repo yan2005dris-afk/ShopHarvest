@@ -235,3 +235,118 @@ describe('extractAllFromContainer — image detection is lazy-load aware', () =>
     expect(result['_all_images']).toContain('https://cdn.example.com/webp.webp');
   });
 });
+
+/**
+ * Regression tests for the "$1.00 scraped instead of $20.00" bug:
+ * a card can legitimately show a currency-tagged shipping/fee/
+ * installment amount alongside the real price — requiring a currency
+ * symbol alone doesn't rule those out, since they have one too. Both
+ * a currency-symbol requirement AND a shipping/fee exclusion are
+ * needed together.
+ */
+describe('extractAllFromContainer — price detection ignores shipping/fee amounts', () => {
+  function containerFrom(html: string): HTMLElement {
+    const el = document.createElement('div');
+    el.innerHTML = html;
+    return el;
+  }
+
+  it('picks the real price over a cheaper shipping amount', () => {
+    const container = containerFrom(`
+      <span class="price">$20.00</span>
+      <span class="shipping-price">$1.00</span>
+    `);
+    const result = extractAllFromContainer(container);
+    expect(result['precio']).toBe(20);
+  });
+
+  it('picks the real price over a cheaper installment amount', () => {
+    const container = containerFrom(`
+      <div class="product-price">$20.00</div>
+      <div class="installment-info">12x $1.67</div>
+    `);
+    const result = extractAllFromContainer(container);
+    expect(result['precio']).toBe(20);
+  });
+
+  it('ignores a discount amount flagged via class', () => {
+    const container = containerFrom(`
+      <span class="price">$20.00</span>
+      <span class="descuento-badge">-$5.00</span>
+    `);
+    const result = extractAllFromContainer(container);
+    expect(result['precio']).toBe(20);
+  });
+
+  it('prefers a currency-tagged price-class match over a bare number in another price-class element', () => {
+    // Pass A (currency required) should win over Pass A′ (no currency) —
+    // the bare "1" is a stray quantity/index, not the price.
+    const container = containerFrom(`
+      <span class="qty-price">1</span>
+      <span class="price">$20.00</span>
+    `);
+    const result = extractAllFromContainer(container);
+    expect(result['precio']).toBe(20);
+  });
+});
+
+/**
+ * extractAllFromContainer also detects a handful of extra discovery
+ * fields beyond price/title/image/url — brand, SKU, availability,
+ * discount, rating — so the "All Detected Fields" panel has something
+ * to show beyond the four preset canonical roles. Best-effort, same as
+ * everything else in this function: a miss just means the key is
+ * absent from the product.
+ */
+describe('extractAllFromContainer — extra discovery fields', () => {
+  function containerFrom(html: string): HTMLElement {
+    const el = document.createElement('div');
+    el.innerHTML = html;
+    return el;
+  }
+
+  it('extracts brand, sku, availability, and discount by class hint', () => {
+    const container = containerFrom(`
+      <span class="brand-name">Everlast</span>
+      <span class="product-sku">SKU-1234</span>
+      <span class="stock-status">En stock</span>
+      <span class="discount-badge">-20%</span>
+    `);
+    const result = extractAllFromContainer(container);
+    expect(result['marca']).toBe('Everlast');
+    expect(result['sku']).toBe('SKU-1234');
+    expect(result['disponibilidad']).toBe('En stock');
+    expect(result['descuento']).toBe('-20%');
+  });
+
+  it('prefers a data-sku attribute over scanning text', () => {
+    const container = containerFrom(`<div data-sku="ABC-999">Some product</div>`);
+    const result = extractAllFromContainer(container);
+    expect(result['sku']).toBe('ABC-999');
+  });
+
+  it('extracts a numeric rating within the 0–10 sanity range', () => {
+    const container = containerFrom(`<span class="product-rating">4.5</span>`);
+    const result = extractAllFromContainer(container);
+    expect(result['rating']).toBe(4.5);
+  });
+
+  it('rejects a "rating" match outside the 0–10 sanity range (mismatched selector)', () => {
+    const container = containerFrom(`<div class="rating-wrapper">Item #48291</div>`);
+    const result = extractAllFromContainer(container);
+    expect(result['rating']).toBeUndefined();
+  });
+
+  it('reads a star rating out of an aria-label', () => {
+    const container = containerFrom(`<span aria-label="4.2 out of 5 stars" class="stars"></span>`);
+    const result = extractAllFromContainer(container);
+    expect(result['rating']).toBe(4.2);
+  });
+
+  it('ignores a match whose text is too long to be a real field value', () => {
+    const longText = 'x'.repeat(80);
+    const container = containerFrom(`<div class="brand-name">${longText}</div>`);
+    const result = extractAllFromContainer(container);
+    expect(result['marca']).toBeUndefined();
+  });
+});

@@ -1,5 +1,6 @@
 import { Injectable, signal, computed } from '@angular/core';
 import { ExtensionFieldMapping, MappingCompletePayload } from '../../../services/extension.service';
+import { CANONICAL_FIELDS } from './canonical-fields';
 
 /**
  * A field extracted from the container with all available values
@@ -50,6 +51,36 @@ export class MappingSessionService {
 
     if (payload.extractAll && products.length > 0) {
       this.computeAvailableFields(products[0]);
+      this.seedDefaultMappings();
+    }
+  }
+
+  /**
+   * Pre-fill each preset canonical field (título, precio, imagen,
+   * url_producto — see CANONICAL_FIELDS) with a sensible default
+   * source: extractAllFromContainer already writes both a Spanish key
+   * and an English alias per role, so an exact-name match is almost
+   * always available on the first pass. The user can still override
+   * any of these from the field-config panel.
+   *
+   * This also matters for correctness, not just convenience:
+   * applyCanonicalMappings() only copies canonical names that have an
+   * explicit fieldMappings entry — without seeding all four up front,
+   * touching just one dropdown would silently drop the other three
+   * from the saved products.
+   */
+  private seedDefaultMappings(): void {
+    const available = new Set(this.availableFields().map((f) => f.key));
+    const seeded: ExtensionFieldMapping[] = [];
+    for (const field of CANONICAL_FIELDS) {
+      const alias = field.aliases.find((a) => available.has(a));
+      if (alias) {
+        seeded.push({ canonicalField: field.key, selector: '', type: 'text', extractedKey: alias });
+      }
+    }
+    if (seeded.length > 0) {
+      this.fieldMappings.set(seeded);
+      this.applyCanonicalMappings();
     }
   }
 
