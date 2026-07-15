@@ -230,6 +230,9 @@ importers:
       apexcharts:
         specifier: ^5.16.0
         version: 5.16.0
+      boneyard-js:
+        specifier: ^1.9.0
+        version: 1.9.0(@angular/core@22.0.1(@angular/compiler@22.0.1)(rxjs@7.8.2))(react@19.2.7)(vite@7.3.2(@types/node@24.13.2)(jiti@2.7.0)(lightningcss@1.32.0)(sass@1.99.0)(terser@5.48.0))
       ng-apexcharts:
         specifier: ^2.4.0
         version: 2.4.0(@angular/common@22.0.1(@angular/core@22.0.1(@angular/compiler@22.0.1)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.0.1(@angular/compiler@22.0.1)(rxjs@7.8.2))(apexcharts@5.16.0)(rxjs@7.8.2)
@@ -765,6 +768,9 @@ packages:
   '@bramus/specificity@2.4.2':
     resolution: {integrity: sha512-ctxtJ/eA+t+6q2++vj5j7FYX3nRu311q1wfYH3xjlLOsczhlhxAg2FWNUXhpGvAw3BWo1xBcvOV6/YLc2r5FJw==}
     hasBin: true
+
+  '@chenglou/pretext@0.0.5':
+    resolution: {integrity: sha512-A8GZN10REdFGsyuiUgLV8jjPDDFMg5GmgxGWV0I3igxBOnzj+jgz2VMmVD7g+SFyoctfeqHFxbNatKSzVRWtRg==}
 
   '@colors/colors@1.5.0':
     resolution: {integrity: sha512-ooWCrlZP11i8GImSjTHYHLkvFDP48nS4+204nGb1RiX/WXYHmJA2III9/e2DWVabCESdW7hBAEzHRqUn9OUVvQ==}
@@ -3628,6 +3634,33 @@ packages:
   body-parser@2.3.0:
     resolution: {integrity: sha512-2cGmJupaNgg+QUwVLAucDuWuoMZ6EX9iHDRswZ5lsNYEmwPaRknMPCLZz07yTzVq/83p4o/wzbDZbBrTvGGTIw==}
     engines: {node: '>=18'}
+
+  boneyard-js@1.9.0:
+    resolution: {integrity: sha512-FlIHm7YyQ6GMBPaNY6um5ESHNyZGONoSZ0IMhayuyemBsCUhhDl4nC/gMTOi/25ojtrlnRInTWKqFKb7hGK6Cg==}
+    hasBin: true
+    peerDependencies:
+      '@angular/core': '>=14'
+      preact: '>=10'
+      react: '>=18'
+      react-native: '>=0.71'
+      svelte: '>=5.29'
+      vite: '>=5'
+      vue: '>=3'
+    peerDependenciesMeta:
+      '@angular/core':
+        optional: true
+      preact:
+        optional: true
+      react:
+        optional: true
+      react-native:
+        optional: true
+      svelte:
+        optional: true
+      vite:
+        optional: true
+      vue:
+        optional: true
 
   boolbase@1.0.0:
     resolution: {integrity: sha512-JZOSA7Mo9sNGB8+UjSgzdLtokWAky1zbztM3WRLCbZ70/3cTANmQmOdR7y2g+J0e2WXywy1yS468tY+IruqEww==}
@@ -7500,6 +7533,9 @@ snapshots:
     dependencies:
       css-tree: 3.2.1
 
+  '@chenglou/pretext@0.0.5':
+    optional: true
+
   '@colors/colors@1.5.0':
     optional: true
 
@@ -10094,6 +10130,15 @@ snapshots:
       type-is: 2.1.0
     transitivePeerDependencies:
       - supports-color
+
+  boneyard-js@1.9.0(@angular/core@22.0.1(@angular/compiler@22.0.1)(rxjs@7.8.2))(react@19.2.7)(vite@7.3.2(@types/node@24.13.2)(jiti@2.7.0)(lightningcss@1.32.0)(sass@1.99.0)(terser@5.48.0)):
+    dependencies:
+      playwright: 1.61.1
+    optionalDependencies:
+      '@angular/core': 22.0.1(@angular/compiler@22.0.1)(rxjs@7.8.2)
+      '@chenglou/pretext': 0.0.5
+      react: 19.2.7
+      vite: 7.3.2(@types/node@24.13.2)(jiti@2.7.0)(lightningcss@1.32.0)(sass@1.99.0)(terser@5.48.0)
 
   boolbase@1.0.0: {}
 
