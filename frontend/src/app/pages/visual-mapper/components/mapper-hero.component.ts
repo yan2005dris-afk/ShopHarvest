@@ -18,7 +18,7 @@ import type { Category, DomainRule } from '../../../services/api.service';
         </svg>
       </div>
       <h1 class="vm-hero-title">Map a new store</h1>
-      <p class="vm-hero-sub">Enter a URL, then click elements in the extension to assign fields</p>
+      <p class="vm-hero-sub">Enter a URL, then click the card that wraps one product — we auto-detect the rest</p>
 
       <div class="vm-input-card">
         <label class="vm-label" for="url-input">Store URL</label>

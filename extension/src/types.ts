@@ -10,14 +10,6 @@ export interface FieldMapping {
   attribute?: string;
 }
 
-/** A field definition the user adds in the popup before mapping. */
-export interface FieldDefinition {
-  name: string;       // e.g. "titulo", "descripcion", "precio"
-  type: 'text' | 'attribute' | 'html';
-  attribute?: string; // e.g. "src", "href" — only used when type=attribute
-  required?: boolean;
-}
-
 // ─── Domain rule (stored in backend) ────────────────────────────────────────
 
 export interface DomainRule {

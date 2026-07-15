@@ -12,7 +12,7 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
           <div class="vm-pulse-dot"></div>
         </div>
         <p class="vm-status-title">Extension tab is open</p>
-        <p class="vm-status-sub">Click elements on the page to assign fields, then click "Finish Mapping"</p>
+        <p class="vm-status-sub">Click the card that wraps one product, then click "Finish — Extract All"</p>
       </div>
     </div>
   `,

@@ -1,7 +1,28 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ApiService, DomainRule } from '../../../services/api.service';
+import { ApiService, DomainRule, FieldMapping } from '../../../services/api.service';
 import type { ExtensionFieldMapping } from '../../../services/extension.service';
+
+/**
+ * Mappings picked in extractAll mode carry `selector: ''` — there is no
+ * real per-field CSS selector, the frontend picked a canonical name for
+ * an already-auto-detected key (see MappingSessionService.selectFieldForMapping).
+ * The backend's FieldMappingDto requires a non-empty selector, so an
+ * empty string 400s the save. Mirrors the same placeholder used by
+ * ApiService.ingestProducts and the extension's
+ * EXTRACT_ALL_PLACEHOLDER_SELECTOR (extension/src/content/mapper.ts) —
+ * keep those three in sync if this ever changes.
+ */
+const EXTRACT_ALL_PLACEHOLDER_SELECTOR = '[extractAll]';
+
+function sanitizeFieldMappings(mappings: ExtensionFieldMapping[]): FieldMapping[] {
+  return mappings.map((m) => ({
+    canonicalField: m.canonicalField,
+    selector: m.selector || EXTRACT_ALL_PLACEHOLDER_SELECTOR,
+    type: m.type,
+    attribute: m.attribute,
+  }));
+}
 
 export interface SaveDomainRuleParams {
   hostname: string;
@@ -34,10 +55,11 @@ export class DomainRulePersistenceService {
     existingDomains: DomainRule[],
   ): Observable<DomainRule> {
     const existing = existingDomains.find((d) => d.domain === params.hostname);
+    const fieldMappings = sanitizeFieldMappings(params.fieldMappings);
 
     if (existing) {
       const payload: Record<string, unknown> = {
-        fieldMappings: params.fieldMappings,
+        fieldMappings,
         containerSelector: params.containerSelector ?? undefined,
       };
       if (params.categoryId) payload['categoryId'] = params.categoryId;
@@ -47,7 +69,7 @@ export class DomainRulePersistenceService {
       domain: params.hostname,
       name: params.pageTitle || params.hostname,
       categoryId: params.categoryId,
-      fieldMappings: params.fieldMappings,
+      fieldMappings,
       containerSelector: params.containerSelector ?? undefined,
     });
   }

@@ -1,4 +1,4 @@
-import type { DomainRule, ExtractedProduct, FieldMapping, FieldDefinition } from '../types';
+import type { DomainRule, ExtractedProduct, FieldMapping } from '../types';
 
 // ── Handshake: announce extension ID to the Angular frontend ──────────────────
 
@@ -26,11 +26,14 @@ let menuEl: HTMLDivElement | null = null;
 let panelEl: HTMLDivElement | null = null;
 let currentTarget: Element | null = null;
 
-/** Dynamic field definitions received from the popup. */
-let fieldDefs: FieldDefinition[] = [];
-
-/** Accumulated field assignments (used in popup + frontend-triggered modes). */
-const assignedFields: Record<string, FieldMapping> = {};
+/**
+ * The ONLY thing the user picks by clicking on the page: the product
+ * container. Everything else (title, price, image, url, ...) is
+ * auto-extracted from inside that container and mapped in the frontend
+ * preview — see `extractAllFromContainer`. There is no per-field click
+ * assignment; that manual path was removed so "select container, review
+ * in preview" is the single mapping methodology.
+ */
 let containerSelector: string | null = null;
 
 // ── Message listener ──────────────────────────────────────────────────────────
@@ -40,15 +43,8 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
   switch (type) {
     case 'START_MAPPING': {
-      const opts = (payload ?? {}) as {
-        fromFrontend?: boolean;
-        fields?: FieldDefinition[];
-      };
+      const opts = (payload ?? {}) as { fromFrontend?: boolean };
       fromFrontend = opts.fromFrontend ?? false;
-      // Use provided field definitions, or keep current ones
-      if (opts.fields && opts.fields.length > 0) {
-        fieldDefs = opts.fields;
-      }
       startMapping();
       sendResponse({ success: true });
       break;
@@ -171,87 +167,15 @@ function showMenu(x: number, y: number, target: Element): void {
   });
 
   const label = document.createElement('div');
-  label.textContent = 'Assign field:';
+  label.textContent = 'Click the card that wraps one product';
   Object.assign(label.style, {
     marginBottom: '8px',
     color: '#888',
     fontSize: '11px',
-    textTransform: 'uppercase',
-    letterSpacing: '0.5px',
+    maxWidth: '200px',
   });
   menuEl.appendChild(label);
 
-  // Dynamic field buttons from fieldDefs
-  if (fieldDefs.length > 0) {
-    const grid = document.createElement('div');
-    Object.assign(grid.style, { display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '8px' });
-
-    for (const def of fieldDefs) {
-      const btn = createMenuButton(def.name, '#0f3460', () =>
-        assignField(def.name, target, def.type, def.attribute),
-      );
-      if (assignedFields[def.name]) {
-        btn.textContent = `✓ ${def.name}`;
-        btn.style.border = '1px solid #4caf50';
-      }
-      grid.appendChild(btn);
-    }
-    menuEl.appendChild(grid);
-  } else {
-    // Fallback: allow typing a custom field name on the fly
-    const inputRow = document.createElement('div');
-    Object.assign(inputRow.style, { display: 'flex', gap: '4px', marginBottom: '8px' });
-
-    const nameInput = document.createElement('input');
-    nameInput.type = 'text';
-    nameInput.placeholder = 'Field name…';
-    Object.assign(nameInput.style, {
-      flex: '1',
-      background: '#0d0d1a',
-      border: '1px solid #333',
-      borderRadius: '4px',
-      padding: '5px 8px',
-      color: '#eaeaea',
-      fontSize: '12px',
-      outline: 'none',
-    });
-
-    const addBtn = document.createElement('button');
-    addBtn.textContent = 'Assign';
-    Object.assign(addBtn.style, {
-      background: '#0f3460',
-      color: '#eaeaea',
-      border: 'none',
-      borderRadius: '4px',
-      padding: '5px 10px',
-      cursor: 'pointer',
-      fontSize: '12px',
-    });
-    addBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const name = nameInput.value.trim();
-      if (name) {
-        assignField(name, target, 'text');
-        removeMenu();
-      }
-    });
-    nameInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        e.stopPropagation();
-        const name = nameInput.value.trim();
-        if (name) {
-          assignField(name, target, 'text');
-          removeMenu();
-        }
-      }
-    });
-
-    inputRow.appendChild(nameInput);
-    inputRow.appendChild(addBtn);
-    menuEl.appendChild(inputRow);
-  }
-
-  // Container button (always available)
   const containerBtn = createMenuButton('Set as Container', '#e94560', () => assignContainer(target));
   Object.assign(containerBtn.style, { width: '100%', marginBottom: '6px' });
   menuEl.appendChild(containerBtn);
@@ -292,65 +216,6 @@ function createMenuButton(text: string, bg: string, handler: () => void): HTMLBu
 function removeMenu(): void {
   menuEl?.remove();
   menuEl = null;
-}
-
-function generateRelativeSelector(el: Element, containerSelector: string): string | null {
-  const containers = Array.from(document.querySelectorAll(containerSelector));
-  let container: Element | null = null;
-  for (const c of containers) {
-    if (c === el || c.contains(el)) {
-      container = c;
-      break;
-    }
-  }
-  if (!container) return null;
-
-  // Find which direct child of the container contains `el`
-  const children = Array.from(container.children);
-  let childContainer: Element | null = null;
-  for (const child of children) {
-    if (child === el || child.contains(el)) {
-      childContainer = child;
-      break;
-    }
-  }
-  if (!childContainer) return null;
-
-  // Generate a path from the child down to `el` (excluding the child itself)
-  const path = generateSelector(el, childContainer);
-  return path || null; // empty path means el IS the childContainer — use null
-}
-
-function assignField(
-  field: string,
-  el: Element,
-  type: FieldMapping['type'],
-  attribute?: string,
-): void {
-  // Prefer a container-relative selector so extractFieldsFromElement can
-  // query each product child individually (avoids the fragile global-index
-  // fallback that misaligns fields like images across products).
-  const selector =
-    (containerSelector && generateRelativeSelector(el, containerSelector)) ??
-    generateSelector(el);
-  const effectiveType = type === 'attribute' && !attribute ? 'text' : type;
-
-  const mapping: FieldMapping = {
-    canonicalField: field,
-    selector,
-    type: effectiveType,
-    ...(effectiveType === 'attribute' && attribute ? { attribute } : {}),
-  };
-
-  assignedFields[field] = mapping;
-
-  chrome.runtime.sendMessage({
-    type: 'FIELD_ASSIGNED',
-    payload: mapping,
-  });
-
-  if (fromFrontend) updatePanel();
-  removeMenu();
 }
 
 function assignContainer(el: Element): void {
@@ -412,27 +277,7 @@ function renderPanel(): void {
   });
   panelEl.appendChild(title);
 
-  // Dynamic fields from fieldDefs
-  for (const def of fieldDefs) {
-    const row = document.createElement('div');
-    Object.assign(row.style, { display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' });
-
-    const dot = document.createElement('span');
-    const assigned = assignedFields[def.name];
-    dot.textContent = assigned ? '✓' : '○';
-    dot.style.color = assigned ? '#4caf50' : '#555';
-    dot.style.width = '14px';
-
-    const name = document.createElement('span');
-    name.textContent = def.name;
-    name.style.color = assigned ? '#eaeaea' : '#666';
-
-    row.appendChild(dot);
-    row.appendChild(name);
-    panelEl!.appendChild(row);
-  }
-
-  // Container
+  // Container — the one thing the user picks by clicking.
   const containerRow = document.createElement('div');
   Object.assign(containerRow.style, { display: 'flex', alignItems: 'center', gap: '6px', margin: '8px 0' });
   const cDot = document.createElement('span');
@@ -450,13 +295,10 @@ function renderPanel(): void {
   Object.assign(separator.style, { border: 'none', borderTop: '1px solid #0f3460', margin: '10px 0' });
   panelEl.appendChild(separator);
 
-  // Can finish if container is set — with OR without field mappings
-  // (without mappings = extractAll mode, user picks fields in frontend preview)
-  const hasFields = Object.keys(assignedFields).length > 0;
   const canFinish = !!containerSelector;
 
   const finishBtn = document.createElement('button');
-  finishBtn.textContent = hasFields ? 'Finish Mapping' : 'Finish — Extract All';
+  finishBtn.textContent = 'Finish — Extract All';
   Object.assign(finishBtn.style, {
     width: '100%',
     background: canFinish ? '#0f3460' : '#2a2a3e',
@@ -476,18 +318,15 @@ function renderPanel(): void {
   }
   panelEl.appendChild(finishBtn);
 
-  // Hint when no fields mapped (extractAll mode)
-  if (!hasFields) {
-    const hint = document.createElement('p');
-    hint.textContent = '💡 All fields will be auto-detected — pick in preview';
-    Object.assign(hint.style, {
-      margin: '0 0 6px',
-      fontSize: '10px',
-      color: '#4a9eff',
-      textAlign: 'center',
-    });
-    panelEl.appendChild(hint);
-  }
+  const hint = document.createElement('p');
+  hint.textContent = '💡 All fields will be auto-detected — pick in preview';
+  Object.assign(hint.style, {
+    margin: '0 0 6px',
+    fontSize: '10px',
+    color: '#4a9eff',
+    textAlign: 'center',
+  });
+  panelEl.appendChild(hint);
 
   const cancelBtn = document.createElement('button');
   cancelBtn.textContent = 'Cancel';
@@ -519,25 +358,25 @@ function removePanel(): void {
 }
 
 function finishMapping(): void {
-  const hasFieldMappings = Object.keys(assignedFields).length > 0;
-
-  // Extraer productos — si hay mappings definidos úsalos, si no extrae todo
+  // Container-only methodology: always extract everything from inside
+  // the container (extractAllFromContainer, via extractProducts with an
+  // empty fieldMappings list) — the frontend preview is where canonical
+  // fields (título, precio, imagen, url...) get picked.
   const products = extractProducts({
     domain: location.hostname,
     containerSelector: containerSelector ?? '',
-    fieldMappings: hasFieldMappings ? Object.values(assignedFields) : [],
+    fieldMappings: [],
     createdAt: 0,
     updatedAt: 0,
   } as DomainRule);
 
   const payload = {
-    fieldMappings: Object.values(assignedFields),
+    fieldMappings: [],
     containerSelector,
     domain: location.hostname,
     pageTitle: document.title,
     products,
-    // Indica si se extrajo todo automáticamente (sin mapeo manual)
-    extractAll: !hasFieldMappings,
+    extractAll: true,
   };
   chrome.runtime.sendMessage({ type: 'MAPPING_COMPLETE', payload });
   stopMapping();
@@ -658,11 +497,83 @@ export function parseLocalizedPrice(raw: string): number | null {
 
 const IMAGE_FIELD_RE = /^image$|^img$|^foto$|^photo$|^picture$|^thumbnail$|^icon$|^imagen$/i;
 
+/** Currency symbols/codes commonly seen in scraped e-commerce prices. */
+const CURRENCY_RE = /[$€£¥₹]|USD|EUR|GBP|COP|MXN|ARS|PEN|CLP|S\/\.?|Bs\.?|R\$/;
+
+/** Matches class/attribute hints that mark an element as a rating/review widget. */
+const RATING_HINT_RE = /rating|stars?|review|puntuaci[oó]n|calificaci[oó]n|estrella/i;
+
+/**
+ * True when `el` (or a close ancestor) looks like a star-rating widget
+ * rather than a price. Star ratings are almost always a small number
+ * (0–5 or 0–10) with no currency symbol, and they parse as valid numbers
+ * just like prices — without this check, `Math.min()` over "every number
+ * on the card" picks the rating instead of the real price.
+ */
+function isRatingElement(el: Element): boolean {
+  if (RATING_HINT_RE.test(el.className)) return true;
+  const ariaLabel = el.getAttribute('aria-label');
+  if (ariaLabel && RATING_HINT_RE.test(ariaLabel)) return true;
+  if (el.getAttribute('itemprop') === 'ratingValue') return true;
+  return !!el.closest(
+    '[class*="rating" i], [class*="stars" i], [class*="review" i], [itemprop="ratingValue"]',
+  );
+}
+
+/**
+ * Attributes lazy-load libraries stash the real image URL in while the
+ * browser hasn't scrolled the element into view yet. Checked BEFORE the
+ * `src` attribute — most lazy-load setups leave `src` pointing at a
+ * placeholder (or unset entirely) until an IntersectionObserver fires.
+ */
+const LAZY_SRC_ATTRS = ['data-src', 'data-lazy-src', 'data-original', 'data-lazy', 'data-echo'];
+const LAZY_SRCSET_ATTRS = ['data-srcset', 'srcset'];
+
+/** Filename/placeholder patterns for 1x1 trackers and lazy-load stand-ins. */
+const PLACEHOLDER_IMAGE_RE = /placeholder|blank\.gif|spacer\.gif|lazy(?:load)?\.(?:svg|gif|png)|1x1|transparent\.(?:gif|png)|loading\.(?:svg|gif)/i;
+
+/** Take the first URL out of a `srcset` value ("url1 480w, url2 800w"). */
+function firstUrlFromSrcset(value: string): string | null {
+  const first = value.split(',')[0]?.trim().split(/\s+/)[0];
+  return first && first.length > 0 ? first : null;
+}
+
+/**
+ * Resolve the real image URL off `<img>` or `<picture><source>`.
+ *
+ * IMPORTANT: reads the `src` ATTRIBUTE, never the `.src` DOM property —
+ * for an <img> with no `src` attribute set (common while a lazy-load
+ * library waits for it to scroll into view), `.src` silently resolves
+ * to `location.href` (the page's own URL, per the HTML spec's "resolve
+ * against the base URI" rule for a missing/empty attribute) instead of
+ * returning empty. That quirk, combined with never checking the
+ * standard `data-src`/`srcset` lazy-load attributes, is why only the
+ * handful of images already visible in the initial viewport used to
+ * get scraped — everything below the fold had no real `src` yet.
+ */
+function resolveImageSrc(el: Element): string | null {
+  for (const attr of LAZY_SRC_ATTRS) {
+    const v = el.getAttribute(attr);
+    if (v && !PLACEHOLDER_IMAGE_RE.test(v)) return v;
+  }
+  for (const attr of LAZY_SRCSET_ATTRS) {
+    const raw = el.getAttribute(attr);
+    const url = raw ? firstUrlFromSrcset(raw) : null;
+    if (url && !PLACEHOLDER_IMAGE_RE.test(url)) return url;
+  }
+  const src = el.getAttribute('src');
+  if (src && !src.startsWith('data:image') && !PLACEHOLDER_IMAGE_RE.test(src)) return src;
+  return null;
+}
+
 /** Search up to 3 levels above `el` for an <img> and return its src. */
 function findNearbyImageSrc(el: Element): string | null {
   // First try inside the element itself
   const ownImg = el.querySelector('img');
-  if (ownImg) return ownImg.getAttribute('src');
+  if (ownImg) {
+    const src = resolveImageSrc(ownImg);
+    if (src) return src;
+  }
 
   // Then walk up to 3 levels, checking each ancestor for an <img>
   let current: Element | null = el;
@@ -674,14 +585,14 @@ function findNearbyImageSrc(el: Element): string | null {
       (sibling): sibling is HTMLImageElement =>
         sibling instanceof Element && sibling !== current && sibling.tagName === 'IMG',
     );
-    const siblingSrc = siblingImg?.getAttribute('src');
+    const siblingSrc = siblingImg ? resolveImageSrc(siblingImg) : null;
     if (siblingSrc) {
       return siblingSrc;
     }
     // Also check the parent itself (skip if it's the same img already found inside el)
     const parentImg = parentEl.querySelector('img');
     if (parentImg && parentImg !== ownImg) {
-      const parentSrc = parentImg.getAttribute('src');
+      const parentSrc = resolveImageSrc(parentImg);
       if (parentSrc) return parentSrc;
     }
     current = parentEl;
@@ -699,10 +610,14 @@ function extractFieldsFromElement(
     const isPriceField = /precio|price|amount|cost|costo/i.test(mapping.canonicalField);
 
     if (isPriceField) {
-      // For price fields: query all matches, parse all prices, pick the lowest
+      // For price fields: query all matches, parse all prices, pick the
+      // lowest. Skip star-rating widgets — a broad selector can catch a
+      // "4.5" rating alongside the real price, and being the smaller
+      // number it would otherwise win the Math.min() below.
       const allEls = root.querySelectorAll(mapping.selector);
       const prices: number[] = [];
       for (const el of allEls) {
+        if (isRatingElement(el)) continue;
         const raw = el.textContent?.trim() ?? '';
         const parsed = parseLocalizedPrice(raw);
         if (parsed !== null && parsed > 0) {
@@ -832,22 +747,25 @@ function extractProductsGlobal(mappings: FieldMapping[]): ExtractedProduct[] {
 export function extractAllFromContainer(container: Element): ExtractedProduct {
   const result: ExtractedProduct = {};
 
-  // Helper: get all text content from elements matching a selector
-  const getAllText = (selector: string): string[] => {
+  // Helper: get all text content from elements matching a selector,
+  // paired with the element itself (so callers can filter by ancestry —
+  // e.g. excluding star-rating widgets — not just by text).
+  const getAllTextEls = (selector: string): { el: Element; text: string }[] => {
     try {
       return Array.from(container.querySelectorAll(selector))
-        .map(el => el.textContent?.trim())
-        .filter((t): t is string => !!t && t.length > 0);
+        .map((el) => ({ el, text: el.textContent?.trim() ?? '' }))
+        .filter((r): r is { el: Element; text: string } => r.text.length > 0);
     } catch {
       return [];
     }
   };
+  const getAllText = (selector: string): string[] => getAllTextEls(selector).map((r) => r.text);
 
-  // Helper: get all image src attributes
+  // Helper: get all image URLs, lazy-load aware (see resolveImageSrc).
   const getAllImages = (selector: string): string[] => {
     try {
       return Array.from(container.querySelectorAll(selector))
-        .map(el => (el as HTMLImageElement).src)
+        .map(resolveImageSrc)
         .filter((src): src is string => !!src && src.length > 0);
     } catch {
       return [];
@@ -865,27 +783,39 @@ export function extractAllFromContainer(container: Element): ExtractedProduct {
     }
   };
 
-  // Prices: extract all numeric values, sort ascending, take lowest
-  const priceSelectors = [
-    '[class*="price"]',
-    '[class*="Precio"]',
-    '[class*="precio"]',
-    '[data-price]',
-    '[class*="Amount"]',
-    '[class*="amount"]',
-    'span',
-    'div',
-  ];
-  const allPrices: number[] = [];
-  for (const sel of priceSelectors) {
-    const texts = getAllText(sel);
-    for (const text of texts) {
-      const parsed = parseLocalizedPrice(text);
-      if (parsed !== null && parsed > 0) {
-        allPrices.push(parsed);
+  // Prices: two passes, both skipping star-rating widgets (a "4.5"
+  // rating parses as a valid number too, and being smaller than the
+  // real price it would otherwise win the Math.min() below).
+  //
+  //   Pass A — specific price classes/attrs. Trusted on their own,
+  //   no currency symbol required (many themes show bare numbers).
+  //   Pass B — fallback only if Pass A found nothing: generic
+  //   span/div scan, but a currency symbol is REQUIRED so a bare
+  //   rating number can't masquerade as a price.
+  const collectPrices = (selectors: string[], requireCurrency: boolean): number[] => {
+    const found: number[] = [];
+    for (const sel of selectors) {
+      for (const { el, text } of getAllTextEls(sel)) {
+        if (isRatingElement(el)) continue;
+        if (requireCurrency && !CURRENCY_RE.test(text)) continue;
+        const parsed = parseLocalizedPrice(text);
+        if (parsed !== null && parsed > 0) found.push(parsed);
       }
     }
+    return found;
+  };
+
+  const specificPriceSelectors = [
+    '[class*="price" i]',
+    '[class*="precio" i]',
+    '[data-price]',
+    '[class*="amount" i]',
+  ];
+  let allPrices = collectPrices(specificPriceSelectors, false);
+  if (allPrices.length === 0) {
+    allPrices = collectPrices(['span', 'div'], true);
   }
+
   // Deduplicate and sort
   const uniquePrices = [...new Set(allPrices)].sort((a, b) => a - b);
   if (uniquePrices.length > 0) {
@@ -946,11 +876,32 @@ export function extractAllFromContainer(container: Element): ExtractedProduct {
 }
 
 /**
- * Extract products using field mappings. When no mappings are defined,
- * falls back to extractAllFromContainer for each container child.
+ * Domain rules saved from the extractAll (container-only) methodology
+ * carry no real per-field selector — the frontend patches the empty
+ * string to this placeholder before persisting, because the backend's
+ * FieldMappingDto requires a non-empty selector. It is never a usable
+ * CSS selector; `hasRealFieldMappings` treats it the same as "no
+ * mapping at all" so replay falls through to extractAllFromContainer
+ * instead of querying for a selector that can never match anything.
  */
-function extractProducts(rule: DomainRule): ExtractedProduct[] {
+const EXTRACT_ALL_PLACEHOLDER_SELECTOR = '[extractAll]';
+
+function hasRealFieldMappings(mappings: FieldMapping[]): boolean {
+  return mappings.some((m) => m.selector && m.selector !== EXTRACT_ALL_PLACEHOLDER_SELECTOR);
+}
+
+/**
+ * Extract products using field mappings. When no *real* mappings are
+ * defined (empty, or the extractAll placeholder), falls back to
+ * extractAllFromContainer for each container child — this is what
+ * makes scheduled auto-replay work for rules saved via the
+ * container-only methodology, not just the interactive first run.
+ *
+ * Exported for unit testing.
+ */
+export function extractProducts(rule: DomainRule): ExtractedProduct[] {
   const products: ExtractedProduct[] = [];
+  const useFieldMappings = hasRealFieldMappings(rule.fieldMappings);
 
   // ── 1. Container-child iteration ────────────────────────────────
   const containers = document.querySelectorAll(rule.containerSelector);
@@ -961,14 +912,13 @@ function extractProducts(rule: DomainRule): ExtractedProduct[] {
 
     if (items.length > 0) {
       for (const item of items) {
-        // If we have field mappings, use them; otherwise extract all
-        const p = rule.fieldMappings.length > 0
+        const p = useFieldMappings
           ? extractFieldsFromElement(item, rule.fieldMappings)
           : extractAllFromContainer(item);
         if (p && Object.keys(p).length > 0) products.push(p);
       }
     } else {
-      const p = rule.fieldMappings.length > 0
+      const p = useFieldMappings
         ? extractFieldsFromElement(container, rule.fieldMappings)
         : extractAllFromContainer(container);
       if (p && Object.keys(p).length > 0) products.push(p);
@@ -976,7 +926,7 @@ function extractProducts(rule: DomainRule): ExtractedProduct[] {
   });
 
   // ── 2. Global index grouping ────────────────────────────────────
-  if (rule.fieldMappings.length > 0) {
+  if (useFieldMappings) {
     const globals = extractProductsGlobal(rule.fieldMappings);
     if (globals.length > 0) return globals;
   }
