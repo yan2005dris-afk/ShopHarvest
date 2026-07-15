@@ -66,7 +66,9 @@ describe('App', () => {
     const fixture = TestBed.createComponent(App);
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('.brand-icon')).toBeTruthy();
+    // Sprint 2: brand uses a Material Symbols 'radar' icon + text,
+    // no more .brand-icon SVG.
+    expect(compiled.querySelector('.material-symbols-outlined')).toBeTruthy();
     expect(compiled.textContent).toContain('Scraper Studio');
   });
 
@@ -90,6 +92,11 @@ describe('App', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     const etlLink = compiled.querySelector('a[routerLink="/etl-management"]');
     expect(etlLink).toBeTruthy();
-    expect(etlLink?.textContent?.trim()).toBe('ETL');
+    // Sprint 2: the nav item now contains a Material Symbols icon
+    // ('memory') followed by the label 'ETL', so textContent is no
+    // longer just 'ETL'. Assert on the label child instead.
+    expect(etlLink?.querySelector('.nav-item__label')?.textContent?.trim()).toBe(
+      'ETL',
+    );
   });
 });

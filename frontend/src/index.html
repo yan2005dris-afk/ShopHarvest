@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es" class="light">
+<html lang="es">
   <head>
     <meta charset="utf-8" />
     <title>Scraper Studio — Web Scraping Dinámico</title>
@@ -10,6 +10,29 @@
       content="Plataforma de análisis comparativo de precios multi-fuente (UPSE)"
     />
     <link rel="icon" type="image/x-icon" href="favicon.ico" />
+
+    <!-- Pre-paint theme bootstrap. Runs synchronously before <body>
+         paints, so the correct `dark`/`light` class is on <html> on
+         first frame — no FOUC. Mirrors ThemeService's resolve order:
+         localStorage 'theme' → prefers-color-scheme → light. -->
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem('theme');
+          var dark =
+            saved === 'dark'
+              ? true
+              : saved === 'light'
+                ? false
+                : window.matchMedia('(prefers-color-scheme: dark)').matches;
+          var root = document.documentElement;
+          root.classList.toggle('dark', dark);
+          root.classList.toggle('light', !dark);
+        } catch (_) {
+          document.documentElement.classList.add('light');
+        }
+      })();
+    </script>
 
     <!-- Hanken Grotesk — Insight Flow sole typeface (DESIGN.md §Typography) -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -25,7 +48,7 @@
       rel="stylesheet"
     />
   </head>
-  <body>
+  <body class="bg-background text-on-surface">
     <app-root></app-root>
   </body>
 </html>

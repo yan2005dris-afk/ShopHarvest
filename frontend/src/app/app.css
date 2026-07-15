@@ -1,170 +1,111 @@
+/*
+ * Component-level styles for the shell (app.html).
+ *
+ * Tailwind v4 utility classes already handle layout, spacing, colors
+ * and typography. This file owns the few rules that can't be expressed
+ * cleanly as utilities:
+ *   - The `.nav-item` family (active/hover state, the lavender
+ *     background + indigo left-border described in DESIGN.md
+ *     §Components/Sidebar).
+ *   - The Material Symbols icon filled-state trick used on active
+ *     nav items.
+ *   - The small color tints that come from the legacy tokens
+ *     (--success-dim, --danger-dim) — exposed as Tailwind utility
+ *     classes via the @theme block in styles.css.
+ */
+
 :host {
   display: block;
   min-height: 100dvh;
 }
 
-.app-shell {
-  display: flex;
-  min-height: 100dvh;
-}
-
-/* ── Sidebar ─────────────────────────────────────── */
-
-.sidebar {
-  width: 220px;
-  min-width: 220px;
-  background: var(--surface);
-  border-right: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  padding: 1rem 0;
-  position: sticky;
-  top: 0;
-  height: 100dvh;
-}
-
-.sidebar-brand {
-  display: flex;
-  align-items: center;
-  gap: 0.625rem;
-  padding: 0.25rem 1rem 1.25rem;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 0.5rem;
-  color: var(--text-1);
-  font-size: 0.9375rem;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-}
-
-.brand-icon {
-  color: var(--accent);
-  flex-shrink: 0;
-}
-
-.sidebar-nav {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
-  padding: 0 0.5rem;
-}
+/* ── Sidebar nav item ─────────────────────────────────────── */
 
 .nav-item {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 0.625rem;
+  gap: 0.75rem;
   padding: 0.625rem 0.75rem;
-  border-radius: var(--radius);
-  color: var(--text-2);
+  border-radius: var(--radius-md);
+  color: var(--color-on-surface-variant);
   text-decoration: none;
-  font-size: 0.875rem;
+  font-size: var(--text-body-md);
   font-weight: 500;
-  transition: color 0.15s, background 0.15s;
-  border: 1px solid transparent;
+  line-height: 1;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease,
+    border-color 150ms ease;
+  border-left: 4px solid transparent;
 }
 
 .nav-item:hover {
-  color: var(--text-1);
-  background: var(--surface-2);
+  color: var(--color-on-surface);
+  background-color: var(--color-surface-container-high);
 }
 
+/* Active state — DESIGN.md §Components/Sidebar:
+   "soft Lavender background with an Indigo left-border" */
 .nav-item.active {
-  color: var(--text-1);
-  background: var(--accent-dim);
-  border-color: var(--accent-border);
+  color: var(--color-on-secondary-container);
+  background-color: var(--color-secondary-container);
+  border-left-color: var(--color-primary);
+  font-weight: 600;
 }
 
-.nav-item.active svg {
-  color: var(--accent);
+/* Filled icon variant when active — visually anchors the selection */
+.nav-item.active .nav-item__icon {
+  font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24;
 }
 
-.sidebar-footer {
-  padding: 0.75rem 0.5rem 0;
-  border-top: 1px solid var(--border);
-  margin-top: 0.5rem;
+/* ── Collapsed state ──────────────────────────────────────── */
+
+.nav-item--collapsed {
+  justify-content: center;
+  padding: 0.625rem 0;
+  border-left-width: 3px;
 }
 
-.nav-item--ext {
-  position: relative;
-}
+/* ── Icon sizing inside nav items ──────────────────────────── */
 
-.ext-badge {
-  margin-left: auto;
-  font-size: 0.625rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  padding: 0.1875rem 0.375rem;
-  border-radius: 0.25rem;
-  background: var(--danger-dim);
-  color: var(--danger);
-}
-
-.ext-badge--on {
-  background: var(--success-dim);
-  color: var(--success);
-}
-
-/* ── Theme toggle ────────────────────────────────── */
-
-.theme-toggle {
-  display: flex;
-  align-items: center;
-  gap: 0.625rem;
-  width: 100%;
-  padding: 0.5rem 0.75rem;
-  background: transparent;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  color: var(--text-2);
-  font-size: 0.8125rem;
-  font-weight: 500;
-  font-family: var(--font);
-  cursor: pointer;
-  margin-bottom: 0.5rem;
-  transition: color 0.15s, border-color 0.15s, background 0.15s;
-}
-
-.theme-toggle:hover {
-  color: var(--text-1);
-  border-color: var(--border-2);
-  background: var(--surface-2);
-}
-
-.theme-toggle svg {
+.nav-item__icon {
+  font-size: 20px;
   flex-shrink: 0;
+  line-height: 1;
 }
 
-/* ── Main content ────────────────────────────────── */
-
-.main-content {
-  flex: 1;
-  overflow: auto;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
+.nav-item__label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* ── Responsive ──────────────────────────────────── */
+/* ── Theme toggle (button-styled nav item) ────────────────── */
 
-@media (max-width: 768px) {
-  .sidebar {
-    width: 64px;
-    min-width: 64px;
-  }
+.nav-item--button {
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-family: inherit;
+  width: 100%;
+  text-align: left;
+}
 
-  .sidebar-brand span,
-  .nav-item span,
-  .ext-badge {
-    display: none;
-  }
+.nav-item--button:hover {
+  border-color: var(--color-outline-variant);
+}
 
-  .sidebar-brand {
-    justify-content: center;
-    padding: 0.25rem 0 1.25rem;
-  }
-
-  .nav-item {
-    justify-content: center;
-    padding: 0.75rem;
-  }
+/* ── Extension "ON/OFF" badge tints ─────────────────────────
+ *
+ * These depend on the dim-tint tokens defined in styles.css.
+ * Kept as a safety net in case Tailwind v4 doesn't auto-generate
+ * bg-success-dim/bg-danger-dim utility classes (they come from the
+ * @theme block but are non-standard names).
+ */
+.bg-success-dim {
+  background-color: color-mix(in srgb, var(--color-success) 12%, transparent);
+}
+.bg-danger-dim {
+  background-color: color-mix(in srgb, var(--color-danger) 12%, transparent);
 }
