@@ -14,7 +14,7 @@ import type {
   LoadResult,
   ScrapeResult,
   StagingResult,
-} from './interfaces';
+} from '../interfaces';
 import { PipelineService } from './pipeline.service';
 import {
   MercadoLibreAdapter,
@@ -24,15 +24,15 @@ import {
   ApiRateAdapter,
   CsvAdapter,
   EncuestaAdapter,
-} from './adapters/data-sources';
-import { DwLoaderAdapter } from './adapters/dw-loader.adapter';
-import { StagingProcessorAdapter } from './adapters/staging-processor.adapter';
-import { AnalyticsPrismaService } from '../../../common/prisma/analytics-prisma.service';
-import { OperationalPrismaService } from '../../../common/prisma/operational-prisma.service';
-import { BrowserFactoryService } from './scraping/browser-factory.service';
-import { DwLoaderService } from './etl/dw-loader.service';
-import { StagingProcessorService } from './etl/staging-processor.service';
-import { QualityService } from './etl/quality.service';
+} from '../adapters/data-sources';
+import { DwLoaderAdapter } from '../adapters/dw-loader.adapter';
+import { StagingProcessorAdapter } from '../adapters/staging-processor.adapter';
+import { AnalyticsPrismaService } from '../../../../common/prisma/analytics-prisma.service';
+import { OperationalPrismaService } from '../../../../common/prisma/operational-prisma.service';
+import { BrowserFactoryService } from '../scraping/browser-factory.service';
+import { DwLoaderService } from '../etl/dw-loader.service';
+import { StagingProcessorService } from '../etl/staging-processor.service';
+import { QualityService } from '../etl/quality.service';
 
 /**
  * RED-first specs for PipelineService.

@@ -35,16 +35,16 @@ import {
   PipelineRunSummary,
 } from '@web-scraping/contracts/pipeline';
 import type { EtlRunDto } from '@web-scraping/contracts/pipeline';
-import { Public } from '../../operational/auth/common/public.decorator';
-import { OperationalPrismaService } from '../../../common/prisma/operational-prisma.service';
-import { PipelineService } from './pipeline.service';
-import { EtlSchedulerService } from './etl-scheduler.service';
+import { Public } from '../../../../../modules/operational/auth/common/public.decorator';
+import { OperationalPrismaService } from '../../../../../common/prisma/operational-prisma.service';
+import { PipelineService } from '../../application/pipeline.service';
+import { EtlSchedulerService } from '../../application/etl-scheduler.service';
 import {
   ListEtlRunsQueryDto,
   TriggerEtlRunDto,
   EtlRunResponseDto,
-} from './dto/etl-run.dto';
-import { SseAuthGuard } from './guards/sse-auth.guard';
+} from '../../dto/etl-run.dto';
+import { SseAuthGuard } from '../../guards/sse-auth.guard';
 
 /** Terminal EtlRun statuses — once reached, SSE polling ends. */
 const TERMINAL_STATUSES = ['SUCCESS', 'FAILED'];

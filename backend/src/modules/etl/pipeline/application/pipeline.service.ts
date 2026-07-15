@@ -14,7 +14,7 @@ import type {
   ScrapeResult,
   SourceConfig,
   StagingResult,
-} from './interfaces';
+} from '../interfaces';
 
 /**
  * PipelineService — orchestrator for the seven scrapers, the

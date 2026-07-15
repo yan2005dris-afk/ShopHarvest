@@ -6,12 +6,12 @@ import {
   DATA_SOURCES,
   STAGING_PROCESSOR,
 } from '@web-scraping/contracts/pipeline';
-import { PipelineController } from './pipeline.controller';
-import { PipelineService } from './pipeline.service';
+import { PipelineController } from './infrastructure/http/pipeline-http.controller';
+import { PipelineService } from './application/pipeline.service';
 import { SseAuthGuard } from './guards/sse-auth.guard';
 import { DwLoaderAdapter } from './adapters/dw-loader.adapter';
 import { StagingProcessorAdapter } from './adapters/staging-processor.adapter';
-import { EtlSchedulerService } from './etl-scheduler.service';
+import { EtlSchedulerService } from './application/etl-scheduler.service';
 import { BrowserFactoryService } from './scraping/browser-factory.service';
 import { QualityService } from './etl/quality.service';
 import { StagingProcessorService } from './etl/staging-processor.service';

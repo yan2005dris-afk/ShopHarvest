@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { EtlSchedulerService } from './etl-scheduler.service';
-import { OperationalPrismaService } from '../../../common/prisma/operational-prisma.service';
+import { OperationalPrismaService } from '../../../../common/prisma/operational-prisma.service';
 import { SchedulerRegistry } from '@nestjs/schedule';
 import { PipelineService } from './pipeline.service';
 import { PipelineSource } from '@web-scraping/contracts/pipeline';

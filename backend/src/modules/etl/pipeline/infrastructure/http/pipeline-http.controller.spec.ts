@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { PipelineController } from './pipeline.controller';
-import { PipelineService } from './pipeline.service';
-import { EtlSchedulerService } from './etl-scheduler.service';
-import { OperationalPrismaService } from '../../../common/prisma/operational-prisma.service';
+import { PipelineController } from './pipeline-http.controller';
+import { PipelineService } from '../../application/pipeline.service';
+import { EtlSchedulerService } from '../../application/etl-scheduler.service';
+import { OperationalPrismaService } from '../../../../../common/prisma/operational-prisma.service';
 import { JwtService } from '@nestjs/jwt';
 
 // ── Mock types ──────────────────────────────────────────────────────

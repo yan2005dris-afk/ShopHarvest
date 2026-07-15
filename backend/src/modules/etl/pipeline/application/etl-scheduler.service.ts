@@ -1,7 +1,7 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { SchedulerRegistry } from '@nestjs/schedule';
 import { CronJob } from 'cron';
-import { OperationalPrismaService } from '../../../common/prisma/operational-prisma.service';
+import { OperationalPrismaService } from '../../../../common/prisma/operational-prisma.service';
 import { PipelineService } from './pipeline.service';
 import { PipelineSource } from '@web-scraping/contracts/pipeline';
 
