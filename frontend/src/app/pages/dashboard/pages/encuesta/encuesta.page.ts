@@ -45,7 +45,7 @@ import { KpiCardComponent } from '../../shared/kpi-card/kpi-card.component';
         label="Total respuestas"
         [value]="totalRespuestas()"
         icon="📋"
-        accent="#60a5fa"
+        accent="secondary"
         [loading]="store.loading()"
       />
 
@@ -53,7 +53,7 @@ import { KpiCardComponent } from '../../shared/kpi-card/kpi-card.component';
         label="Sitios evaluados"
         [value]="sitiosCount()"
         icon="🌐"
-        accent="#a78bfa"
+        accent="secondary"
         [loading]="store.loading()"
       />
 
@@ -62,7 +62,7 @@ import { KpiCardComponent } from '../../shared/kpi-card/kpi-card.component';
         [value]="sitioTop()"
         [delta]="sitioTopPct()"
         icon="🏆"
-        accent="#fbbf24"
+        accent="warning"
         [loading]="store.loading()"
       />
 
@@ -70,7 +70,7 @@ import { KpiCardComponent } from '../../shared/kpi-card/kpi-card.component';
         label="Frecuencia común"
         [value]="frecuenciaComun()"
         icon="📈"
-        accent="#34d399"
+        accent="success"
         [loading]="store.loading()"
       />
     </section>

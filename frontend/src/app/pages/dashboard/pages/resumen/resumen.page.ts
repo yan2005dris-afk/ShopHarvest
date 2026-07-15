@@ -52,7 +52,7 @@ import { ChartCardComponent } from '../../shared/chart-card/chart-card.component
         label="Total productos"
         [value]="totalProductos()"
         icon="📦"
-        accent="#60a5fa"
+        accent="secondary"
         [loading]="store.loading()"
       />
 
@@ -60,7 +60,7 @@ import { ChartCardComponent } from '../../shared/chart-card/chart-card.component
         label="Total encuestas"
         [value]="totalEncuestas()"
         icon="📋"
-        accent="#34d399"
+        accent="success"
         [loading]="store.loading()"
       />
 
@@ -69,7 +69,7 @@ import { ChartCardComponent } from '../../shared/chart-card/chart-card.component
         [value]="precioPromedio()"
         delta="USD por producto"
         icon="💰"
-        accent="#fbbf24"
+        accent="warning"
         [loading]="store.loading()"
       />
 
@@ -77,7 +77,7 @@ import { ChartCardComponent } from '../../shared/chart-card/chart-card.component
         label="Fuentes scrapeadas"
         [value]="fuentesScrapeadas()"
         icon="🌐"
-        accent="#a78bfa"
+        accent="secondary"
         [loading]="store.loading()"
       />
 
@@ -85,7 +85,7 @@ import { ChartCardComponent } from '../../shared/chart-card/chart-card.component
         label="Categorías únicas"
         [value]="categoriasUnicas()"
         icon="🏷️"
-        accent="#f472b6"
+        accent="primary"
         [loading]="store.loading()"
       />
 
@@ -94,7 +94,7 @@ import { ChartCardComponent } from '../../shared/chart-card/chart-card.component
         [value]="completitudGeneral()"
         delta="ficha completa"
         icon="✅"
-        accent="#34d399"
+        accent="success"
         [loading]="store.loading()"
       />
 
@@ -103,7 +103,7 @@ import { ChartCardComponent } from '../../shared/chart-card/chart-card.component
         [value]="preferenciaTop()"
         [delta]="preferenciaPct()"
         icon="🏆"
-        accent="#fb923c"
+        accent="warning"
         [loading]="store.loading()"
       />
     </section>

@@ -1,58 +1,108 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 /**
- * Reusable KPI summary card.
+ * Reusable KPI summary card — Insight Flow variant.
  *
- * Adapts to the global dark / light theme via CSS custom properties
- * (defined in `styles.css`). Three inputs cover the common cases:
- *   - `label`: short uppercase string (e.g. "Total productos").
- *   - `value`: the headline number / formatted string the card shows
- *     big. Kept as `string | number` so callers can pass either
- *     `1234` or `"$49.97"`.
- *   - `delta`: optional secondary line for trend / extra context.
- *   - `trend`: 'up' | 'down' | undefined — color of the delta line.
- *   - `accent`: optional CSS color override for the top accent bar.
+ * Design system references (DESIGN.md §Components/Data Cards):
+ *   - Title in `text-headline-sm` (18px / 600)
+ *   - Subtitle in `text-label-caps` (11px / 700 / tracked 0.08em /
+ *     uppercase / muted) — replaces the old "kpi-label" usage.
+ *   - KPI value in `text-metric-value` (40px / 700 / tracking -0.03em)
+ *   - Colored 2px top border corresponding to the metric's category
+ *     or status — mapped from the `accent` input.
+ *   - Card padding 1.5rem per `--spacing-card-padding`.
+ *   - Card surface is `--color-surface-container-low` (M3 "container"
+ *     tone, one elevation step above the page background).
+ *   - Status chips / delta line use `--color-success` / `--color-danger`.
  *
- * `loading` flips the card into a skeleton state.
+ * Inputs (kept signal-based for Angular 22 + zoneless):
+ *   - `label`     required short uppercase string
+ *   - `value`     required headline number or pre-formatted string
+ *   - `delta`     optional secondary line for trend / extra context
+ *   - `trend`     'up' | 'down' — colour of the delta line
+ *   - `icon`      optional Material Symbols icon name (e.g. 'trending_up')
+ *   - `accent`    optional token key — one of 'primary' | 'success' |
+ *                 'warning' | 'danger' | 'secondary'. Defaults to
+ *                 'primary'. Replaces the previous free-form CSS
+ *                 color input — the system is the only source of truth
+ *                 for what "indigo for category X" means.
+ *   - `loading`   flips the card into a skeleton state
  */
+type AccentToken = 'primary' | 'secondary' | 'success' | 'warning' | 'danger';
+
+const ACCENT_VAR: Record<AccentToken, string> = {
+  primary: 'var(--color-primary)',
+  secondary: 'var(--color-secondary)',
+  success: 'var(--color-success)',
+  warning: 'var(--color-warning)',
+  danger: 'var(--color-danger)',
+};
+
 @Component({
   selector: 'app-kpi-card',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <article
-      class="kpi-card"
+      class="kpi-card relative flex flex-col gap-2 overflow-hidden rounded-xl border border-outline-variant bg-surface-container-low p-6 font-sans transition-[border-color,transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:border-primary"
       [class.kpi-card--loading]="loading()"
       [attr.aria-busy]="loading()"
-      [style.--accent]="accent() || 'var(--accent)'"
+      [style.--accent]="accentVar()"
     >
-      <span class="kpi-card__accent" aria-hidden="true"></span>
+      <!-- 2px top accent bar — DESIGN.md §Components/Data Cards
+           "colored top-border corresponding to the metric's category" -->
+      <span
+        class="absolute inset-x-0 top-0 h-0.5"
+        [style.background-color]="'var(--accent)'"
+        aria-hidden="true"
+      ></span>
 
       @if (loading()) {
         <div class="kpi-card__skeleton kpi-card__skeleton--label"></div>
         <div class="kpi-card__skeleton kpi-card__skeleton--value"></div>
         <div class="kpi-card__skeleton kpi-card__skeleton--delta"></div>
       } @else {
-        <header class="kpi-card__header">
+        <header class="flex items-center gap-2">
           @if (icon()) {
-            <span class="kpi-card__icon" aria-hidden="true">{{ icon() }}</span>
+            <span
+              class="material-symbols-outlined text-on-surface-variant"
+              style="font-size: 18px"
+              aria-hidden="true"
+              >{{ icon() }}</span
+            >
           }
-          <span class="kpi-card__label">{{ label() }}</span>
+          <span
+            class="text-label-caps text-on-surface-variant"
+            data-testid="kpi-label"
+          >
+            {{ label() }}
+          </span>
         </header>
 
-        <div class="kpi-card__value">{{ value() }}</div>
+        <div
+          class="text-metric-value text-on-surface"
+          data-testid="kpi-value"
+        >
+          {{ value() }}
+        </div>
 
         @if (delta()) {
           <div
-            class="kpi-card__delta"
-            [class.kpi-card__delta--up]="trend() === 'up'"
-            [class.kpi-card__delta--down]="trend() === 'down'"
+            class="inline-flex items-center gap-1 text-body-md"
+            [class.text-success]="trend() === 'up'"
+            [class.text-danger]="trend() === 'down'"
+            [class.text-on-surface-variant]="!trend()"
+            data-testid="kpi-delta"
           >
             @if (trend() === 'up') {
-              <span class="kpi-card__trend-glyph" aria-hidden="true">▲</span>
+              <span class="material-symbols-outlined" style="font-size: 14px"
+                >trending_up</span
+              >
             }
             @if (trend() === 'down') {
-              <span class="kpi-card__trend-glyph" aria-hidden="true">▼</span>
+              <span class="material-symbols-outlined" style="font-size: 14px"
+                >trending_down</span
+              >
             }
             <span>{{ delta() }}</span>
           </div>
@@ -66,105 +116,20 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
         display: block;
       }
 
-      .kpi-card {
-        position: relative;
-        padding: 1.5rem 1.25rem 1.25rem;
-        border-radius: 12px;
-        background: var(--surface);
-        background-image: var(--card-glass, none);
-        backdrop-filter: blur(8px);
-        border: 1px solid var(--border);
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-        font-family: var(--font);
-        overflow: hidden;
-        transition: border-color 0.18s ease, transform 0.18s ease,
-          box-shadow 0.18s ease;
-        box-shadow: var(--shadow-card, none);
-      }
-
-      .kpi-card:hover {
-        border-color: var(--accent-border);
-        transform: translateY(-2px);
-        box-shadow: var(--shadow-card-hover, none);
-      }
-
-      .kpi-card__accent {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 2px;
-        background: var(--accent, var(--accent));
-        opacity: 0.85;
-      }
-
-      .kpi-card__header {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-      }
-
-      .kpi-card__icon {
-        font-size: 0.95rem;
-        opacity: 0.7;
-        line-height: 1;
-      }
-
-      .kpi-card__label {
-        font-size: 0.6875rem;
-        color: var(--text-3);
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        font-weight: 600;
-      }
-
-      .kpi-card__value {
-        font-size: 2rem;
-        font-weight: 700;
-        color: var(--text-1);
-        line-height: 1.1;
-        letter-spacing: -0.025em;
-        word-break: break-word;
-        margin-top: 0.25rem;
-      }
-
-      .kpi-card__delta {
-        font-size: 0.75rem;
-        color: var(--text-3);
-        display: inline-flex;
-        align-items: center;
-        gap: 0.25rem;
-        margin-top: 0.25rem;
-      }
-
-      .kpi-card__delta--up {
-        color: var(--success);
-      }
-
-      .kpi-card__delta--down {
-        color: var(--danger);
-      }
-
-      .kpi-card__trend-glyph {
-        font-size: 0.65rem;
-      }
-
-      .kpi-card--loading {
-        gap: 0.6rem;
-      }
-
+      /* Skeleton shimmer — uses M3 surface tokens instead of the
+         removed --surface-2/3 pair. The animation is the same
+         (left-to-right gradient sweep) but the source tones are
+         container-low → container → container-low. */
       .kpi-card__skeleton {
         background: linear-gradient(
           90deg,
-          var(--surface-2) 0%,
-          var(--surface-3) 50%,
-          var(--surface-2) 100%
+          var(--color-surface-container-low) 0%,
+          var(--color-surface-container-high) 50%,
+          var(--color-surface-container-low) 100%
         );
         background-size: 200% 100%;
         animation: kpi-shimmer 1.4s ease-in-out infinite;
-        border-radius: 4px;
+        border-radius: var(--radius-xs);
       }
 
       .kpi-card__skeleton--label {
@@ -174,12 +139,16 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
       .kpi-card__skeleton--value {
         width: 75%;
-        height: 2rem;
+        height: 2.5rem;
       }
 
       .kpi-card__skeleton--delta {
         width: 45%;
         height: 0.75rem;
+      }
+
+      .kpi-card--loading {
+        gap: 0.6rem;
       }
 
       @keyframes kpi-shimmer {
@@ -199,6 +168,13 @@ export class KpiCardComponent {
   readonly delta = input<string>('');
   readonly trend = input<'up' | 'down' | undefined>(undefined);
   readonly icon = input<string>('');
-  readonly accent = input<string>('');
+  /** Token key — see AccentToken. Default: 'primary'. */
+  readonly accent = input<AccentToken>('primary');
   readonly loading = input<boolean>(false);
+
+  /**
+   * Resolved CSS var for the top accent bar. Computed from the
+   * `accent` input so the template can stay declarative.
+   */
+  protected readonly accentVar = computed(() => ACCENT_VAR[this.accent()]);
 }
