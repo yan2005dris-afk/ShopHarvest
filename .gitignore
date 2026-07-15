@@ -32,6 +32,8 @@ logs/
 # ─── Angular ──────────────────────────────────
 frontend/.angular/
 frontend/dist/
+# Generated Tailwind output (pnpm build:css) — see styles.css for the source
+frontend/src/styles.built.css
 
 # ─── Prisma ───────────────────────────────────
 backend/src/generated/
