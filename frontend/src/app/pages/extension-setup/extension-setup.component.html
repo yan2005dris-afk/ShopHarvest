@@ -1,57 +1,92 @@
-<div class="setup">
-  <div class="setup-hero">
-    <div class="setup-hero-icon">
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"/><line x1="16" y1="8" x2="2" y2="22"/><line x1="17.5" y1="15" x2="9" y2="15"/>
-      </svg>
+<!--
+  ExtensionSetupComponent — Insight Flow variant.
+
+  Layout: centered single-column page, max-width 640px, vertical
+  rhythm via gap-4. Hero uses the rounded-xl icon container with
+  bg-primary-dim tone and text-primary icon. Material Symbols
+  replace the inline SVGs (extension / warning / check /
+  download / settings / list / open-in-new). The accent/primary
+  color of the legacy CSS becomes --color-primary throughout.
+-->
+<div class="mx-auto flex max-w-2xl flex-col gap-4 px-8 pt-10 pb-16">
+  <!-- Hero -->
+  <div class="mb-3 flex flex-col items-center gap-3 text-center">
+    <div
+      class="flex size-16 items-center justify-center rounded-xl border border-primary bg-primary-fixed text-primary"
+    >
+      <span class="material-symbols-outlined" style="font-size: 32px">extension</span>
     </div>
-    <h1>Visual Scraper Extension</h1>
-    <p class="setup-subtitle">Install the extension to map and extract data visually</p>
+    <h1 class="text-headline-md m-0 font-bold text-on-surface tracking-tight">
+      Visual Scraper Extension
+    </h1>
+    <p class="text-body-lg m-0 text-on-surface-variant">
+      Install the extension to map and extract data visually
+    </p>
   </div>
 
   @if (!extensionBuilt) {
-    <div class="setup-alert setup-alert--warn">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="m10.29 3.86-8.22 14.22A2 2 0 0 0 3.78 21h16.44a2 2 0 0 0 1.71-3l-8.22-14.22a2 2 0 0 0-3.42 0z"/>
-        <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-      </svg>
+    <div
+      class="flex items-start gap-3 rounded-xl border border-outline-variant bg-warning-dim p-4 text-body-md text-warning"
+      role="alert"
+    >
+      <span class="material-symbols-outlined shrink-0" style="font-size: 20px"
+        >warning</span
+      >
       <div>
-        <strong>Extension not packaged yet</strong>
-        <p>Run <code>pnpm package:extension</code> at the repo root to generate the zip files.</p>
+        <strong class="mb-1 block font-bold">Extension not packaged yet</strong>
+        <p class="m-0 text-body-md text-on-surface-variant leading-relaxed">
+          Run <code class="rounded-xs bg-surface-container px-1.5 py-0.5 font-mono text-body-md text-on-surface">pnpm package:extension</code>
+          at the repo root to generate the zip files.
+        </p>
       </div>
     </div>
   }
 
   @if (detected) {
-    <div class="setup-detected">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="20 6 9 17 4 12"/>
-      </svg>
-      <span>Detected browser: <strong>{{ detected.label }}</strong></span>
+    <div
+      class="flex items-center gap-2.5 rounded-md border border-outline-variant bg-success-dim p-3 text-body-md text-success"
+    >
+      <span class="material-symbols-outlined" style="font-size: 18px">check_circle</span>
+      <span
+        >Detected browser: <strong class="font-bold text-on-surface">{{ detected.label }}</strong></span
+      >
     </div>
 
-    <div class="setup-actions">
-      <button class="btn-accent-lg" (click)="downloadExtension()">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-        </svg>
+    <div class="flex flex-wrap gap-3">
+      <button
+        type="button"
+        class="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-md bg-primary px-6 py-3 text-body-lg font-semibold text-on-primary transition-colors hover:bg-primary-container"
+        (click)="downloadExtension()"
+        data-testid="btn-download"
+      >
+        <span class="material-symbols-outlined" style="font-size: 18px">download</span>
         Download extension ({{ detected.size }})
       </button>
-      <button class="btn-outline-lg" (click)="openConfigUrl()">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>
-        </svg>
+      <button
+        type="button"
+        class="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-outline-variant bg-transparent px-6 py-3 text-body-lg font-medium text-on-surface-variant transition-colors hover:bg-surface-container hover:text-on-surface"
+        (click)="openConfigUrl()"
+        data-testid="btn-open-config"
+      >
+        <span class="material-symbols-outlined" style="font-size: 18px">open_in_new</span>
         Open {{ detected.label }} extensions
       </button>
     </div>
 
-    <details class="setup-other">
-      <summary>Using a different browser?</summary>
-      <div class="setup-browser-grid">
+    <details class="text-body-md text-on-surface-variant">
+      <summary
+        class="cursor-pointer px-0 py-1.5 select-none transition-colors hover:text-on-surface"
+      >
+        Using a different browser?
+      </summary>
+      <div class="mt-3 flex flex-wrap gap-2">
         @for (b of browsers; track b.browser) {
           <button
-            class="setup-browser-btn"
-            [class.setup-browser-btn--active]="selected?.browser === b.browser"
+            type="button"
+            class="cursor-pointer rounded-md border bg-surface px-3.5 py-1.5 text-body-md text-on-surface-variant transition-colors hover:border-outline hover:text-on-surface"
+            [class.border-primary]="selected?.browser === b.browser"
+            [class.bg-primary-fixed]="selected?.browser === b.browser"
+            [class.text-on-surface]="selected?.browser === b.browser"
             (click)="selectBrowser(b.browser)"
           >
             {{ b.label }}
@@ -61,49 +96,97 @@
     </details>
 
     @if (selected) {
-      <div class="setup-steps-card">
-        <h3>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
-            <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
-          </svg>
+      <section
+        class="rounded-xl border border-outline-variant bg-surface p-5"
+        aria-label="Installation steps"
+      >
+        <h3 class="text-body-md m-0 mb-4 flex items-center gap-2 font-bold text-on-surface">
+          <span class="material-symbols-outlined text-primary" style="font-size: 18px"
+            >format_list_numbered</span
+          >
           Installation steps
         </h3>
-        <ol class="setup-steps">
+        <ol class="m-0 flex flex-col gap-3 p-0 list-none">
           @for (step of getSteps(selected.browser); track step.number) {
-            <li>
-              <span class="step-num">{{ step.number }}</span>
+            <li class="flex items-start gap-3 text-body-md leading-relaxed text-on-surface-variant">
+              <span
+                class="mt-0.5 inline-flex size-[22px] shrink-0 items-center justify-center rounded-full border border-primary bg-primary-fixed text-[11px] font-bold text-primary"
+                >{{ step.number }}</span
+              >
               <span>{{ step.text }}</span>
             </li>
           }
         </ol>
-      </div>
+      </section>
 
-      <div class="setup-tips-card">
-        <h3>Tips for {{ selected.label }}</h3>
+      <section
+        class="rounded-xl border border-outline-variant bg-surface p-5 text-body-md"
+        aria-label="Tips"
+      >
+        <h3 class="text-body-md m-0 mb-3 font-bold text-on-surface">
+          Tips for {{ selected.label }}
+        </h3>
         @if (selected.browser === 'firefox') {
-          <p>The extension loads temporarily — it won't survive a browser restart.</p>
-          <p>For permanent install, sign it through
-            <a [href]="selected.docsUrl" target="_blank" rel="noopener">Firefox Add-ons</a>.
+          <p class="m-0 mb-2 text-on-surface-variant leading-relaxed">
+            The extension loads temporarily — it won't survive a browser restart.
+          </p>
+          <p class="m-0 text-on-surface-variant leading-relaxed">
+            For permanent install, sign it through
+            <a
+              class="font-medium text-primary no-underline hover:underline"
+              [href]="selected.docsUrl"
+              target="_blank"
+              rel="noopener"
+              >Firefox Add-ons</a
+            >.
           </p>
         } @else if (selected.browser === 'safari') {
-          <p>Xcode is required to build the Safari native wrapper.</p>
-          <p>See <a [href]="selected.docsUrl" target="_blank" rel="noopener">Apple's guide</a> for details.</p>
+          <p class="m-0 mb-2 text-on-surface-variant leading-relaxed">
+            Xcode is required to build the Safari native wrapper.
+          </p>
+          <p class="m-0 text-on-surface-variant leading-relaxed">
+            See
+            <a
+              class="font-medium text-primary no-underline hover:underline"
+              [href]="selected.docsUrl"
+              target="_blank"
+              rel="noopener"
+              >Apple's guide</a
+            >
+            for details.
+          </p>
         } @else {
-          <p>Developer mode must be enabled — Chrome blocks unsigned extensions without it.</p>
-          <p>For permanent distribution, package as <code>.crx</code> or publish to the
-            <a [href]="selected.docsUrl" target="_blank" rel="noopener">Chrome Web Store</a>.
+          <p class="m-0 mb-2 text-on-surface-variant leading-relaxed">
+            Developer mode must be enabled — Chrome blocks unsigned extensions without it.
+          </p>
+          <p class="m-0 text-on-surface-variant leading-relaxed">
+            For permanent distribution, package as
+            <code class="rounded-xs bg-surface-container-low px-1.5 py-0.5 font-mono text-body-md text-on-surface"
+              >.crx</code
+            >
+            or publish to the
+            <a
+              class="font-medium text-primary no-underline hover:underline"
+              [href]="selected.docsUrl"
+              target="_blank"
+              rel="noopener"
+              >Chrome Web Store</a
+            >.
           </p>
         }
-      </div>
+      </section>
     }
 
-    <div class="setup-verify-card">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="20 6 9 17 4 12"/>
-      </svg>
-      <p>Extension already installed?
-        <a routerLink="/">Go to Visual Mapper</a> to start scraping.
+    <div
+      class="flex items-center gap-2.5 rounded-md border border-primary bg-primary-fixed p-3 text-body-md text-primary"
+    >
+      <span class="material-symbols-outlined" style="font-size: 18px">check_circle</span>
+      <p class="m-0 text-on-surface-variant">
+        Extension already installed?
+        <a class="font-semibold text-primary no-underline hover:underline" routerLink="/"
+          >Go to Visual Mapper</a
+        >
+        to start scraping.
       </p>
     </div>
   }

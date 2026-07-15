@@ -32,9 +32,22 @@ export class PriceHistoryChartComponent implements AfterViewInit {
   private canvasEl!: HTMLCanvasElement;
   private ctx!: CanvasRenderingContext2D;
 
-  // Chart configuration constants
+  // Chart configuration constants.
+  // Series colors come from the Insight Flow palette so the chart
+  // matches the rest of the dashboard in light + dark mode.
+  // (Material 3 primary / secondary / success / warning / danger /
+  //  tertiary-fixed etc — kept as fallbacks if a token isn't bound.)
   private readonly padding = { top: 20, right: 20, bottom: 40, left: 60 };
-  private readonly colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316'];
+  private readonly colors = [
+    '#494bd6', // surface-tint / primary
+    '#10b981', // success (emerald-500)
+    '#f59e0b', // warning (amber-500)
+    '#ef4444', // danger  (red-500)
+    '#8b5cf6', // violet-500
+    '#ec4899', // pink-500
+    '#06b6d4', // cyan-500
+    '#f97316', // orange-500
+  ];
 
   ngAfterViewInit(): void {
     this.canvasEl = this.canvasRef.nativeElement;
@@ -109,11 +122,16 @@ export class PriceHistoryChartComponent implements AfterViewInit {
     // Clear
     this.ctx.clearRect(0, 0, cssWidth, cssHeight);
 
-    // Theme colors
+    // Theme colors — read from the Insight Flow CSS vars first, fall
+    // back to slate-* defaults if the tokens aren't bound (e.g. in
+    // unit tests where styles.css isn't loaded).
     const computedStyle = getComputedStyle(document.documentElement);
-    const colorBorder = computedStyle.getPropertyValue('--border').trim() || '#e5e7eb';
-    const colorText3 = computedStyle.getPropertyValue('--text-3').trim() || '#6b7280';
-    const colorText1 = computedStyle.getPropertyValue('--text-1').trim() || '#111827';
+    const colorBorder =
+      computedStyle.getPropertyValue('--color-outline-variant').trim() || '#c7c4d7';
+    const colorText3 =
+      computedStyle.getPropertyValue('--color-on-surface-variant').trim() || '#464554';
+    const colorText1 =
+      computedStyle.getPropertyValue('--color-on-surface').trim() || '#111c2d';
 
     // Grid lines (horizontal)
     this.ctx.strokeStyle = colorBorder;

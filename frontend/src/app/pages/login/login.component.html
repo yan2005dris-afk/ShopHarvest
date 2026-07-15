@@ -1,39 +1,73 @@
-<div class="login-wrap">
-  <form class="login-card" (ngSubmit)="submit()">
-    <h1 class="login-title">{{ title }}</h1>
-    <p class="login-sub">Visual Scraper</p>
+<!--
+  LoginComponent template — Insight Flow variant.
 
-    <label class="login-field">
+  Layout: full-viewport grid, single card centered. Card uses
+  bg-surface / border-outline-variant per Insight Flow §Elevation.
+  Inputs follow the Insight Flow input convention:
+    - bg-surface-container-low fill (per .form-group select in the
+      ConfirmModal precedent)
+    - border-outline-variant by default
+    - focus:border-primary + focus:ring-2 focus:ring-primary (the
+      "2px Indigo ring" from DESIGN.md §Components/Input Fields)
+
+  The accent/error color comes from --color-danger because the
+  legacy accent was already reddish; the system token is what binds
+  this to "error / required attention".
+-->
+<div class="grid min-h-dvh place-items-center p-6">
+  <form
+    class="flex w-full max-w-sm flex-col gap-3.5 rounded-xl border border-outline-variant bg-surface p-7"
+    (ngSubmit)="submit()"
+  >
+    <h1 class="text-headline-md m-0 text-on-surface">{{ title }}</h1>
+    <p class="text-body-md -mt-2 mb-1.5 text-on-surface-variant">Visual Scraper</p>
+
+    <label class="flex flex-col gap-1.5 text-body-md text-on-surface-variant">
       <span>Email</span>
       <input
         type="email"
         name="email"
         autocomplete="username"
+        class="rounded-md border border-outline-variant bg-surface-container-low px-3 py-2.5 text-body-lg text-on-surface outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary"
         [(ngModel)]="email"
         required
       />
     </label>
 
-    <label class="login-field">
+    <label class="flex flex-col gap-1.5 text-body-md text-on-surface-variant">
       <span>Password</span>
       <input
         type="password"
         name="password"
         [attr.autocomplete]="mode === 'login' ? 'current-password' : 'new-password'"
+        class="rounded-md border border-outline-variant bg-surface-container-low px-3 py-2.5 text-body-lg text-on-surface outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary"
         [(ngModel)]="password"
         required
       />
     </label>
 
     @if (error) {
-      <p class="login-error">{{ error }}</p>
+      <p class="text-body-md m-0 text-danger" data-testid="login-error">{{ error }}</p>
     }
 
-    <button type="submit" class="login-btn" [disabled]="submitting">
-      @if (submitting) { Please wait… } @else { {{ title }} }
+    <button
+      type="submit"
+      class="bg-primary text-on-primary hover:bg-primary-container mt-1 cursor-pointer rounded-md px-3.5 py-2.5 text-body-lg font-semibold transition-colors disabled:cursor-default disabled:opacity-60"
+      [disabled]="submitting"
+      data-testid="login-submit"
+    >
+      @if (submitting) {
+        Please wait…
+      } @else {
+        {{ title }}
+      }
     </button>
 
-    <button type="button" class="login-switch" (click)="toggleMode()">
+    <button
+      type="button"
+      class="text-body-md cursor-pointer bg-transparent text-on-surface-variant transition-colors hover:text-on-surface"
+      (click)="toggleMode()"
+    >
       @if (mode === 'login') {
         Need an account? Register
       } @else {

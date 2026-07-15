@@ -92,7 +92,7 @@ describe('ProductsComponent (offer-level model)', () => {
     fixture.detectChanges();
 
     const host = fixture.nativeElement as HTMLElement;
-    const offerRows = host.querySelectorAll('.prd-offer-row');
+    const offerRows = host.querySelectorAll('[data-testid="offer-row"]');
     expect(offerRows).toHaveLength(2);
     expect(offerRows[0].textContent).toContain('29.99');
     expect(offerRows[1].textContent).toContain('24.5');
@@ -141,7 +141,7 @@ describe('ProductsComponent (offer-level model)', () => {
     expect(component.historyForOffer('o2')[0].price).toBe(24.5);
 
     const host = fixture.nativeElement as HTMLElement;
-    const historyGroups = host.querySelectorAll('.prd-history-group');
+    const historyGroups = host.querySelectorAll('[data-testid="history-group"]');
     expect(historyGroups).toHaveLength(2);
   });
 
