@@ -1,8 +1,8 @@
 export { AnalyticsModule } from './analytics.module';
-export { AnalyticsController } from './analytics.controller';
-export { AnalyticsService } from './analytics.service';
-export { AnalyticsQueryService } from './analytics-query.service';
-export { DwLoaderService } from './dw-loader.service';
+export { AnalyticsHttpController } from './infrastructure/http/analytics-http.controller';
+export { KpisService } from './application/kpis.service';
+export { QueriesService } from './application/queries.service';
+export { DwLoaderService } from './application/dw-loader.service';
 export {
   serializeKpiRows,
   serializeKpiRow,

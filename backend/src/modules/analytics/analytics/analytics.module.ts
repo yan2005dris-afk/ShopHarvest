@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
-import { AnalyticsController } from './analytics.controller';
-import { AnalyticsService } from './analytics.service';
-import { AnalyticsQueryService } from './analytics-query.service';
-import { DwLoaderService } from './dw-loader.service';
+import { KpisService } from './application/kpis.service';
+import { QueriesService } from './application/queries.service';
+import { DwLoaderService } from './application/dw-loader.service';
+import { AnalyticsHttpController } from './infrastructure/http/analytics-http.controller';
 import { PipelineModule } from '../../etl/pipeline/pipeline.module';
 
 /**
@@ -15,14 +15,16 @@ import { PipelineModule } from '../../etl/pipeline/pipeline.module';
  *     is constructed.
  *   - DwLoaderService is now a thin shim over IDwLoader that maps
  *     the camelCase LoadResult back to the snake_case envelope the
- *     AnalyticsController.load endpoint already exposes.
+ *     AnalyticsHttpController.load endpoint already exposes.
  *
- * Everything else (controller, services, queries) is untouched.
+ * Application services (KpisService, QueriesService, DwLoaderService)
+ * live in the `application/` layer. The HTTP adapter is in
+ * `infrastructure/http/`.
  */
 @Module({
   imports: [PipelineModule],
-  controllers: [AnalyticsController],
-  providers: [AnalyticsService, AnalyticsQueryService, DwLoaderService],
-  exports: [AnalyticsService, AnalyticsQueryService, DwLoaderService],
+  controllers: [AnalyticsHttpController],
+  providers: [KpisService, QueriesService, DwLoaderService],
+  exports: [KpisService, QueriesService, DwLoaderService],
 })
 export class AnalyticsModule {}

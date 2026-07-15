@@ -1,5 +1,5 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { AnalyticsPrismaService } from '../../../common/prisma/analytics-prisma.service';
+import { AnalyticsPrismaService } from '../../../../common/prisma/analytics-prisma.service';
 import {
   AllKpisResponseDto,
   KpiPrecioCategoriaDto,
@@ -8,10 +8,10 @@ import {
   KpiRangoPreciosDto,
   KpiPreferenciaDto,
 } from '@web-scraping/contracts/analytics';
-import { serializeKpiRow, serializeKpiRows } from './dto/serializers';
+import { serializeKpiRow, serializeKpiRows } from '../dto/serializers';
 
 /**
- * AnalyticsService — KPI card endpoints backed by `dw.v_kpi_*` views.
+ * KpisService — KPI card endpoints backed by `dw.v_kpi_*` views.
  *
  * Reads only — no mutations. Every method calls `prisma.$queryRawUnsafe`
  * with the verbatim SQL from `backend/pipeline/scripts/dw/dw_analytical_queries.sql`
@@ -24,8 +24,8 @@ import { serializeKpiRow, serializeKpiRows } from './dto/serializers';
  *     surface injectable for the URL params validated by NestJS.
  */
 @Injectable()
-export class AnalyticsService {
-  private readonly logger = new Logger(AnalyticsService.name);
+export class KpisService {
+  private readonly logger = new Logger(KpisService.name);
 
   /** Whitelist of KPI names accepted on `GET /api/analytics/kpis/:name`. */
   static readonly KPI_NAMES = [
@@ -38,7 +38,7 @@ export class AnalyticsService {
 
   /** Map KPI name → SQL statement. Centralized to avoid string drift. */
   private static readonly KPI_SQL: Record<
-    (typeof AnalyticsService.KPI_NAMES)[number],
+    (typeof KpisService.KPI_NAMES)[number],
     string
   > = {
     'precio-categoria': 'SELECT * FROM dw.v_kpi_precio_promedio_categoria',
@@ -69,19 +69,19 @@ export class AnalyticsService {
       preferencia,
     ] = await Promise.all([
       this.prisma.$queryRawUnsafe<KpiPrecioCategoriaDto[]>(
-        AnalyticsService.KPI_SQL['precio-categoria'],
+        KpisService.KPI_SQL['precio-categoria'],
       ),
       this.prisma.$queryRawUnsafe<KpiDistribucionFuentesDto[]>(
-        AnalyticsService.KPI_SQL['distribucion-fuentes'],
+        KpisService.KPI_SQL['distribucion-fuentes'],
       ),
       this.prisma.$queryRawUnsafe<KpiCompletitudDto[]>(
-        AnalyticsService.KPI_SQL['completitud'],
+        KpisService.KPI_SQL['completitud'],
       ),
       this.prisma.$queryRawUnsafe<KpiRangoPreciosDto[]>(
-        AnalyticsService.KPI_SQL['rango-precios'],
+        KpisService.KPI_SQL['rango-precios'],
       ),
       this.prisma.$queryRawUnsafe<KpiPreferenciaDto[]>(
-        AnalyticsService.KPI_SQL['preferencia'],
+        KpisService.KPI_SQL['preferencia'],
       ),
     ]);
 
@@ -102,10 +102,10 @@ export class AnalyticsService {
    */
   async getKpi(name: string): Promise<unknown[]> {
     const sql =
-      AnalyticsService.KPI_SQL[name as keyof typeof AnalyticsService.KPI_SQL];
+      KpisService.KPI_SQL[name as keyof typeof KpisService.KPI_SQL];
     if (!sql) {
       throw new NotFoundException(
-        `Unknown KPI "${name}". Valid names: ${AnalyticsService.KPI_NAMES.join(', ')}`,
+        `Unknown KPI "${name}". Valid names: ${KpisService.KPI_NAMES.join(', ')}`,
       );
     }
     const rows =

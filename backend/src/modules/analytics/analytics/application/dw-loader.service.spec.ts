@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { Logger } from '@nestjs/common';
 import { DW_LOADER } from '@web-scraping/contracts/pipeline';
-import type { IDwLoader, LoadResult } from '../../etl/pipeline/interfaces';
+import type { IDwLoader, LoadResult } from '../../../etl/pipeline/interfaces';
 import { DwLoaderService } from './dw-loader.service';
 
 /**
@@ -65,7 +65,6 @@ describe('DwLoaderService (thin wrapper around IDwLoader)', () => {
     expect(dwLoaderMock.load).toHaveBeenCalledWith({ truncateFirst: true });
     expect(result.estado).toBe('completado');
     if (result.estado === 'completado') {
-      // snake_case envelope preserved for AnalyticsController.load
       expect(result.productos_cargados).toBe(164);
       expect(result.encuestas_cargadas).toBe(24);
       expect(result.tiempo_ms).toBe(932);

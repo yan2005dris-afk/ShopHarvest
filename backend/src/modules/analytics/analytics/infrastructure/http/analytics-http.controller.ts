@@ -13,13 +13,13 @@ import {
   OutlierRowDto,
   EncuestaRowDto,
 } from '@web-scraping/contracts/analytics';
-import { Public } from '../../operational/auth/common/public.decorator';
-import { AnalyticsService } from './analytics.service';
-import { AnalyticsQueryService } from './analytics-query.service';
-import { DwLoaderService } from './dw-loader.service';
+import { Public } from '../../../../operational/auth/common/public.decorator';
+import { KpisService } from '../../application/kpis.service';
+import { QueriesService } from '../../application/queries.service';
+import { DwLoaderService } from '../../application/dw-loader.service';
 
 /**
- * AnalyticsController — read-only BI surface.
+ * AnalyticsHttpController — read-only BI surface.
  *
  * The 10 GET endpoints are individually `@Public()` because the
  * dashboard is required to be reachable without a JWT (PLAN §2.3
@@ -35,10 +35,10 @@ import { DwLoaderService } from './dw-loader.service';
  */
 @ApiTags('Analytics')
 @Controller('analytics')
-export class AnalyticsController {
+export class AnalyticsHttpController {
   constructor(
-    private readonly analyticsService: AnalyticsService,
-    private readonly queryService: AnalyticsQueryService,
+    private readonly kpisService: KpisService,
+    private readonly queriesService: QueriesService,
     private readonly dwLoader: DwLoaderService,
   ) {}
 
@@ -53,7 +53,7 @@ export class AnalyticsController {
   @Public()
   @Get('kpis')
   async getAllKpis(): Promise<AllKpisResponseDto> {
-    return this.analyticsService.getAllKpis();
+    return this.kpisService.getAllKpis();
   }
 
   @ApiOperation({ summary: 'Return one KPI view by URL slug.' })
@@ -66,7 +66,7 @@ export class AnalyticsController {
   @Public()
   @Get('kpis/:name')
   async getKpi(@Param('name') name: string): Promise<unknown[]> {
-    return this.analyticsService.getKpi(name);
+    return this.kpisService.getKpi(name);
   }
 
   // ─── Analytical queries ─────────────────────────────────────
@@ -79,7 +79,7 @@ export class AnalyticsController {
   @Public()
   @Get('queries/main')
   async runPreguntaPrincipal(): Promise<PreguntaPrincipalRowDto[]> {
-    return this.queryService.runPreguntaPrincipal();
+    return this.queriesService.runPreguntaPrincipal();
   }
 
   @ApiOperation({
@@ -90,7 +90,7 @@ export class AnalyticsController {
   @Public()
   @Get('queries/ranked-products')
   async runRankedProducts(): Promise<RankedProductRowDto[]> {
-    return this.queryService.runRankedProducts();
+    return this.queriesService.runRankedProducts();
   }
 
   @ApiOperation({
@@ -101,7 +101,7 @@ export class AnalyticsController {
   @Public()
   @Get('queries/category-distribution')
   async runCategoryDistribution(): Promise<CategoryDistributionRowDto[]> {
-    return this.queryService.runCategoryDistribution();
+    return this.queriesService.runCategoryDistribution();
   }
 
   @ApiOperation({
@@ -111,7 +111,7 @@ export class AnalyticsController {
   @Public()
   @Get('queries/percentiles')
   async runPercentiles(): Promise<PercentileRowDto[]> {
-    return this.queryService.runPercentileAnalysis();
+    return this.queriesService.runPercentileAnalysis();
   }
 
   @ApiOperation({
@@ -121,7 +121,7 @@ export class AnalyticsController {
   @Public()
   @Get('queries/outliers')
   async runOutliers(): Promise<OutlierRowDto[]> {
-    return this.queryService.runOutlierDetection();
+    return this.queriesService.runOutlierDetection();
   }
 
   @ApiOperation({
@@ -132,7 +132,7 @@ export class AnalyticsController {
   @Public()
   @Get('queries/encuesta')
   async runEncuesta(): Promise<EncuestaRowDto[]> {
-    return this.queryService.runEncuestaAnalysis();
+    return this.queriesService.runEncuestaAnalysis();
   }
 
   @ApiOperation({
@@ -143,7 +143,7 @@ export class AnalyticsController {
   @Public()
   @Get('queries/time-series')
   async runTimeSeries(): Promise<TimeSeriesByQuarterResponseDto> {
-    return this.queryService.runTimeSeriesByQuarter();
+    return this.queriesService.runTimeSeriesByQuarter();
   }
 
   // ─── Summary + maintenance ──────────────────────────────────
@@ -156,7 +156,7 @@ export class AnalyticsController {
   @Public()
   @Get('summary')
   async getSummary(): Promise<DwSummaryResponseDto> {
-    return this.queryService.runDwSummary();
+    return this.queriesService.runDwSummary();
   }
 
   @ApiOperation({
@@ -167,7 +167,7 @@ export class AnalyticsController {
   @HttpCode(200)
   @Post('refresh-mv')
   async refreshMv(): Promise<{ refreshed: true; view: string; ms: number }> {
-    return this.queryService.refreshMaterializedView();
+    return this.queriesService.refreshMaterializedView();
   }
 
   @ApiOperation({

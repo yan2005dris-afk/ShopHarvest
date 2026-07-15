@@ -1,6 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { DW_LOADER } from '@web-scraping/contracts/pipeline';
-import type { IDwLoader, LoadResult } from '../../etl/pipeline/interfaces';
+import type { IDwLoader, LoadResult } from '../../../etl/pipeline/interfaces';
 
 /**
  * DwLoaderService — analytics-side thin wrapper around `IDwLoader`.
@@ -12,7 +12,7 @@ import type { IDwLoader, LoadResult } from '../../etl/pipeline/interfaces';
  * service just delegates. The single-line shim exists for two
  * reasons:
  *
- *   1. `AnalyticsController.load()` (kept unchanged by the refactor
+ *   1. `AnalyticsHttpController.load()` (kept unchanged by the refactor
  *      scope) calls `this.dwLoader.run({ truncate_first })` and
  *      expects a snake_case response envelope. `LoadResult` (the
  *      contracts interface) uses camelCase, so this method maps the
@@ -29,7 +29,7 @@ export class DwLoaderService {
   /**
    * Run the staging → DW ETL pipeline.
    *
-   * Returns the snake_case envelope that `AnalyticsController.load`
+   * Returns the snake_case envelope that `AnalyticsHttpController.load`
    * already wires into the `/api/analytics/load` response — preserves
    * the HTTP contract so existing frontend callers keep working.
    */

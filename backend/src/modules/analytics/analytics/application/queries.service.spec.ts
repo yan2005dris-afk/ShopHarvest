@@ -1,11 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { Logger } from '@nestjs/common';
-import { AnalyticsQueryService } from './analytics-query.service';
-import { AnalyticsService } from './analytics.service';
-import { AnalyticsPrismaService } from '../../../common/prisma/analytics-prisma.service';
+import { QueriesService } from './queries.service';
+import { KpisService } from './kpis.service';
+import { AnalyticsPrismaService } from '../../../../common/prisma/analytics-prisma.service';
 
 /**
- * RED-first spec for AnalyticsQueryService.
+ * RED-first spec for QueriesService.
  *
  * Each of the 8 SQL-bearing methods is exercised against a mocked
  * `$queryRawUnsafe`. The assertions focus on:
@@ -15,8 +15,8 @@ import { AnalyticsPrismaService } from '../../../common/prisma/analytics-prisma.
  *   4. `refreshMaterializedView` falls back to the non-CONCURRENTLY
  *      variant when Postgres refuses it.
  */
-describe('AnalyticsQueryService', () => {
-  let service: AnalyticsQueryService;
+describe('QueriesService', () => {
+  let service: QueriesService;
   let queryRawUnsafeMock: jest.Mock;
   let executeRawUnsafeMock: jest.Mock;
   let warnSpy: jest.SpyInstance;
@@ -37,9 +37,9 @@ describe('AnalyticsQueryService', () => {
 
     const moduleRef: TestingModule = await Test.createTestingModule({
       providers: [
-        AnalyticsQueryService,
+        QueriesService,
         {
-          provide: AnalyticsService,
+          provide: KpisService,
           useValue: {
             getSnapshot: jest.fn().mockResolvedValue({
               fecha_min: '2026-06-30',
@@ -62,7 +62,7 @@ describe('AnalyticsQueryService', () => {
       ],
     }).compile();
 
-    service = moduleRef.get(AnalyticsQueryService);
+    service = moduleRef.get(QueriesService);
     warnSpy = jest
       .spyOn(Logger.prototype, 'warn')
       .mockImplementation(() => undefined);

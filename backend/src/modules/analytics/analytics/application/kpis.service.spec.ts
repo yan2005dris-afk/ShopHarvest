@@ -1,15 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
-import { AnalyticsService } from './analytics.service';
-import { AnalyticsPrismaService } from '../../../common/prisma/analytics-prisma.service';
+import { KpisService } from './kpis.service';
+import { AnalyticsPrismaService } from '../../../../common/prisma/analytics-prisma.service';
 import {
   serializeKpiRows,
   serializeKpiRow,
   serializeValue,
-} from './dto/serializers';
+} from '../dto/serializers';
 
 /**
- * RED-first spec for AnalyticsService.
+ * RED-first spec for KpisService.
  *
  * Two surface areas:
  *   1. getAllKpis()  → fans out 5 raw queries in parallel.
@@ -21,8 +21,8 @@ import {
  *   - BigInt counts and Decimal prices are coerced to JS numbers on the wire.
  *   - Unknown KPI names raise NotFoundException with a useful message.
  */
-describe('AnalyticsService', () => {
-  let service: AnalyticsService;
+describe('KpisService', () => {
+  let service: KpisService;
   let queryRawUnsafeMock: jest.Mock;
   let executeRawUnsafeMock: jest.Mock;
 
@@ -110,7 +110,7 @@ describe('AnalyticsService', () => {
 
     const moduleRef: TestingModule = await Test.createTestingModule({
       providers: [
-        AnalyticsService,
+        KpisService,
         {
           provide: AnalyticsPrismaService,
           useValue: {
@@ -121,7 +121,7 @@ describe('AnalyticsService', () => {
       ],
     }).compile();
 
-    service = moduleRef.get(AnalyticsService);
+    service = moduleRef.get(KpisService);
   });
 
   describe('getAllKpis', () => {

@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { AnalyticsPrismaService } from '../../../common/prisma/analytics-prisma.service';
+import { AnalyticsPrismaService } from '../../../../common/prisma/analytics-prisma.service';
 import {
   PreguntaPrincipalRowDto,
   RankedProductRowDto,
@@ -11,11 +11,11 @@ import {
   TimeSeriesByQuarterResponseDto,
   DwSummaryResponseDto,
 } from '@web-scraping/contracts/analytics';
-import { serializeKpiRows } from './dto/serializers';
-import { AnalyticsService } from './analytics.service';
+import { serializeKpiRows } from '../dto/serializers';
+import { KpisService } from './kpis.service';
 
 /**
- * AnalyticsQueryService — analytical queries from
+ * QueriesService — analytical queries from
  * `backend/pipeline/scripts/dw/dw_analytical_queries.sql` §1–2 plus the
  * new `runTimeSeriesByQuarter()` and `runDwSummary()` endpoints.
  *
@@ -28,12 +28,12 @@ import { AnalyticsService } from './analytics.service';
  * BigInt.
  */
 @Injectable()
-export class AnalyticsQueryService {
-  private readonly logger = new Logger(AnalyticsQueryService.name);
+export class QueriesService {
+  private readonly logger = new Logger(QueriesService.name);
 
   constructor(
     private readonly prisma: AnalyticsPrismaService,
-    private readonly analyticsService: AnalyticsService,
+    private readonly kpisService: KpisService,
   ) {}
 
   // ─────────────────────────────────────────────────────────────
@@ -226,7 +226,7 @@ export class AnalyticsQueryService {
       ORDER BY dt.anio, dt.trimestre, df.nombre_fuente
     `;
     const rows = await this.prisma.$queryRawUnsafe<TimeSeriesRowDto[]>(sql);
-    const snapshot = await this.analyticsService.getSnapshot();
+    const snapshot = await this.kpisService.getSnapshot();
     return {
       series: serializeKpiRows<TimeSeriesRowDto>(rows),
       snapshot,
@@ -238,8 +238,8 @@ export class AnalyticsQueryService {
   // ─────────────────────────────────────────────────────────────
   async runDwSummary(): Promise<DwSummaryResponseDto> {
     const [tablas, snapshot] = await Promise.all([
-      this.analyticsService.getDwCounts(),
-      this.analyticsService.getSnapshot(),
+      this.kpisService.getDwCounts(),
+      this.kpisService.getSnapshot(),
     ]);
     return { tablas, snapshot };
   }
