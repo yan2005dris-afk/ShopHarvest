@@ -37,14 +37,24 @@
   </header>
 
   @if (store.isLoading()) {
+    <!-- boneyard-js skeleton — the `card` preset registered in
+         core/boneyard.setup.ts mirrors the product-card layout
+         (img + title + price + source badge) so the placeholder
+         occupies the same space as the real cards once they
+         arrive. We render 8 skeletons in the same grid so the
+         page doesn't visually shift when the data lands. -->
     <div
-      class="flex flex-1 flex-col items-center justify-center gap-4 p-16 text-center text-body-md text-on-surface-variant"
+      class="grid gap-6"
+      style="grid-template-columns: repeat(auto-fill, minmax(260px, 1fr))"
+      data-testid="products-loading-skeleton"
     >
-      <span
-        class="inline-block h-8 w-8 rounded-full border-[3px] border-outline-variant border-t-primary"
-        style="animation: spin 0.7s linear infinite"
-      ></span>
-      <p class="m-0">Loading products…</p>
+      @for (i of [1,2,3,4,5,6,7,8]; track i) {
+        <boneyard-skeleton
+          name="card"
+          [loading]="true"
+          cssClass="block rounded-xl border border-outline-variant bg-surface p-3"
+        />
+      }
     </div>
   }
 

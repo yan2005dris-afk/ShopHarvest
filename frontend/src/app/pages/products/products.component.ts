@@ -6,11 +6,12 @@ import { ApiService, Product, Offer, PriceObservation } from '../../services/api
 import { ProductsPageStore } from './services/products-page.store';
 import { PriceHistoryChartComponent } from './components/price-history-chart.component';
 import { ProductCardComponent } from './components/product-card.component';
+import { SkeletonComponent } from 'boneyard-js/angular';
 
 @Component({
   selector: 'app-products',
   standalone: true,
-  imports: [DatePipe, CurrencyPipe, RouterLink, FormsModule, PriceHistoryChartComponent, ProductCardComponent],
+  imports: [DatePipe, CurrencyPipe, RouterLink, FormsModule, PriceHistoryChartComponent, ProductCardComponent, SkeletonComponent],
   templateUrl: './products.component.html',
   styleUrl: './products.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
