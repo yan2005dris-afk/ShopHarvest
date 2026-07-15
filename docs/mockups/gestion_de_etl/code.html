@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Gestión de Pipeline ETL - Scraper Studio</title>
+<!-- Google Fonts: Hanken Grotesk -->
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                "on-error-container": "#93000a",
+                "on-surface": "#111c2d",
+                "tertiary-fixed-dim": "#c4c6ce",
+                "primary-fixed-dim": "#c0c1ff",
+                "on-surface-variant": "#464554",
+                "primary-fixed": "#e1e0ff",
+                "on-secondary-fixed-variant": "#334282",
+                "on-tertiary-fixed": "#181c21",
+                "surface-container-lowest": "#ffffff",
+                "secondary-fixed": "#dde1ff",
+                "tertiary": "#5b5e65",
+                "error": "#ba1a1a",
+                "surface-container-highest": "#d8e3fb",
+                "surface-container-low": "#f0f3ff",
+                "background": "#f9f9ff",
+                "tertiary-fixed": "#e0e2ea",
+                "surface-variant": "#d8e3fb",
+                "tertiary-container": "#74777e",
+                "surface-container": "#e7eeff",
+                "on-tertiary": "#ffffff",
+                "inverse-surface": "#263143",
+                "on-primary-fixed": "#07006c",
+                "outline-variant": "#c7c4d7",
+                "error-container": "#ffdad6",
+                "surface-dim": "#cfdaf2",
+                "on-primary-fixed-variant": "#2f2ebe",
+                "outline": "#767586",
+                "secondary-fixed-dim": "#b8c4ff",
+                "on-primary-container": "#fffbff",
+                "surface-bright": "#f9f9ff",
+                "surface": "#f9f9ff",
+                "secondary-container": "#a6b5fd",
+                "secondary": "#4b5a9c",
+                "on-error": "#ffffff",
+                "inverse-primary": "#c0c1ff",
+                "on-tertiary-fixed-variant": "#43474d",
+                "on-tertiary-container": "#03050a",
+                "on-secondary-container": "#354585",
+                "inverse-on-surface": "#ecf1ff",
+                "on-secondary-fixed": "#001354",
+                "surface-tint": "#494bd6",
+                "primary": "#4648d4",
+                "on-secondary": "#ffffff",
+                "surface-container-high": "#dee8ff",
+                "on-background": "#111c2d",
+                "on-primary": "#ffffff",
+                "primary-container": "#6063ee"
+            },
+            "borderRadius": {
+                "DEFAULT": "0.25rem",
+                "lg": "0.5rem",
+                "xl": "0.75rem",
+                "full": "9999px"
+            },
+            "spacing": {
+                "stack_lg": "2rem",
+                "gutter": "1.5rem",
+                "stack_sm": "0.5rem",
+                "container_max_width": "1440px",
+                "stack_md": "1rem",
+                "sidebar_width": "240px",
+                "card_padding": "1.5rem"
+            },
+            "fontFamily": {
+                "body-md": ["Hanken Grotesk"],
+                "headline-sm": ["Hanken Grotesk"],
+                "headline-md": ["Hanken Grotesk"],
+                "headline-lg": ["Hanken Grotesk"],
+                "label-caps": ["Hanken Grotesk"]
+            },
+            "fontSize": {
+                "headline-sm": ["18px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                "headline-lg": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                "body-md": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                "label-caps": ["11px", {"lineHeight": "1", "letterSpacing": "0.08em", "fontWeight": "700"}]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        body { font-family: 'Hanken Grotesk', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        .sidebar-active {
+            background-color: #EEF2FF;
+            border-left: 4px solid #4648d4;
+        }
+        .data-card {
+            background: #ffffff;
+            border: 1px solid #E2E8F0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #c7c4d7;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface min-h-screen">
+<!-- Side Navigation Shell -->
+<aside class="w-[240px] h-screen fixed left-0 top-0 z-40 bg-surface border-r border-outline-variant flex flex-col py-stack_lg px-stack_sm transition-all duration-200">
+<div class="px-4 mb-10">
+<h1 class="font-headline-sm text-headline-sm font-bold text-primary">Scraper Studio</h1>
+<p class="text-[10px] uppercase tracking-wider text-on-surface-variant font-bold opacity-60">BI Analytics Engine</p>
+</div>
+<nav class="flex-1 space-y-1 overflow-y-auto custom-scrollbar">
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined">account_tree</span>
+<span>Visual Mapper</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+<span>Products</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined">source</span>
+<span>Sources</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined">category</span>
+<span>Categories</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg sidebar-active text-on-secondary-container font-bold font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined">transform</span>
+<span>ETL</span>
+</a>
+</nav>
+<div class="mt-auto pt-6 border-t border-outline-variant">
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined">contact_support</span>
+<span>Support</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span>Sign Out</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Stage -->
+<main class="ml-[240px] p-gutter max-w-screen-2xl">
+<!-- Header -->
+<header class="flex justify-between items-start mb-8">
+<div>
+<h2 class="font-headline-md text-headline-md text-on-surface">Gestión de Pipeline ETL</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">Monitoreo y ejecución manual de procesos de extracción y carga</p>
+</div>
+<button class="flex items-center gap-2 bg-[#86efac] hover:bg-[#4ade80] text-[#064e3b] font-bold px-6 py-2.5 rounded-lg transition-colors shadow-sm">
+<span class="material-symbols-outlined text-[20px]">play_arrow</span>
+<span class="font-body-md text-body-md">Ejecutar ETL</span>
+</button>
+</header>
+<!-- Bento Grid Section: Ingesta Pendiente -->
+<section class="mb-gutter">
+<div class="flex justify-between items-center mb-4">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Lotes de Ingesta Pendientes</h3>
+<span class="bg-surface-container-high text-[#15803d] text-xs font-bold px-3 py-1 rounded-full">
+                    0 de 0 items seleccionados
+                </span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter">
+<!-- Card 1 -->
+<div class="data-card rounded-xl p-card_padding border-t-2 border-primary">
+<div class="flex items-start justify-between mb-4">
+<div class="flex items-center gap-3">
+<input class="rounded border-outline text-primary focus:ring-primary w-4 h-4" type="checkbox"/>
+<div>
+<h4 class="font-body-md font-bold text-on-surface">es.aliexpress.com</h4>
+<span class="text-[10px] font-bold tracking-widest text-on-surface-variant/50 uppercase">ES.ALIEXPRESS.COM</span>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div>
+<p class="font-label-caps text-label-caps text-on-surface-variant uppercase mb-1">Nuevos</p>
+<p class="text-[28px] font-bold text-on-surface">0</p>
+</div>
+<div>
+<p class="font-label-caps text-label-caps text-on-surface-variant uppercase mb-1">Fallidos</p>
+<p class="text-[28px] font-bold text-on-surface">0</p>
+</div>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="data-card rounded-xl p-card_padding border-t-2 border-secondary">
+<div class="flex items-start justify-between mb-4">
+<div class="flex items-center gap-3">
+<input class="rounded border-outline text-primary focus:ring-primary w-4 h-4" type="checkbox"/>
+<div>
+<h4 class="font-body-md font-bold text-on-surface">temu.com</h4>
+<span class="text-[10px] font-bold tracking-widest text-on-surface-variant/50 uppercase">TEMU.COM</span>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div>
+<p class="font-label-caps text-label-caps text-on-surface-variant uppercase mb-1">Nuevos</p>
+<p class="text-[28px] font-bold text-on-surface">0</p>
+</div>
+<div>
+<p class="font-label-caps text-label-caps text-on-surface-variant uppercase mb-1">Fallidos</p>
+<p class="text-[28px] font-bold text-on-surface">0</p>
+</div>
+</div>
+</div>
+<!-- Detail View Placeholder Card -->
+<div class="data-card rounded-xl p-card_padding border-2 border-dashed border-outline-variant flex flex-col items-center justify-center text-center h-full min-h-[140px] bg-background/50">
+<span class="material-symbols-outlined text-outline text-3xl mb-2">info</span>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-[200px]">Seleccioná una ejecución para ver el detalle de carga</p>
+</div>
+</div>
+</section>
+<!-- Filters & History Table Section -->
+<section class="data-card rounded-xl overflow-hidden mb-gutter">
+<!-- Filters Row -->
+<div class="p-card_padding border-b border-outline-variant bg-surface-container-lowest">
+<div class="flex flex-wrap items-end gap-4">
+<div class="flex-1 min-w-[150px]">
+<label class="block font-label-caps text-label-caps text-on-surface-variant mb-2">ESTADO</label>
+<select class="w-full bg-[#f1f5f9] border-none rounded-lg focus:ring-2 focus:ring-primary font-body-md text-body-md py-2">
+<option>Todos</option>
+<option>SUCCESS</option>
+<option>FAILED</option>
+</select>
+</div>
+<div class="flex-1 min-w-[150px]">
+<label class="block font-label-caps text-label-caps text-on-surface-variant mb-2">FUENTE</label>
+<select class="w-full bg-[#f1f5f9] border-none rounded-lg focus:ring-2 focus:ring-primary font-body-md text-body-md py-2">
+<option>Todas</option>
+<option>AliExpress</option>
+<option>Temu</option>
+</select>
+</div>
+<div class="flex-1 min-w-[200px]">
+<label class="block font-label-caps text-label-caps text-on-surface-variant mb-2">DESDE</label>
+<input class="w-full bg-[#f1f5f9] border-none rounded-lg focus:ring-2 focus:ring-primary font-body-md text-body-md py-2" type="date"/>
+</div>
+<div class="flex-1 min-w-[200px]">
+<label class="block font-label-caps text-label-caps text-on-surface-variant mb-2">HASTA</label>
+<input class="w-full bg-[#f1f5f9] border-none rounded-lg focus:ring-2 focus:ring-primary font-body-md text-body-md py-2" type="date"/>
+</div>
+<div class="flex gap-3">
+<button class="px-6 py-2 border border-outline-variant rounded-lg text-on-surface-variant font-body-md font-bold hover:bg-surface-container-low transition-colors">Limpiar</button>
+<button class="px-6 py-2 bg-primary text-on-primary rounded-lg font-body-md font-bold shadow-sm hover:opacity-90 transition-opacity">Filtrar</button>
+</div>
+</div>
+</div>
+<!-- Table Header & Body -->
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead class="bg-surface-container-low border-b border-outline-variant">
+<tr>
+<th class="px-gutter py-4 font-label-caps text-label-caps text-on-surface-variant uppercase">Fuente</th>
+<th class="px-gutter py-4 font-label-caps text-label-caps text-on-surface-variant uppercase">Estado</th>
+<th class="px-gutter py-4 font-label-caps text-label-caps text-on-surface-variant uppercase">Inicio</th>
+<th class="px-gutter py-4 font-label-caps text-label-caps text-on-surface-variant uppercase">Duración</th>
+<th class="px-gutter py-4 font-label-caps text-label-caps text-on-surface-variant uppercase">Extraídas</th>
+<th class="px-gutter py-4 font-label-caps text-label-caps text-on-surface-variant uppercase">Persistidas</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-container-lowest transition-colors cursor-pointer">
+<td class="px-gutter py-4 font-body-md text-on-surface">pending</td>
+<td class="px-gutter py-4">
+<span class="bg-[#dcfce7] text-[#15803d] px-2 py-0.5 rounded text-[11px] font-bold flex items-center w-fit gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-[#15803d]"></span>
+                                    SUCCESS
+                                </span>
+</td>
+<td class="px-gutter py-4 font-body-md text-on-surface-variant">Jul 14, 2026, 2:30:46 PM</td>
+<td class="px-gutter py-4 font-body-md text-on-surface-variant">1.31s</td>
+<td class="px-gutter py-4 font-body-md text-on-surface">0</td>
+<td class="px-gutter py-4 font-body-md text-on-surface">50</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-container-lowest transition-colors cursor-pointer">
+<td class="px-gutter py-4 font-body-md text-on-surface">pending</td>
+<td class="px-gutter py-4">
+<span class="bg-[#dcfce7] text-[#15803d] px-2 py-0.5 rounded text-[11px] font-bold flex items-center w-fit gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-[#15803d]"></span>
+                                    SUCCESS
+                                </span>
+</td>
+<td class="px-gutter py-4 font-body-md text-on-surface-variant">Jul 14, 2026, 2:21:43 PM</td>
+<td class="px-gutter py-4 font-body-md text-on-surface-variant">1.21s</td>
+<td class="px-gutter py-4 font-body-md text-on-surface">0</td>
+<td class="px-gutter py-4 font-body-md text-on-surface">45</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container-lowest transition-colors cursor-pointer">
+<td class="px-gutter py-4 font-body-md text-on-surface">pending</td>
+<td class="px-gutter py-4">
+<span class="bg-[#dcfce7] text-[#15803d] px-2 py-0.5 rounded text-[11px] font-bold flex items-center w-fit gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-[#15803d]"></span>
+                                    SUCCESS
+                                </span>
+</td>
+<td class="px-gutter py-4 font-body-md text-on-surface-variant">Jul 14, 2026, 2:20:56 PM</td>
+<td class="px-gutter py-4 font-body-md text-on-surface-variant">5.69s</td>
+<td class="px-gutter py-4 font-body-md text-on-surface">0</td>
+<td class="px-gutter py-4 font-body-md text-on-surface">120</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination Footer -->
+<div class="px-gutter py-4 flex items-center justify-between bg-surface-container-lowest border-t border-outline-variant">
+<span class="font-body-md text-body-md text-on-surface-variant">Mostrando 3 de 3 ejecuciones</span>
+<div class="flex items-center gap-4">
+<button class="px-4 py-1.5 border border-outline-variant rounded-lg text-outline font-bold text-xs disabled:opacity-50 cursor-not-allowed" disabled="">Anterior</button>
+<span class="font-body-md text-body-md text-on-surface">Página 1 de 1</span>
+<button class="px-4 py-1.5 border border-outline-variant rounded-lg text-outline font-bold text-xs disabled:opacity-50 cursor-not-allowed" disabled="">Siguiente</button>
+</div>
+</div>
+</section>
+</main>
+<!-- Floating Atmosphere -->
+<div class="fixed bottom-6 right-6 opacity-40 pointer-events-none">
+<div class="w-48 h-48 bg-primary/10 blur-[60px] rounded-full animate-pulse"></div>
+</div>
+<script>
+        // Simple Micro-interaction for table rows
+        document.querySelectorAll('tbody tr').forEach(row => {
+            row.addEventListener('click', () => {
+                // Flash effect
+                row.classList.add('bg-primary-container/20');
+                setTimeout(() => {
+                    row.classList.remove('bg-primary-container/20');
+                }, 300);
+            });
+        });
+
+        // Hover animation for the primary button
+        const mainBtn = document.querySelector('button.bg-[#86efac]');
+        mainBtn.addEventListener('mouseenter', () => {
+            mainBtn.querySelector('.material-symbols-outlined').style.transform = 'scale(1.2) rotate(10deg)';
+            mainBtn.querySelector('.material-symbols-outlined').style.transition = 'transform 0.2s ease';
+        });
+        mainBtn.addEventListener('mouseleave', () => {
+            mainBtn.querySelector('.material-symbols-outlined').style.transform = 'scale(1) rotate(0deg)';
+        });
+    </script>
+</body></html>

@@ -1,0 +1,4 @@
+# Mockup screenshots are large binary files that get regenerated from the
+# .html files. Keep them out of version control to avoid bloating the repo.
+# To regenerate, render the HTML in each subdirectory and export a screenshot.
+*.png

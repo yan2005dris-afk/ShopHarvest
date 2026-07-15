@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Scraper Studio - Sources Management</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary-fixed": "#07006c",
+                        "primary-fixed": "#e1e0ff",
+                        "on-primary-fixed-variant": "#2f2ebe",
+                        "secondary-fixed-dim": "#b8c4ff",
+                        "surface-container": "#e7eeff",
+                        "surface-tint": "#494bd6",
+                        "secondary": "#4b5a9c",
+                        "on-tertiary-fixed-variant": "#43474d",
+                        "tertiary-fixed": "#e0e2ea",
+                        "surface-bright": "#f9f9ff",
+                        "surface-container-high": "#dee8ff",
+                        "on-background": "#111c2d",
+                        "surface-dim": "#cfdaf2",
+                        "on-primary": "#ffffff",
+                        "surface": "#f9f9ff",
+                        "surface-container-low": "#f0f3ff",
+                        "outline-variant": "#c7c4d7",
+                        "primary": "#4648d4",
+                        "on-tertiary-container": "#03050a",
+                        "on-secondary": "#ffffff",
+                        "surface-variant": "#d8e3fb",
+                        "on-surface": "#111c2d",
+                        "on-secondary-fixed": "#001354",
+                        "on-error": "#ffffff",
+                        "tertiary": "#5b5e55",
+                        "on-tertiary-fixed": "#181c21",
+                        "background": "#f9f9ff",
+                        "primary-fixed-dim": "#c0c1ff",
+                        "secondary-container": "#a6b5fd",
+                        "surface-container-highest": "#d8e3fb",
+                        "tertiary-container": "#74777e",
+                        "error-container": "#ffdad6",
+                        "on-secondary-container": "#354585",
+                        "primary-container": "#6063ee",
+                        "on-primary-container": "#fffbff",
+                        "inverse-surface": "#263143",
+                        "on-tertiary": "#ffffff",
+                        "on-surface-variant": "#464554",
+                        "inverse-primary": "#c0c1ff",
+                        "on-secondary-fixed-variant": "#334282",
+                        "surface-container-lowest": "#ffffff",
+                        "inverse-on-surface": "#ecf1ff",
+                        "secondary-fixed": "#dde1ff",
+                        "outline": "#767586",
+                        "error": "#ba1a1a",
+                        "on-error-container": "#93000a",
+                        "tertiary-fixed-dim": "#c4c6ce"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "container_max_width": "1440px",
+                        "gutter": "1.5rem",
+                        "stack_md": "1rem",
+                        "card_padding": "1.5rem",
+                        "stack_lg": "2rem",
+                        "sidebar_width": "240px",
+                        "stack_sm": "0.5rem"
+                    },
+                    "fontFamily": {
+                        "body-lg": ["Hanken Grotesk"],
+                        "headline-lg": ["Hanken Grotesk"],
+                        "body-md": ["Hanken Grotesk"],
+                        "headline-lg-mobile": ["Hanken Grotesk"],
+                        "label-caps": ["Hanken Grotesk"],
+                        "headline-md": ["Hanken Grotesk"],
+                        "headline-sm": ["Hanken Grotesk"],
+                        "metric-value": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "body-lg": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "headline-lg": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-md": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                        "label-caps": ["11px", {"lineHeight": "1", "letterSpacing": "0.08em", "fontWeight": "700"}],
+                        "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                        "headline-sm": ["18px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                        "metric-value": ["40px", {"lineHeight": "1", "letterSpacing": "-0.03em", "fontWeight": "700"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Hanken Grotesk', sans-serif;
+            background-color: #F8FAFC;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .card-shadow {
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .glass-header {
+            backdrop-filter: blur(8px);
+            background-color: rgba(255, 255, 255, 0.8);
+        }
+    </style>
+</head>
+<body class="text-on-surface">
+<!-- SideNavBar (Authority: JSON) -->
+<aside class="w-[240px] h-screen fixed left-0 top-0 z-40 bg-surface border-r border-outline-variant flex flex-col h-full py-stack_lg px-stack_sm transition-all duration-200">
+<div class="mb-stack_lg px-stack_md">
+<h1 class="font-headline-sm text-headline-sm font-bold text-primary">Scraper Studio</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">BI Analytics Engine</p>
+</div>
+<button class="mx-stack_md mb-stack_lg bg-primary text-on-primary py-stack_sm px-stack_md rounded-lg flex items-center justify-center gap-2 transition-transform active:scale-95 font-body-md">
+<span class="material-symbols-outlined text-[20px]">add</span>
+            New Scraping Task
+        </button>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-3 px-stack_md py-stack_sm transition-colors duration-200 rounded-lg text-on-surface-variant hover:bg-surface-container-high" href="#">
+<span class="material-symbols-outlined">account_tree</span>
+<span class="font-body-md">Visual Mapper</span>
+</a>
+<a class="flex items-center gap-3 px-stack_md py-stack_sm transition-colors duration-200 rounded-lg text-on-surface-variant hover:bg-surface-container-high" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-body-md">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-stack_md py-stack_sm transition-colors duration-200 rounded-lg text-on-surface-variant hover:bg-surface-container-high" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="font-body-md">Products</span>
+</a>
+<!-- Active State: Sources -->
+<a class="flex items-center gap-3 px-stack_md py-stack_sm transition-all duration-200 bg-secondary-container text-on-secondary-container border-l-4 border-primary rounded-r-lg" href="#">
+<span class="material-symbols-outlined">source</span>
+<span class="font-body-md font-bold">Sources</span>
+</a>
+<a class="flex items-center gap-3 px-stack_md py-stack_sm transition-colors duration-200 rounded-lg text-on-surface-variant hover:bg-surface-container-high" href="#">
+<span class="material-symbols-outlined">category</span>
+<span class="font-body-md">Categories</span>
+</a>
+<a class="flex items-center gap-3 px-stack_md py-stack_sm transition-colors duration-200 rounded-lg text-on-surface-variant hover:bg-surface-container-high" href="#">
+<span class="material-symbols-outlined">transform</span>
+<span class="font-body-md">ETL</span>
+</a>
+</nav>
+<div class="mt-auto space-y-1 border-t border-outline-variant pt-stack_md">
+<a class="flex items-center gap-3 px-stack_md py-stack_sm transition-colors duration-200 rounded-lg text-on-surface-variant hover:bg-surface-container-high" href="#">
+<span class="material-symbols-outlined">contact_support</span>
+<span class="font-body-md">Support</span>
+</a>
+<a class="flex items-center gap-3 px-stack_md py-stack_sm transition-colors duration-200 rounded-lg text-on-surface-variant hover:bg-surface-container-high" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span class="font-body-md">Sign Out</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-[240px] min-h-screen">
+<!-- TopNavBar (Authority: JSON) -->
+<header class="w-full h-16 bg-surface border-b border-outline-variant shadow-sm flex justify-between items-center px-gutter sticky top-0 z-30 glass-header">
+<div class="flex items-center gap-stack_lg flex-1">
+<div class="relative w-full max-w-md">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-surface-container-low rounded-lg border-none focus:ring-2 focus:ring-primary font-body-md text-on-surface" placeholder="Search sources..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 rounded-full hover:bg-surface-container-low transition-colors text-on-surface-variant relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<button class="p-2 rounded-full hover:bg-surface-container-low transition-colors text-on-surface-variant">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<button class="p-2 rounded-full hover:bg-surface-container-low transition-colors text-on-surface-variant">
+<span class="material-symbols-outlined">help</span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant ml-2">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a business intelligence analyst in a clean corporate office environment, soft daylighting, high-key professional photography style, minimalist aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCMIIlaTrKGyDjytCyqt3gkI51JsoE5fDv7pXKJozskj9KUdUdtVil7xCkAxKRJdPCAfUF1KVOenK3YFhjJ9qt7hIZ29uTcrUeIQEQUt_alj5B7uGMmbPig2YBLRhY9IdingfAKCUzol7S2bFVQIjbojWyazpjEJd7hhIN9UqW90d5X25jlPuiOWWV-63E6RN5XPNuU2cpwEPXJGkN1MwWaFr3Eg6V5VguLAFm5hGWuVFEMZ7W-69g42QRX1XtTNldfOuDTdXm_vBGz"/>
+</div>
+</div>
+</header>
+<!-- Canvas Content -->
+<div class="p-stack_lg max-w-[container_max_width] mx-auto">
+<!-- Header Section -->
+<div class="flex flex-col md:flex-row md:items-end justify-between mb-stack_lg gap-stack_md">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Sources Management</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant mt-1">Configure and manage your data extraction endpoints.</p>
+</div>
+<div class="flex gap-stack_sm">
+<button class="px-stack_md py-stack_sm border border-outline-variant rounded-lg font-body-md text-on-surface-variant hover:bg-surface-container transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">filter_list</span>
+                        Filter
+                    </button>
+<button class="px-stack_md py-stack_sm border border-outline-variant rounded-lg font-body-md text-on-surface-variant hover:bg-surface-container transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">sync</span>
+                        Refresh All
+                    </button>
+</div>
+</div>
+<!-- Sources Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-gutter">
+<!-- Card: MercadoLibre -->
+<div class="bg-surface rounded-xl border-t-2 border-primary card-shadow p-card_padding flex flex-col h-full group hover:shadow-md transition-all">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 rounded-lg bg-primary-fixed flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-[28px]">shopping_cart</span>
+</div>
+<span class="bg-green-100 text-green-800 text-[11px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">Active</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-1">MercadoLibre</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6 break-all">mercadolibre.com.mx/deals</p>
+<div class="mt-auto">
+<button class="w-full bg-primary text-on-primary py-2.5 rounded-lg font-body-md font-bold transition-transform active:scale-95 group-hover:bg-primary-container">
+                            Scrape now
+                        </button>
+</div>
+</div>
+<!-- Card: AliExpress -->
+<div class="bg-surface rounded-xl border-t-2 border-primary card-shadow p-card_padding flex flex-col h-full group hover:shadow-md transition-all">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 rounded-lg bg-primary-fixed flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-[28px]">local_mall</span>
+</div>
+<span class="bg-green-100 text-green-800 text-[11px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">Active</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-1">AliExpress</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6 break-all">aliexpress.com/flash-deals</p>
+<div class="mt-auto">
+<button class="w-full bg-primary text-on-primary py-2.5 rounded-lg font-body-md font-bold transition-transform active:scale-95 group-hover:bg-primary-container">
+                            Scrape now
+                        </button>
+</div>
+</div>
+<!-- Card: Temu -->
+<div class="bg-surface rounded-xl border-t-2 border-orange-400 card-shadow p-card_padding flex flex-col h-full opacity-90">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 rounded-lg bg-surface-container-high flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface-variant text-[28px]">extension</span>
+</div>
+<span class="bg-orange-100 text-orange-800 text-[11px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider text-center">Needs extension</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-1">Temu</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6 break-all">temu.com/bestsellers</p>
+<div class="mt-auto">
+<button class="w-full bg-surface-container text-on-surface-variant py-2.5 rounded-lg font-body-md font-bold cursor-not-allowed">
+                            Install Module
+                        </button>
+</div>
+</div>
+<!-- Card: SHEIN -->
+<div class="bg-surface rounded-xl border-t-2 border-orange-400 card-shadow p-card_padding flex flex-col h-full opacity-90">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 rounded-lg bg-surface-container-high flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface-variant text-[28px]">extension</span>
+</div>
+<span class="bg-orange-100 text-orange-800 text-[11px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider text-center">Needs extension</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-1">SHEIN</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6 break-all">shein.com/campaigns/sale</p>
+<div class="mt-auto">
+<button class="w-full bg-surface-container text-on-surface-variant py-2.5 rounded-lg font-body-md font-bold cursor-not-allowed">
+                            Install Module
+                        </button>
+</div>
+</div>
+<!-- Card: Exchange Rates API -->
+<div class="bg-surface rounded-xl border-t-2 border-tertiary-fixed-dim card-shadow p-card_padding flex flex-col h-full">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 rounded-lg bg-surface-container-low flex items-center justify-center">
+<span class="material-symbols-outlined text-tertiary text-[28px]">api</span>
+</div>
+<span class="bg-surface-variant text-on-surface-variant text-[11px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">Pending</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-1">Exchange Rates API</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6 break-all">api.fxrates.io/v1/latest</p>
+<div class="mt-auto">
+<button class="w-full bg-primary text-on-primary py-2.5 rounded-lg font-body-md font-bold transition-transform active:scale-95">
+                            Scrape now
+                        </button>
+</div>
+</div>
+<!-- Card: CSV Dataset -->
+<div class="bg-surface rounded-xl border-t-2 border-tertiary-fixed-dim card-shadow p-card_padding flex flex-col h-full">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 rounded-lg bg-surface-container-low flex items-center justify-center">
+<span class="material-symbols-outlined text-tertiary text-[28px]">description</span>
+</div>
+<span class="bg-surface-variant text-on-surface-variant text-[11px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">Pending</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-1">CSV Dataset</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6 break-all">Internal://exports/july_v2.csv</p>
+<div class="mt-auto">
+<button class="w-full bg-primary text-on-primary py-2.5 rounded-lg font-body-md font-bold transition-transform active:scale-95">
+                            Scrape now
+                        </button>
+</div>
+</div>
+<!-- Card: Encuesta -->
+<div class="bg-surface rounded-xl border-t-2 border-tertiary-fixed-dim card-shadow p-card_padding flex flex-col h-full">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 rounded-lg bg-surface-container-low flex items-center justify-center">
+<span class="material-symbols-outlined text-tertiary text-[28px]">poll</span>
+</div>
+<span class="bg-surface-variant text-on-surface-variant text-[11px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">Pending</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-1">Encuesta</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6 break-all">survey.internal/market-share</p>
+<div class="mt-auto">
+<button class="w-full bg-primary text-on-primary py-2.5 rounded-lg font-body-md font-bold transition-transform active:scale-95">
+                            Scrape now
+                        </button>
+</div>
+</div>
+<!-- Add New Placeholder -->
+<div class="border-2 border-dashed border-outline-variant rounded-xl p-card_padding flex flex-col items-center justify-center text-center group hover:border-primary hover:bg-surface-container-low transition-all cursor-pointer">
+<div class="w-14 h-14 rounded-full bg-surface-container flex items-center justify-center mb-4 group-hover:bg-primary-fixed transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary text-[32px]">add</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface-variant group-hover:text-primary mb-1">Add Source</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Connect a new API, URL or File</p>
+</div>
+</div>
+<!-- Insights Section (Asymmetric / Bento Style) -->
+<div class="mt-stack_lg grid grid-cols-1 md:grid-cols-12 gap-gutter">
+<div class="md:col-span-8 bg-surface border border-outline-variant rounded-xl p-card_padding card-shadow">
+<div class="flex justify-between items-center mb-6">
+<h4 class="font-headline-sm text-headline-sm">Activity Log</h4>
+<button class="text-primary font-body-md font-bold hover:underline">View History</button>
+</div>
+<div class="space-y-4">
+<div class="flex items-center gap-4 pb-4 border-b border-outline-variant last:border-0 last:pb-0">
+<div class="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center">
+<span class="material-symbols-outlined text-green-600 text-[20px]">check_circle</span>
+</div>
+<div class="flex-1">
+<p class="font-body-md text-on-surface"><strong>MercadoLibre</strong> scrape completed successfully.</p>
+<p class="text-[12px] text-on-surface-variant">2,450 rows ingested • 2 minutes ago</p>
+</div>
+</div>
+<div class="flex items-center gap-4 pb-4 border-b border-outline-variant last:border-0 last:pb-0">
+<div class="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-[20px]">sync</span>
+</div>
+<div class="flex-1">
+<p class="font-body-md text-on-surface"><strong>AliExpress</strong> is currently syncing...</p>
+<p class="text-[12px] text-on-surface-variant">Est. time remaining: 45 seconds</p>
+</div>
+</div>
+<div class="flex items-center gap-4 pb-4 border-b border-outline-variant last:border-0 last:pb-0">
+<div class="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center">
+<span class="material-symbols-outlined text-orange-600 text-[20px]">warning</span>
+</div>
+<div class="flex-1">
+<p class="font-body-md text-on-surface"><strong>SHEIN</strong> reported a connection timeout.</p>
+<p class="text-[12px] text-on-surface-variant">Error code: E408 • 1 hour ago</p>
+</div>
+</div>
+</div>
+</div>
+<div class="md:col-span-4 bg-primary-container text-on-primary-container rounded-xl p-card_padding flex flex-col justify-between relative overflow-hidden">
+<!-- Subtle background decoration -->
+<div class="absolute -right-10 -bottom-10 opacity-10">
+<span class="material-symbols-outlined text-[200px]" style="font-variation-settings: 'FILL' 1;">analytics</span>
+</div>
+<div class="relative z-10">
+<h4 class="font-headline-sm text-headline-sm mb-2">Resource Usage</h4>
+<p class="font-body-md opacity-90 mb-6">Your plan is currently at 65% capacity for the month.</p>
+<div class="space-y-4">
+<div>
+<div class="flex justify-between text-[12px] font-bold uppercase tracking-wider mb-1">
+<span>Data Rows</span>
+<span>650k / 1M</span>
+</div>
+<div class="w-full h-2 bg-on-primary-container/20 rounded-full overflow-hidden">
+<div class="bg-on-primary-container h-full rounded-full" style="width: 65%;"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-[12px] font-bold uppercase tracking-wider mb-1">
+<span>Compute Hours</span>
+<span>124 / 200</span>
+</div>
+<div class="w-full h-2 bg-on-primary-container/20 rounded-full overflow-hidden">
+<div class="bg-on-primary-container h-full rounded-full" style="width: 62%;"></div>
+</div>
+</div>
+</div>
+</div>
+<button class="relative z-10 mt-8 w-full bg-on-primary-container text-primary-container py-2.5 rounded-lg font-body-md font-bold hover:bg-white transition-colors">
+                        Upgrade Workspace
+                    </button>
+</div>
+</div>
+</div>
+</main>
+<script>
+        // Micro-interactions for button ripple or feedback
+        document.querySelectorAll('button').forEach(button => {
+            button.addEventListener('click', function(e) {
+                if (this.disabled) return;
+                
+                // Add a simple animation class or visual feedback
+                this.classList.add('scale-[0.98]');
+                setTimeout(() => {
+                    this.classList.remove('scale-[0.98]');
+                }, 100);
+            });
+        });
+
+        // Simulating some dynamic behavior for active states
+        const sidebarLinks = document.querySelectorAll('aside nav a');
+        sidebarLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                sidebarLinks.forEach(l => {
+                    l.classList.remove('bg-secondary-container', 'text-on-secondary-container', 'border-l-4', 'border-primary', 'font-bold');
+                    l.classList.add('text-on-surface-variant');
+                });
+                link.classList.remove('text-on-surface-variant');
+                link.classList.add('bg-secondary-container', 'text-on-secondary-container', 'border-l-4', 'border-primary', 'font-bold');
+            });
+        });
+    </script>
+</body></html>

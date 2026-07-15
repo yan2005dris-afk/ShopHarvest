@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Scraper Studio - Productos</title>
+<!-- Google Fonts: Hanken Grotesk -->
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary-fixed": "#07006c",
+                        "primary-fixed": "#e1e0ff",
+                        "on-primary-fixed-variant": "#2f2ebe",
+                        "secondary-fixed-dim": "#b8c4ff",
+                        "surface-container": "#e7eeff",
+                        "surface-tint": "#494bd6",
+                        "secondary": "#4b5a9c",
+                        "on-tertiary-fixed-variant": "#43474d",
+                        "tertiary-fixed": "#e0e2ea",
+                        "surface-bright": "#f9f9ff",
+                        "surface-container-high": "#dee8ff",
+                        "on-background": "#111c2d",
+                        "surface-dim": "#cfdaf2",
+                        "on-primary": "#ffffff",
+                        "surface": "#f9f9ff",
+                        "surface-container-low": "#f0f3ff",
+                        "outline-variant": "#c7c4d7",
+                        "primary": "#4648d4",
+                        "on-tertiary-container": "#03050a",
+                        "on-secondary": "#ffffff",
+                        "surface-variant": "#d8e3fb",
+                        "on-surface": "#111c2d",
+                        "on-secondary-fixed": "#001354",
+                        "on-error": "#ffffff",
+                        "tertiary": "#5b5e65",
+                        "on-tertiary-fixed": "#181c21",
+                        "background": "#f9f9ff",
+                        "primary-fixed-dim": "#c0c1ff",
+                        "secondary-container": "#a6b5fd",
+                        "surface-container-highest": "#d8e3fb",
+                        "tertiary-container": "#74777e",
+                        "error-container": "#ffdad6",
+                        "on-secondary-container": "#354585",
+                        "primary-container": "#6063ee",
+                        "on-primary-container": "#fffbff",
+                        "inverse-surface": "#263143",
+                        "on-tertiary": "#ffffff",
+                        "on-surface-variant": "#464554",
+                        "inverse-primary": "#c0c1ff",
+                        "on-secondary-fixed-variant": "#334282",
+                        "surface-container-lowest": "#ffffff",
+                        "inverse-on-surface": "#ecf1ff",
+                        "secondary-fixed": "#dde1ff",
+                        "outline": "#767586",
+                        "error": "#ba1a1a",
+                        "on-error-container": "#93000a",
+                        "tertiary-fixed-dim": "#c4c6ce"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "container_max_width": "1440px",
+                        "gutter": "1.5rem",
+                        "stack_md": "1rem",
+                        "card_padding": "1.5rem",
+                        "stack_lg": "2rem",
+                        "sidebar_width": "240px",
+                        "stack_sm": "0.5rem"
+                    },
+                    "fontFamily": {
+                        "body-lg": ["Hanken Grotesk"],
+                        "headline-lg": ["Hanken Grotesk"],
+                        "body-md": ["Hanken Grotesk"],
+                        "headline-lg-mobile": ["Hanken Grotesk"],
+                        "label-caps": ["Hanken Grotesk"],
+                        "headline-md": ["Hanken Grotesk"],
+                        "headline-sm": ["Hanken Grotesk"],
+                        "metric-value": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "body-lg": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "headline-lg": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-md": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                        "label-caps": ["11px", {"lineHeight": "1", "letterSpacing": "0.08em", "fontWeight": "700"}],
+                        "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                        "headline-sm": ["18px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                        "metric-value": ["40px", {"lineHeight": "1", "letterSpacing": "-0.03em", "fontWeight": "700"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Hanken Grotesk', sans-serif;
+            background-color: #F8FAFC;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .sidebar-active {
+            background-color: #EEF2FF;
+            border-left: 4px solid #4648d4;
+            color: #354585;
+        }
+        .card-shadow {
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .product-card:hover {
+            transform: translateY(-2px);
+            transition: transform 0.2s ease;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface">
+<!-- SideNavBar (Authority: JSON) -->
+<aside class="w-[240px] h-screen fixed left-0 top-0 z-40 bg-surface border-r border-outline-variant flex flex-col h-full py-stack_lg px-stack_sm shadow-sm">
+<div class="px-4 mb-stack_lg">
+<h1 class="font-headline-sm text-headline-sm font-bold text-primary">Scraper Studio</h1>
+<p class="text-on-surface-variant text-body-md opacity-70">BI Analytics Engine</p>
+</div>
+<nav class="flex-grow space-y-1">
+<!-- Nav Item: Visual Mapper -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 group" href="#">
+<span class="material-symbols-outlined">account_tree</span>
+<span class="font-body-md text-body-md">Visual Mapper</span>
+</a>
+<!-- Nav Item: Dashboard -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 group" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-body-md text-body-md">Dashboard</span>
+</a>
+<!-- Nav Item: Products (ACTIVE) -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg bg-secondary-container text-on-secondary-container border-l-4 border-primary transition-all duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">inventory_2</span>
+<span class="font-body-md text-body-md font-bold">Products</span>
+</a>
+<!-- Nav Item: Sources -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 group" href="#">
+<span class="material-symbols-outlined">source</span>
+<span class="font-body-md text-body-md">Sources</span>
+</a>
+<!-- Nav Item: Categories -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 group" href="#">
+<span class="material-symbols-outlined">category</span>
+<span class="font-body-md text-body-md">Categories</span>
+</a>
+<!-- Nav Item: ETL -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 group" href="#">
+<span class="material-symbols-outlined">transform</span>
+<span class="font-body-md text-body-md">ETL</span>
+</a>
+</nav>
+<div class="mt-auto border-t border-outline-variant pt-stack_md space-y-1">
+<button class="w-full mb-stack_md bg-primary text-on-primary py-2.5 rounded-lg font-body-md flex items-center justify-center gap-2 hover:brightness-110 transition-all">
+<span class="material-symbols-outlined text-[20px]">add</span>
+<span>New Scraping Task</span>
+</button>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all duration-200" href="#">
+<span class="material-symbols-outlined">contact_support</span>
+<span class="font-body-md text-body-md">Support</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all duration-200" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span class="font-body-md text-body-md">Sign Out</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Stage -->
+<main class="ml-[240px] min-h-screen flex flex-col">
+<!-- TopNavBar (Authority: JSON) -->
+<header class="w-full h-16 bg-surface flex justify-between items-center px-gutter border-b border-outline-variant shadow-sm z-30 sticky top-0">
+<div class="flex items-center gap-4 flex-1">
+<div class="relative max-w-md w-full">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary font-body-md text-on-surface" placeholder="Buscar productos..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-stack_md">
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-low rounded-full transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-low rounded-full transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-low rounded-full transition-colors">
+<span class="material-symbols-outlined">help</span>
+</button>
+<div class="h-8 w-px bg-outline-variant mx-2"></div>
+<div class="flex items-center gap-3">
+<div class="text-right hidden sm:block">
+<p class="font-body-md font-bold leading-none">Alex Rivera</p>
+<p class="text-label-caps text-on-surface-variant opacity-70">ADMINISTRADOR</p>
+</div>
+<img class="w-10 h-10 rounded-full border border-outline-variant object-cover" data-alt="A professional studio portrait of a young male professional with short dark hair, wearing a clean charcoal grey blazer. The background is a soft, out-of-focus modern office environment with cool blue and white tones. High-end lighting creates soft shadows on the face, emphasizing clarity and analytical character, matching the corporate modern aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAqyFvCD9qBrQeUKwcS4sLfgfqgCuJEqpeDEtOewuw8nV5YSOXTZbk3n1cN-8jhFudkuy_tyVCcEXEUaRW7JhUA18OAcFRvbf0JCnuUhuFIH92icyfMMYH4O_BJ9GruGSYQXkoHl8YbE1ubS8vXVvU4WaKkBxYrHZsu6c7D2qgcwekKz_1dDw4sAOov4lU-GySO5jZcpMS_7aqrLESY2z0GduUq0pG8SxmeI66gGpt7YOUu0XjQdR-ifj25vVduqxpwPICO_nap2ORf"/>
+</div>
+</div>
+</header>
+<!-- Page Canvas -->
+<div class="p-8 max-w-[1440px] mx-auto w-full">
+<div class="flex justify-between items-end mb-stack_lg">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface mb-2">Productos</h2>
+<p class="text-body-lg text-on-surface-variant">Visualiza y gestiona el inventario extraído de las fuentes activas.</p>
+</div>
+<div class="flex gap-stack_sm">
+<button class="flex items-center gap-2 px-4 py-2 bg-surface-container-lowest border border-outline-variant rounded-lg text-body-md font-bold hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined">filter_list</span>
+                        Filtrar
+                    </button>
+<button class="flex items-center gap-2 px-4 py-2 bg-surface-container-lowest border border-outline-variant rounded-lg text-body-md font-bold hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined">download</span>
+                        Exportar CSV
+                    </button>
+</div>
+</div>
+<!-- Products Grid (Bento Style) -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-gutter">
+<!-- Product Card 1 -->
+<div class="product-card bg-surface border border-outline-variant rounded-xl overflow-hidden card-shadow flex flex-col group">
+<div class="h-48 overflow-hidden relative border-b border-outline-variant/30">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A minimalist, high-tech pair of wireless headphones in a sleek matte indigo finish, resting on a clean white marble surface. The lighting is soft and diffused from the side, creating elegant highlights and soft shadows. The overall mood is sophisticated and analytical, showcasing the product's premium build quality against a bright, professional background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAfY7XrPLOLbhJlGQOcMxJt4HnifjFLIhBXBU76U2-6gOl1wUfcwH3skcIn9YZ9l2bg8xbNHw5JeA7M4uz5Vo0vOhYjJu_goioAW-odbS7lkykv8ha4wPdqmaAoRDylLEzWqv-xTIa2AdR56BalxmKe-xMVd9llH6XmbCFKQgOh18s6MyUOwR_Y-SlsV7CNtWGvvPq0J-2nL4HUcYI0PP_bWIJsE0Wp6YiZhweSC4GGVTsm5N3fWEXvVGh2Gdo8kdUuUDIxKdn_giV6"/>
+<div class="absolute top-3 right-3 bg-primary/10 text-primary px-2 py-1 rounded text-label-caps backdrop-blur-md">ELECTRÓNICA</div>
+</div>
+<div class="p-card_padding flex flex-col flex-grow">
+<div class="flex justify-between items-start mb-2">
+<h3 class="font-headline-sm text-headline-sm line-clamp-1">Auriculares Inalámbricos Pro</h3>
+<span class="font-metric-value text-[18px] text-primary">$129.99</span>
+</div>
+<p class="text-body-md text-on-surface-variant mb-4 line-clamp-2">Cancelación activa de ruido con 40 horas de autonomía y sonido de alta fidelidad.</p>
+<div class="mt-auto flex items-center justify-between">
+<span class="text-label-caps text-on-surface-variant bg-surface-container-low px-2 py-1 rounded">ID: PRD-8821</span>
+<div class="flex gap-1">
+<button class="p-1.5 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Product Card 2 -->
+<div class="product-card bg-surface border border-outline-variant rounded-xl overflow-hidden card-shadow flex flex-col group">
+<div class="h-48 overflow-hidden relative border-b border-outline-variant/30">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A modern mechanical keyboard with RGB backlighting, captured in a low-angle shot on a dark wood desk. The lighting focuses on the soft indigo glow of the keys, creating a tech-focused, professional atmosphere. The setting is a clean home office with subtle lavender accents in the background, matching the brand's sophisticated and analytical color palette." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBAlMgzXdZS2rcZihnI8vrmQbFZFf028RCD-fs59MUpWiMrapTQEDPvTDRBc9-qLLp2XItAfRwv6sFAUA09Cx8NOmMVcNv1KUlncDolXY_sbh2mJCghLYToU3JUGjmoNwfc7ybg6CnVYPhpJ0adUCnTOFuT9VVNRjnbOvk2p0sG0vkH3kpRtuSe55gpULskoW3hCRbroJcNH3FhJl_3suP2mngCV1YHweQ-UG7CXupfjBhVWhdbZChxIH4uvxEHdJUn1IrU6o_GBB1O"/>
+<div class="absolute top-3 right-3 bg-primary/10 text-primary px-2 py-1 rounded text-label-caps backdrop-blur-md">COMPUTACIÓN</div>
+</div>
+<div class="p-card_padding flex flex-col flex-grow">
+<div class="flex justify-between items-start mb-2">
+<h3 class="font-headline-sm text-headline-sm line-clamp-1">Teclado Mecánico RGB</h3>
+<span class="font-metric-value text-[18px] text-primary">$85.00</span>
+</div>
+<p class="text-body-md text-on-surface-variant mb-4 line-clamp-2">Switches táctiles silenciosos con chasis de aluminio aeronáutico.</p>
+<div class="mt-auto flex items-center justify-between">
+<span class="text-label-caps text-on-surface-variant bg-surface-container-low px-2 py-1 rounded">ID: PRD-4521</span>
+<div class="flex gap-1">
+<button class="p-1.5 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Product Card 3 -->
+<div class="product-card bg-surface border border-outline-variant rounded-xl overflow-hidden card-shadow flex flex-col group">
+<div class="h-48 overflow-hidden relative border-b border-outline-variant/30">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A sleek, minimalist aluminum smartwatch with a midnight blue strap, displayed on a clean white pedestral. The lighting is high-key and professional, with sharp focus on the glass face of the watch reflecting a soft lavender gradient. The image evokes precision, technology, and analytical reliability, consistent with the Scraper Studio brand identity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD4JDG2PX4qk8X3ieEofJ8I3TOqqMp-cettt_2mv6TPck7KasifnHusajCtJh84OgfG96uTBkcoPP27NxO8l50qY5QOfHPbwwD1dbAeER8un22gJyB-BsPlsIs3xjLsb63KyfJ5R7wgMzfOhfDn-sDRpRc8nx0kCL0tLlKy3D5Dbr3w6tUZLd_aepNcTl5cwfKYORJhCbyH7yhGg_m5hEg-4A7Dz59l31xMbIdS0FsiolNmfBlnSS71Oj0qEW26mVxY6ba5dSnZPfmn"/>
+<div class="absolute top-3 right-3 bg-primary/10 text-primary px-2 py-1 rounded text-label-caps backdrop-blur-md">WEARABLES</div>
+</div>
+<div class="p-card_padding flex flex-col flex-grow">
+<div class="flex justify-between items-start mb-2">
+<h3 class="font-headline-sm text-headline-sm line-clamp-1">Reloj Inteligente Ultra</h3>
+<span class="font-metric-value text-[18px] text-primary">$199.00</span>
+</div>
+<p class="text-body-md text-on-surface-variant mb-4 line-clamp-2">Monitorización de salud avanzada y GPS integrado de alta precisión.</p>
+<div class="mt-auto flex items-center justify-between">
+<span class="text-label-caps text-on-surface-variant bg-surface-container-low px-2 py-1 rounded">ID: PRD-9012</span>
+<div class="flex gap-1">
+<button class="p-1.5 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Product Card 4 -->
+<div class="product-card bg-surface border border-outline-variant rounded-xl overflow-hidden card-shadow flex flex-col group">
+<div class="h-48 overflow-hidden relative border-b border-outline-variant/30">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="An ergonomic office chair with a modern mesh back, set against a pristine, well-lit architectural studio background. The color palette is composed of cool greys and soft whites, with subtle indigo lighting accents from the windows. The image is clean, structured, and professional, reflecting the high-end UI design goals of a business intelligence environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC0KLR8-FctBqH5HY2UrVJSynX2sHgEHvyeZKSOo3udjIl7PDwX_xsOrfSvB6vuzCIjAh_nlKvnG282JBGvx-9h7ltp-ZZsKD84EQTwTacbGRk7k75MgG5UCpgGv7pYEQLaWz1590DGEleEfdwHbWOerwQdSeUxs5_cphdrhJGLn0iY4nUNmNqvZ5267gq4XxiMZgyLK-XFosNISv2hKhoYTdWVzzuUZCt4jVbHAmCXosYLtzIUVXODj5RjhsY59xCa66eRadk0GmvC"/>
+<div class="absolute top-3 right-3 bg-primary/10 text-primary px-2 py-1 rounded text-label-caps backdrop-blur-md">OFICINA</div>
+</div>
+<div class="p-card_padding flex flex-col flex-grow">
+<div class="flex justify-between items-start mb-2">
+<h3 class="font-headline-sm text-headline-sm line-clamp-1">Silla Ergonómica Air</h3>
+<span class="font-metric-value text-[18px] text-primary">$349.50</span>
+</div>
+<p class="text-body-md text-on-surface-variant mb-4 line-clamp-2">Soporte lumbar ajustable con malla transpirable de alta resistencia.</p>
+<div class="mt-auto flex items-center justify-between">
+<span class="text-label-caps text-on-surface-variant bg-surface-container-low px-2 py-1 rounded">ID: PRD-1102</span>
+<div class="flex gap-1">
+<button class="p-1.5 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Product Card 5 -->
+<div class="product-card bg-surface border border-outline-variant rounded-xl overflow-hidden card-shadow flex flex-col group">
+<div class="h-48 overflow-hidden relative border-b border-outline-variant/30">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A high-performance gaming mouse with a refined matte black finish, positioned on a sleek grey desk mat. The lighting is focused and precise, highlighting the ergonomic curves and subtle indigo LED indicators. The background is a clean, minimal workspace that emphasizes reliability and modern analytical design standards." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCq8gTwwNqi1ICB_4CWDcH5fMPOB1C2raq7Hr1XU1ZJUR0khrsG4O6qTCmpNQUyg3GhMcjug1C8EmXmzXnHyUtTe2i3Ei9jbvmL9mZ4AxqgKwzVimJsKfkvs6VPtyczNmeZdQBZO5EJBkv2hB_d_Dl7kLVqvmiaLlwBoYBgZGHu2ZCXrYA-uXp3vrycbVUgH4N5ym8fEtAKvqAqhnFm6j7Nb4e7wP2Gw1T8S_0gx6VS7RxMg-cPKFyTTfmg79IcYhUXQKA1MLz3j_pA"/>
+<div class="absolute top-3 right-3 bg-primary/10 text-primary px-2 py-1 rounded text-label-caps backdrop-blur-md">PERIFÉRICOS</div>
+</div>
+<div class="p-card_padding flex flex-col flex-grow">
+<div class="flex justify-between items-start mb-2">
+<h3 class="font-headline-sm text-headline-sm line-clamp-1">Ratón Óptico Precision</h3>
+<span class="font-metric-value text-[18px] text-primary">$49.99</span>
+</div>
+<p class="text-body-md text-on-surface-variant mb-4 line-clamp-2">Sensor de 16,000 DPI con botones programables y peso ajustable.</p>
+<div class="mt-auto flex items-center justify-between">
+<span class="text-label-caps text-on-surface-variant bg-surface-container-low px-2 py-1 rounded">ID: PRD-2291</span>
+<div class="flex gap-1">
+<button class="p-1.5 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Product Card 6 -->
+<div class="product-card bg-surface border border-outline-variant rounded-xl overflow-hidden card-shadow flex flex-col group">
+<div class="h-48 overflow-hidden relative border-b border-outline-variant/30">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A professional 4K monitor displaying a complex data dashboard with clean charts and maps. The monitor is thin-bezel, sitting on a minimalist brushed metal stand. The lighting is cool and even, emphasizing the vibrant but professional colors on the screen. The scene exudes business intelligence and analytical sophistication." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAVUzyMSJHAs66c_afUyh7L9X9zdW0AO2kPbWPnUXDBpJM9lprH_-VhC29GIXq-0W1QY-vU6O2BiW4TnHuB-DNG0QXTrANd9EO3Ph3vJOWN8SdErtmtqUN5DSo8K2P6I3ukXPPrpHm6phrEy9dYsn4lgLoZTF3ytS14zSug6O4DLIJ3rPjkRUx5KSQOSXxevAfITJj342OCz_8XCl92q5NbMngy0YrR_0Gg7QEBfojsdqr-ZdXb122T9NRwWKDJbLm66PESqS3jt1MN"/>
+<div class="absolute top-3 right-3 bg-primary/10 text-primary px-2 py-1 rounded text-label-caps backdrop-blur-md">PANTALLAS</div>
+</div>
+<div class="p-card_padding flex flex-col flex-grow">
+<div class="flex justify-between items-start mb-2">
+<h3 class="font-headline-sm text-headline-sm line-clamp-1">Monitor 4K Profesional</h3>
+<span class="font-metric-value text-[18px] text-primary">$450.00</span>
+</div>
+<p class="text-body-md text-on-surface-variant mb-4 line-clamp-2">Panel IPS de 27 pulgadas con calibración de color de fábrica.</p>
+<div class="mt-auto flex items-center justify-between">
+<span class="text-label-caps text-on-surface-variant bg-surface-container-low px-2 py-1 rounded">ID: PRD-3341</span>
+<div class="flex gap-1">
+<button class="p-1.5 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Product Card 7 -->
+<div class="product-card bg-surface border border-outline-variant rounded-xl overflow-hidden card-shadow flex flex-col group">
+<div class="h-48 overflow-hidden relative border-b border-outline-variant/30">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A premium leather laptop sleeve in a deep navy color, resting on a minimalist concrete table. The background is a bright, airy architectural space with clean lines. The lighting is natural and soft, highlighting the fine texture of the leather. This image captures a sense of reliable professional tools and modern minimalist style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB036mNayYf4wJP9kx3Pne_GMoF8wBucRU2u9EbuBfwj2U_XCsmgofAeAcngTk67njDBxUPqLTtoKBi7FNDrykx7kzkBcreWy6ZdOGi5oHP5n63xvgll8cc1rflmloflsU_g9QvAIqW50jeL_2ArCpFuTNNmQUE5BaU9DoR7FCiUsc-H0rljRqjabXGTQtVNPoeAwvNQfiv1A3CJtevdpKjVd90PKmEAw7xklY3NlHEktX6gJLk4_0cL8NpTQaE1qBhHZgT-APSr30y"/>
+<div class="absolute top-3 right-3 bg-primary/10 text-primary px-2 py-1 rounded text-label-caps backdrop-blur-md">ACCESORIOS</div>
+</div>
+<div class="p-card_padding flex flex-col flex-grow">
+<div class="flex justify-between items-start mb-2">
+<h3 class="font-headline-sm text-headline-sm line-clamp-1">Funda de Cuero Premium</h3>
+<span class="font-metric-value text-[18px] text-primary">$55.00</span>
+</div>
+<p class="text-body-md text-on-surface-variant mb-4 line-clamp-2">Cuero genuino curtido vegetal para portátiles de hasta 14 pulgadas.</p>
+<div class="mt-auto flex items-center justify-between">
+<span class="text-label-caps text-on-surface-variant bg-surface-container-low px-2 py-1 rounded">ID: PRD-7762</span>
+<div class="flex gap-1">
+<button class="p-1.5 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Product Card 8 -->
+<div class="product-card bg-surface border border-outline-variant rounded-xl overflow-hidden card-shadow flex flex-col group">
+<div class="h-48 overflow-hidden relative border-b border-outline-variant/30">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A compact external SSD in a brushed titanium finish, connected to a slim laptop by a braided cable. The scene is shot in a clean, minimalist setting with bright, clinical lighting that emphasizes technological precision. The color palette is focused on silver, white, and a touch of professional indigo blue." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDP8iZz2yduFS7tnTi6FTVokx1fVugIo7Du8eGML9yQdiTA3Jw1s42Nc_Td44U2KqpwFWEjZlxSv3uDr27WFKm9ocbgkKS_UU5cPNqIxj6T-LNzYgiBHSOgzXEKD01Z4Aw8KQWyUtKcEx6gI3ftbfB2pa3gaBbuQe91_aYeIi4-4Dg4W6Nie-FAEE8CjBMuBurqbEQKr6Ttcq-n4ON3CadZp0LNgLnE2on0yYgUngiY22XPTluT07VndO3fVkEldB9pIOpxHJslXaMr"/>
+<div class="absolute top-3 right-3 bg-primary/10 text-primary px-2 py-1 rounded text-label-caps backdrop-blur-md">ALMACENAMIENTO</div>
+</div>
+<div class="p-card_padding flex flex-col flex-grow">
+<div class="flex justify-between items-start mb-2">
+<h3 class="font-headline-sm text-headline-sm line-clamp-1">SSD Portátil 2TB</h3>
+<span class="font-metric-value text-[18px] text-primary">$175.00</span>
+</div>
+<p class="text-body-md text-on-surface-variant mb-4 line-clamp-2">Velocidades de transferencia de hasta 1050 MB/s con cifrado de hardware.</p>
+<div class="mt-auto flex items-center justify-between">
+<span class="text-label-caps text-on-surface-variant bg-surface-container-low px-2 py-1 rounded">ID: PRD-5509</span>
+<div class="flex gap-1">
+<button class="p-1.5 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Pagination (Refined Action Chips style) -->
+<div class="mt-stack_lg flex items-center justify-between py-6 border-t border-outline-variant">
+<span class="text-body-md text-on-surface-variant">Mostrando 8 de 124 productos</span>
+<div class="flex gap-2">
+<button class="px-3 py-1 bg-surface border border-outline-variant rounded hover:bg-surface-container-low transition-colors disabled:opacity-50" disabled="">
+<span class="material-symbols-outlined">chevron_left</span>
+</button>
+<button class="px-4 py-1 bg-primary text-on-primary font-bold rounded">1</button>
+<button class="px-4 py-1 bg-surface border border-outline-variant rounded hover:bg-surface-container-low transition-colors">2</button>
+<button class="px-4 py-1 bg-surface border border-outline-variant rounded hover:bg-surface-container-low transition-colors">3</button>
+<button class="px-3 py-1 bg-surface border border-outline-variant rounded hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</main>
+<script>
+        // Simple micro-interaction for the search bar focus
+        const searchInput = document.querySelector('input[type="text"]');
+        searchInput.addEventListener('focus', () => {
+            searchInput.parentElement.classList.add('ring-2', 'ring-primary/20');
+        });
+        searchInput.addEventListener('blur', () => {
+            searchInput.parentElement.classList.remove('ring-2', 'ring-primary/20');
+        });
+    </script>
+</body></html>
