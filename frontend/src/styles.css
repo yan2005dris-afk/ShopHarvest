@@ -184,12 +184,31 @@
 }
 
 /* ──────────────────────────────────────────────────────────────────
- * Dark mode — Material 3 dark palette
- * Activated by adding `class="dark"` to <html> (or any ancestor).
- * ThemeService toggles this; no media-query magic.
- * ────────────────────────────────────────────────────────────────── */
-@variant dark {
-  @theme {
+ * Dark mode — Material 3 dark palette.
+ *
+ * IMPORTANT: we declare a CUSTOM dark variant matching `class="dark"`
+ * rather than using Tailwind's built-in `@variant dark` (which uses
+ * `prefers-color-scheme: dark`). ThemeService.ts toggles the `dark`
+ * class on <html> at runtime, and that class is what triggers this
+ * block.
+ *
+ * The override block lives in `@layer base` so it can sit between
+ * the Tailwind preflight and the utilities — and crucially the
+ * tokens being re-declared here need to USE the same `--color-*`
+ * names that the main `@theme` block declares. Without this, the
+ * earlier CLI build collapsed both blocks and emitted only the dark
+ * values into :root, which broke the light theme entirely.
+ *
+ * Why the explicit selector and not `@variant dark { @theme { ... } }`?
+ *   With the standalone @tailwindcss/cli the nested-@theme pattern
+ *   gets merged into the main theme block and overrides the light
+ *   defaults. Using `.dark` as a plain selector keeps the dark tokens
+ *   scoped to the class and lets the cascade work as documented.
+ */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  .dark {
     /* Surface tones (dark) */
     --color-surface: #11131b;
     --color-surface-dim: #11131b;
