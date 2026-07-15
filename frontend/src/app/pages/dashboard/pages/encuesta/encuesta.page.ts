@@ -16,9 +16,12 @@ import { KpiCardComponent } from '../../shared/kpi-card/kpi-card.component';
  *   2. Heatmap sitio × gasto         (heatmap)
  *   3. Distribución por género        (pie / donut)
  *
- * The same `DashboardStore` powers the fuente filter; we only filter
- * by `sitio_preferido` (mapped to `fuentes`) because the encuesta DTO
- * does not carry a `categoria` field.
+ * Sprint 6: tokens migrated to Insight Flow (Material 3 + Tailwind
+ * v4 utility classes). KPI icons switched from emoji to Material
+ * Symbols names (the kpi-card input now expects icon names, not
+ * emoji, per Sprint 3). The chart palette is kept as literal hex
+ * values because the chart components consume them as data
+ * attributes, not CSS classes.
  */
 @Component({
   selector: 'app-encuesta-page',
@@ -32,19 +35,25 @@ import { KpiCardComponent } from '../../shared/kpi-card/kpi-card.component';
     KpiCardComponent,
   ],
   template: `
-    <header class="page-header">
-      <h1>Comportamiento del consumidor</h1>
-      <p class="page-sub">
+    <header class="mb-6">
+      <h1 class="text-headline-lg text-on-surface m-0 mb-1 font-bold tracking-tight">
+        Comportamiento del consumidor
+      </h1>
+      <p class="text-body-md text-on-surface-variant m-0">
         3 visualizaciones sobre la encuesta de preferencia de plataformas.
       </p>
     </header>
 
     <!-- ─── Encuesta KPIs ────────────────────────────────── -->
-    <section class="kpi-grid">
+    <section
+      class="mb-8 grid gap-4"
+      style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr))"
+      aria-label="Encuesta KPIs"
+    >
       <app-kpi-card
         label="Total respuestas"
         [value]="totalRespuestas()"
-        icon="📋"
+        icon="fact_check"
         accent="secondary"
         [loading]="store.loading()"
       />
@@ -52,7 +61,7 @@ import { KpiCardComponent } from '../../shared/kpi-card/kpi-card.component';
       <app-kpi-card
         label="Sitios evaluados"
         [value]="sitiosCount()"
-        icon="🌐"
+        icon="public"
         accent="secondary"
         [loading]="store.loading()"
       />
@@ -61,7 +70,7 @@ import { KpiCardComponent } from '../../shared/kpi-card/kpi-card.component';
         label="Sitio top"
         [value]="sitioTop()"
         [delta]="sitioTopPct()"
-        icon="🏆"
+        icon="emoji_events"
         accent="warning"
         [loading]="store.loading()"
       />
@@ -69,83 +78,55 @@ import { KpiCardComponent } from '../../shared/kpi-card/kpi-card.component';
       <app-kpi-card
         label="Frecuencia común"
         [value]="frecuenciaComun()"
-        icon="📈"
+        icon="trending_up"
         accent="success"
         [loading]="store.loading()"
       />
     </section>
 
     <!-- ─── Charts grid ────────────────────────────────────── -->
-    <section class="charts-grid">
-      <app-chart-card
-        title="Sitio preferido × frecuencia"
-        caption="Cantidad de encuestados por combinación"
-        class="charts-grid__span-12"
-      >
-        <app-encuesta-frecuencia-chart
-          [rows]="store.filteredEncuesta()"
-          [colors]="palette"
-        />
-      </app-chart-card>
+    <section
+      class="grid gap-4"
+      style="grid-template-columns: repeat(12, 1fr)"
+      aria-label="Encuesta charts"
+    >
+      <div class="col-span-12">
+        <app-chart-card
+          title="Sitio preferido × frecuencia"
+          caption="Cantidad de encuestados por combinación"
+        >
+          <app-encuesta-frecuencia-chart
+            [rows]="store.filteredEncuesta()"
+            [colors]="palette"
+          />
+        </app-chart-card>
+      </div>
 
-      <app-chart-card
-        title="Heatmap sitio × gasto"
-        caption="Distribución de los niveles de gasto promedio"
-        class="charts-grid__span-6"
-      >
-        <app-encuesta-heatmap-chart
-          [rows]="store.filteredEncuesta()"
-          color="#60a5fa"
-        />
-      </app-chart-card>
+      <div class="col-span-12 md:col-span-6">
+        <app-chart-card
+          title="Heatmap sitio × gasto"
+          caption="Distribución de los niveles de gasto promedio"
+        >
+          <app-encuesta-heatmap-chart
+            [rows]="store.filteredEncuesta()"
+            color="#60a5fa"
+          />
+        </app-chart-card>
+      </div>
 
-      <app-chart-card
-        title="Distribución por género"
-        caption="Participación por género en la encuesta"
-        class="charts-grid__span-6"
-      >
-        <app-encuesta-genero-chart
-          [rows]="store.filteredEncuesta()"
-          [colors]="palette"
-        />
-      </app-chart-card>
+      <div class="col-span-12 md:col-span-6">
+        <app-chart-card
+          title="Distribución por género"
+          caption="Participación por género en la encuesta"
+        >
+          <app-encuesta-genero-chart
+            [rows]="store.filteredEncuesta()"
+            [colors]="palette"
+          />
+        </app-chart-card>
+      </div>
     </section>
   `,
-  styles: [
-    `
-      :host {
-        display: block;
-      }
-      .page-header h1 {
-        margin: 0 0 0.25rem;
-        font-size: 1.875rem;
-        font-weight: 700;
-        letter-spacing: -0.025em;
-        color: var(--text-1);
-      }
-      .page-sub {
-        margin: 0 0 1.5rem;
-        color: var(--text-3);
-        font-size: 0.875rem;
-      }
-      .kpi-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 1rem;
-        margin-bottom: 2rem;
-      }
-      .charts-grid {
-        display: grid;
-        grid-template-columns: repeat(12, 1fr);
-        gap: 1rem;
-      }
-      .charts-grid__span-12 { grid-column: span 12; }
-      .charts-grid__span-6 { grid-column: span 12; }
-      @media (min-width: 900px) {
-        .charts-grid__span-6 { grid-column: span 6; }
-      }
-    `,
-  ],
 })
 export class EncuestaPage {
   readonly store = inject(DashboardStore);

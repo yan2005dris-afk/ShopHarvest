@@ -16,18 +16,15 @@ import { ChartCardComponent } from '../../shared/chart-card/chart-card.component
  * Analisis page — 4 chart families + reactive filter sidebar.
  *
  * Family 1: grouped bar of AVG(precio_usd) by fuente × categoria
- *           (driven by `getPreguntaPrincipal`).
- * Family 2: line chart of precio promedio por trimestre × fuente with
- *           a prominent "snapshot de UN SOLO DÍA" banner.
- * Family 3: scatter using `getOutliers`.
- * Family 4: box plot por fuente.
+ * Family 2: line chart of precio promedio por trimestre × fuente
+ * Family 3: scatter using the outliers endpoint
+ * Family 4: box plot per fuente
  *
- * The filter inputs drive a `computed()` derivation that recomputes
- * every chart's series array whenever any filter changes. Because the
- * underlying data is small (168 products / 24 surveys) we filter
- * client-side rather than re-hitting the backend — this keeps the
- * UI snappy and avoids the round-trip latency that would dominate
- * over the actual render time.
+ * Sprint 6: tokens migrated to Insight Flow. The filter sidebar
+ * keeps the same controls but uses the Insight Flow form-input
+ * pattern (bg-surface-container-low, focus:border-primary +
+ * focus:ring-2). The chart palette stays as literal hex values
+ * because the chart components consume them as data attributes.
  */
 @Component({
   selector: 'app-analisis-page',
@@ -42,17 +39,26 @@ import { ChartCardComponent } from '../../shared/chart-card/chart-card.component
     ChartCardComponent,
   ],
   template: `
-    <header class="page-header">
-      <h1>Análisis de precios</h1>
-      <p class="page-sub">
+    <header class="mb-6">
+      <h1 class="text-headline-lg text-on-surface m-0 mb-1 font-bold tracking-tight">
+        Análisis de precios
+      </h1>
+      <p class="text-body-md text-on-surface-variant m-0">
         4 familias de gráficos con filtros reactivos. Cambiá un filtro y los
         gráficos se recalculan automáticamente.
       </p>
     </header>
 
     @if (store.isSnapshot()) {
-      <div class="snapshot-pill" role="status">
-        <span class="snapshot-pill__dot"></span>
+      <div
+        class="inline-flex items-center gap-2 rounded-full border bg-warning-dim mb-6 px-3 py-1.5 text-label-caps font-semibold text-warning"
+        style="border-color: color-mix(in srgb, var(--color-warning) 40%, transparent)"
+        role="status"
+      >
+        <span
+          class="h-1.5 w-1.5 rounded-full bg-warning"
+          style="box-shadow: 0 0 8px var(--color-warning)"
+        ></span>
         <span>
           Serie temporal · <strong>UN SOLO DÍA</strong> ({{ store.snapshotDate() }}).
           La línea es representativa del snapshot, no de una tendencia real.
@@ -60,16 +66,26 @@ import { ChartCardComponent } from '../../shared/chart-card/chart-card.component
       </div>
     }
 
-    <div class="analisis-layout">
-      <aside class="filter-sidebar" aria-label="Filtros globales">
-        <h3>Filtros</h3>
+    <div class="grid items-start gap-6" style="grid-template-columns: 260px 1fr">
+      <aside
+        class="sticky top-4 flex flex-col gap-5 rounded-xl border border-outline-variant bg-surface p-5 font-sans"
+        aria-label="Filtros globales"
+      >
+        <h3 class="text-body-lg text-on-surface m-0 font-bold tracking-tight">
+          Filtros
+        </h3>
 
-        <fieldset class="filter-group">
-          <legend>Fuentes</legend>
+        <fieldset class="m-0 flex flex-col gap-1.5 border-none p-0">
+          <legend class="text-label-caps text-on-surface-variant mb-2 font-semibold tracking-wider uppercase">
+            Fuentes
+          </legend>
           @for (f of availableFuentes(); track f) {
-            <label class="filter-check">
+            <label
+              class="text-body-md text-on-surface-variant flex cursor-pointer items-center gap-2 py-1 transition-colors hover:text-on-surface"
+            >
               <input
                 type="checkbox"
+                class="size-4 cursor-pointer accent-primary"
                 [checked]="isFuenteSelected(f)"
                 (change)="toggleFuente(f)"
               />
@@ -78,15 +94,22 @@ import { ChartCardComponent } from '../../shared/chart-card/chart-card.component
           }
         </fieldset>
 
-        <fieldset class="filter-group">
-          <legend>Categorías</legend>
+        <fieldset class="m-0 flex flex-col gap-1.5 border-none p-0">
+          <legend class="text-label-caps text-on-surface-variant mb-2 font-semibold tracking-wider uppercase">
+            Categorías
+          </legend>
           @if (availableCategorias().length === 0) {
-            <p class="filter-empty">Cargando categorías…</p>
+            <p class="text-body-md text-on-surface-variant m-0 italic">
+              Cargando categorías…
+            </p>
           }
           @for (c of availableCategorias(); track c) {
-            <label class="filter-check">
+            <label
+              class="text-body-md text-on-surface-variant flex cursor-pointer items-center gap-2 py-1 transition-colors hover:text-on-surface"
+            >
               <input
                 type="checkbox"
+                class="size-4 cursor-pointer accent-primary"
                 [checked]="isCategoriaSelected(c)"
                 (change)="toggleCategoria(c)"
               />
@@ -95,22 +118,26 @@ import { ChartCardComponent } from '../../shared/chart-card/chart-card.component
           }
         </fieldset>
 
-        <fieldset class="filter-group">
-          <legend>Rango de precio (USD)</legend>
-          <div class="range-row">
+        <fieldset class="m-0 flex flex-col gap-1.5 border-none p-0">
+          <legend class="text-label-caps text-on-surface-variant mb-2 font-semibold tracking-wider uppercase">
+            Rango de precio (USD)
+          </legend>
+          <div class="flex items-center gap-2">
             <input
               type="number"
               min="0"
               step="1"
+              class="w-[90px] rounded-md border border-outline-variant bg-surface-container-low px-2 py-1.5 text-body-md text-on-surface outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary"
               [ngModel]="rangoMin()"
               (ngModelChange)="setRangoMin($event)"
               aria-label="Precio mínimo"
             />
-            <span>—</span>
+            <span class="text-on-surface-variant">—</span>
             <input
               type="number"
               min="0"
               step="1"
+              class="w-[90px] rounded-md border border-outline-variant bg-surface-container-low px-2 py-1.5 text-body-md text-on-surface outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary"
               [ngModel]="rangoMax()"
               (ngModelChange)="setRangoMax($event)"
               aria-label="Precio máximo"
@@ -118,23 +145,30 @@ import { ChartCardComponent } from '../../shared/chart-card/chart-card.component
           </div>
         </fieldset>
 
-        <fieldset class="filter-group">
-          <legend>Rango de fechas</legend>
+        <fieldset class="m-0 flex flex-col gap-1.5 border-none p-0">
+          <legend class="text-label-caps text-on-surface-variant mb-2 font-semibold tracking-wider uppercase">
+            Rango de fechas
+          </legend>
           @if (!store.timeRangeIsApplicable()) {
-            <p class="filter-empty" role="note">
+            <p class="text-body-md text-on-surface-variant m-0 italic" role="note">
               El DW es un snapshot de un solo día
               @if (store.timeRangeBounds().min) {
                 ({{ store.timeRangeBounds().min }})
-              }.
-              El filtro temporal se activa cuando hay más de una fecha
-              capturada en <code>dim_tiempo</code>.
+              }. El filtro temporal se activa cuando hay más de una fecha
+              capturada en <code class="rounded-xs bg-surface-container-low px-1 py-0.5 font-mono text-body-md">dim_tiempo</code>.
             </p>
           } @else {
-            <div class="date-row">
-              <label class="filter-check">
-                <span class="date-label">Desde</span>
+            <div class="flex flex-col gap-2">
+              <label
+                class="text-body-md text-on-surface-variant grid grid-cols-[60px_1fr] cursor-pointer items-center gap-2 py-1"
+              >
+                <span class="text-label-caps text-on-surface-variant font-semibold tracking-wider uppercase"
+                  >Desde</span
+                >
                 <input
                   type="date"
+                  class="rounded-md border border-outline-variant bg-surface-container-low px-2 py-1.5 text-body-md text-on-surface outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary"
+                  style="color-scheme: light dark"
                   [min]="store.timeRangeBounds().min"
                   [max]="store.timeRangeBounds().max"
                   [value]="fechaDesde() ?? ''"
@@ -142,10 +176,16 @@ import { ChartCardComponent } from '../../shared/chart-card/chart-card.component
                   [attr.aria-label]="'Fecha desde'"
                 />
               </label>
-              <label class="filter-check">
-                <span class="date-label">Hasta</span>
+              <label
+                class="text-body-md text-on-surface-variant grid grid-cols-[60px_1fr] cursor-pointer items-center gap-2 py-1"
+              >
+                <span class="text-label-caps text-on-surface-variant font-semibold tracking-wider uppercase"
+                  >Hasta</span
+                >
                 <input
                   type="date"
+                  class="rounded-md border border-outline-variant bg-surface-container-low px-2 py-1.5 text-body-md text-on-surface outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary"
+                  style="color-scheme: light dark"
                   [min]="store.timeRangeBounds().min"
                   [max]="store.timeRangeBounds().max"
                   [value]="fechaHasta() ?? ''"
@@ -154,26 +194,33 @@ import { ChartCardComponent } from '../../shared/chart-card/chart-card.component
                 />
               </label>
             </div>
-            <p class="filter-help">
-              Aplica a la serie temporal. La granularidad del DW es
-              trimestral.
+            <p class="text-label-caps text-on-surface-variant mt-2 leading-snug tracking-wider uppercase">
+              Aplica a la serie temporal. La granularidad del DW es trimestral.
             </p>
           }
         </fieldset>
 
-        <fieldset class="filter-group">
-          <legend>Restricciones</legend>
-          <label class="filter-check">
+        <fieldset class="m-0 flex flex-col gap-1.5 border-none p-0">
+          <legend class="text-label-caps text-on-surface-variant mb-2 font-semibold tracking-wider uppercase">
+            Restricciones
+          </legend>
+          <label
+            class="text-body-md text-on-surface-variant flex cursor-pointer items-center gap-2 py-1 transition-colors hover:text-on-surface"
+          >
             <input
               type="checkbox"
+              class="size-4 cursor-pointer accent-primary"
               [ngModel]="store.filtros().soloConDisponibilidad"
               (ngModelChange)="store.setSoloConDisponibilidad($event)"
             />
             <span>Solo con disponibilidad</span>
           </label>
-          <label class="filter-check">
+          <label
+            class="text-body-md text-on-surface-variant flex cursor-pointer items-center gap-2 py-1 transition-colors hover:text-on-surface"
+          >
             <input
               type="checkbox"
+              class="size-4 cursor-pointer accent-primary"
               [ngModel]="store.filtros().soloConCalificacion"
               (ngModelChange)="store.setSoloConCalificacion($event)"
             />
@@ -181,254 +228,72 @@ import { ChartCardComponent } from '../../shared/chart-card/chart-card.component
           </label>
         </fieldset>
 
-        <button type="button" class="reset-btn" (click)="store.resetFilters()">
+        <button
+          type="button"
+          class="mt-2 cursor-pointer rounded-md border border-outline-variant bg-surface-container-low px-4 py-2 text-body-md font-semibold text-on-surface-variant transition-colors hover:bg-primary-dim hover:text-on-surface"
+          (click)="store.resetFilters()"
+        >
           Limpiar filtros
         </button>
       </aside>
 
-      <section class="charts-grid charts-grid--analisis">
-        <app-chart-card
-          title="Barras correlacionales"
-          caption="Precio promedio por fuente × categoría"
-          class="charts-grid__span-12"
-        >
-          <app-precio-promedio-fuente-categoria-chart
-            [rows]="store.filteredPreguntaPrincipal()"
-            [colors]="palette"
-          />
-        </app-chart-card>
+      <section
+        class="grid gap-4"
+        style="grid-template-columns: repeat(12, 1fr)"
+        aria-label="Análisis de precios"
+      >
+        <div class="col-span-12">
+          <app-chart-card
+            title="Barras correlacionales"
+            caption="Precio promedio por fuente × categoría"
+          >
+            <app-precio-promedio-fuente-categoria-chart
+              [rows]="store.filteredPreguntaPrincipal()"
+              [colors]="palette"
+            />
+          </app-chart-card>
+        </div>
 
-        <app-chart-card
-          title="Serie temporal"
-          caption="Precio promedio por trimestre"
-          class="charts-grid__span-12"
-        >
-          <app-serie-temporal-precios-chart
-            [rows]="store.filteredTimeSeries()"
-            [colors]="palette"
-            [isSnapshot]="store.isSnapshot()"
-            [snapshotDate]="store.snapshotDate()"
-          />
-        </app-chart-card>
+        <div class="col-span-12">
+          <app-chart-card
+            title="Serie temporal"
+            caption="Precio promedio por trimestre"
+          >
+            <app-serie-temporal-precios-chart
+              [rows]="store.filteredTimeSeries()"
+              [colors]="palette"
+              [isSnapshot]="store.isSnapshot()"
+              [snapshotDate]="store.snapshotDate()"
+            />
+          </app-chart-card>
+        </div>
 
-        <app-chart-card
-          title="Dispersión de outliers (IQR)"
-          caption="Precio por producto coloreado por clasificación"
-          class="charts-grid__span-6"
-        >
-          <app-dispersion-outliers-chart
-            [rows]="store.filteredOutliers()"
-            [colors]="['#10b981', '#ef4444', '#f59e0b']"
-          />
-        </app-chart-card>
+        <div class="col-span-12 md:col-span-6">
+          <app-chart-card
+            title="Dispersión de outliers (IQR)"
+            caption="Precio por producto coloreado por clasificación"
+          >
+            <app-dispersion-outliers-chart
+              [rows]="store.filteredOutliers()"
+              [colors]="['#10b981', '#ef4444', '#f59e0b']"
+            />
+          </app-chart-card>
+        </div>
 
-        <app-chart-card
-          title="Box plot por fuente"
-          caption="Distribución del rango de precios detectado como outlier"
-          class="charts-grid__span-6"
-        >
-          <app-boxplot-por-fuente-chart
-            [rows]="store.filteredOutliers()"
-            [colors]="palette"
-          />
-        </app-chart-card>
+        <div class="col-span-12 md:col-span-6">
+          <app-chart-card
+            title="Box plot por fuente"
+            caption="Distribución del rango de precios detectado como outlier"
+          >
+            <app-boxplot-por-fuente-chart
+              [rows]="store.filteredOutliers()"
+              [colors]="palette"
+            />
+          </app-chart-card>
+        </div>
       </section>
     </div>
   `,
-  styles: [
-    `
-      :host {
-        display: block;
-      }
-      .page-header h1 {
-        margin: 0 0 0.25rem;
-        font-size: 1.875rem;
-        font-weight: 700;
-        letter-spacing: -0.025em;
-        color: var(--text-1);
-      }
-      .page-sub {
-        margin: 0 0 1.5rem;
-        color: var(--text-3);
-        font-size: 0.875rem;
-      }
-      .snapshot-pill {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        margin-bottom: 1.5rem;
-        padding: 0.375rem 0.75rem;
-        border-radius: 999px;
-        background: var(--warning-dim);
-        border: 1px solid var(--warning);
-        border-color: color-mix(in srgb, var(--warning) 40%, transparent);
-        color: var(--warning);
-        font-size: 0.75rem;
-        font-weight: 600;
-      }
-      .snapshot-pill__dot {
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        background: var(--warning);
-        box-shadow: 0 0 8px var(--warning);
-      }
-      .analisis-layout {
-        display: grid;
-        grid-template-columns: 260px 1fr;
-        gap: 1.5rem;
-        align-items: start;
-      }
-      @media (max-width: 900px) {
-        .analisis-layout {
-          grid-template-columns: 1fr;
-        }
-      }
-      .filter-sidebar {
-        background: var(--surface);
-        background-image: var(--card-glass, none);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        padding: 1.25rem;
-        display: flex;
-        flex-direction: column;
-        gap: 1.25rem;
-        position: sticky;
-        top: 1rem;
-        font-family: var(--font);
-      }
-      .filter-sidebar h3 {
-        margin: 0;
-        font-size: 0.95rem;
-        font-weight: 700;
-        color: var(--text-1);
-        letter-spacing: -0.01em;
-      }
-      .filter-group {
-        border: none;
-        padding: 0;
-        margin: 0;
-        display: flex;
-        flex-direction: column;
-        gap: 0.4rem;
-      }
-      .filter-group legend {
-        font-size: 0.6875rem;
-        text-transform: uppercase;
-        color: var(--text-3);
-        font-weight: 600;
-        letter-spacing: 0.08em;
-        margin-bottom: 0.5rem;
-      }
-      .filter-check {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        font-size: 0.8125rem;
-        color: var(--text-2);
-        cursor: pointer;
-        padding: 0.25rem 0;
-      }
-      .filter-check:hover {
-        color: var(--text-1);
-      }
-      .filter-empty {
-        font-size: 0.75rem;
-        color: var(--text-4);
-        margin: 0;
-        font-style: italic;
-      }
-      .range-row {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-      }
-      .range-row input {
-        width: 90px;
-        padding: 0.375rem 0.5rem;
-        background: var(--surface-2);
-        border: 1px solid var(--border);
-        border-radius: 6px;
-        font-size: 0.8125rem;
-        color: var(--text-1);
-        font-family: inherit;
-      }
-      .range-row input:focus {
-        outline: none;
-        border-color: var(--accent);
-      }
-      .date-row {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-      }
-      .date-row .filter-check {
-        display: grid;
-        grid-template-columns: 60px 1fr;
-        align-items: center;
-        gap: 0.5rem;
-      }
-      .date-row input[type='date'] {
-        padding: 0.375rem 0.5rem;
-        background: var(--surface-2);
-        border: 1px solid var(--border);
-        border-radius: 6px;
-        font-size: 0.8125rem;
-        color: var(--text-1);
-        font-family: inherit;
-        color-scheme: dark;
-      }
-      .date-row input[type='date']:focus {
-        outline: none;
-        border-color: var(--accent);
-      }
-      .date-label {
-        font-size: 0.75rem;
-        color: var(--text-3);
-        font-weight: 600;
-      }
-      .filter-help {
-        margin: 0.5rem 0 0;
-        font-size: 0.6875rem;
-        color: var(--text-4);
-        line-height: 1.4;
-      }
-      .filter-help code {
-        background: var(--surface-2);
-        padding: 0.0625rem 0.25rem;
-        border-radius: 3px;
-        font-family: var(--font-mono, monospace);
-        font-size: 0.6875rem;
-      }
-      .reset-btn {
-        margin-top: 0.5rem;
-        padding: 0.5rem;
-        background: var(--surface-2);
-        border: 1px solid var(--border);
-        border-radius: 6px;
-        font-size: 0.8125rem;
-        cursor: pointer;
-        color: var(--text-3);
-        font-weight: 600;
-      }
-      .reset-btn:hover {
-        background: var(--accent-dim);
-        color: var(--text-1);
-      }
-      .charts-grid {
-        display: grid;
-        grid-template-columns: repeat(12, 1fr);
-        gap: 1rem;
-      }
-
-      .charts-grid__span-12 { grid-column: span 12; }
-      .charts-grid__span-6 { grid-column: span 12; }
-
-      @media (min-width: 900px) {
-        .charts-grid__span-6 { grid-column: span 6; }
-      }
-    `,
-  ],
 })
 export class AnalisisPage {
   readonly store = inject(DashboardStore);
@@ -478,10 +343,7 @@ export class AnalisisPage {
 
   /**
    * Date-range handlers for the new "Rango de fechas" fieldset.
-   *
-   * The native `<input type="date">` fires `(change)` with `event.target.value`
-   * already in ISO-8601 (`YYYY-MM-DD`), which is exactly the shape the store
-   * expects. Empty string → null (treated as "no bound").
+   * Empty value → null (treated as "no bound" by the store).
    */
   setFechaDesde(event: Event): void {
     const value = (event.target as HTMLInputElement).value || null;
