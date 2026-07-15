@@ -34,7 +34,7 @@ type MapperState =
     ErrorStateComponent,
   ],
   template: `
-    <div class="vm">
+    <div class="flex min-h-dvh flex-col font-sans">
       @switch (currentState()) {
         @case ('idle') {
           <app-mapper-hero
@@ -96,15 +96,6 @@ type MapperState =
       }
     </div>
   `,
-  styles: [`
-    .vm {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      min-height: calc(100dvh);
-      font-family: var(--font);
-    }
-  `],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class VisualMapperPage implements OnInit, OnDestroy {

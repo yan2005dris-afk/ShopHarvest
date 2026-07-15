@@ -1,86 +1,139 @@
-<div class="sources">
-  <div class="sources-header">
-    <h1>Sources</h1>
+<!--
+  SourcesComponent template — Insight Flow variant.
+
+  Layout: centered max-w-[1100px] container, flex-col. Source cards
+  in a responsive grid (auto-fill, min 300px). Status badges map to
+  Insight Flow status colors: success for "Active", warning for
+  "Needs extension", tertiary (neutral grey) for "Pending".
+-->
+<div class="mx-auto flex w-full max-w-[1100px] flex-col px-8 pt-6 pb-12 min-h-full">
+  <header class="mb-6 flex items-baseline gap-2.5">
+    <h1 class="text-headline-md m-0 font-bold text-on-surface tracking-tight">Sources</h1>
     @if (!loading() && !error()) {
-      <span class="sources-count">{{ sources().length }}</span>
+      <span
+        class="rounded-full border border-outline-variant bg-surface-container px-2 py-0.5 text-body-md font-semibold text-on-surface-variant"
+      >
+        {{ sources().length }}
+      </span>
     }
-  </div>
+  </header>
 
   @if (loading()) {
-    <div class="sources-state">
-      <div class="src-spinner"></div>
-      <p>Loading sources…</p>
+    <div
+      class="flex flex-1 flex-col items-center justify-center gap-4 p-16 text-center text-body-md text-on-surface-variant"
+    >
+      <span
+        class="inline-block h-8 w-8 rounded-full border-[3px] border-outline-variant border-t-primary"
+        style="animation: spin 0.7s linear infinite"
+      ></span>
+      <p class="m-0">Loading sources…</p>
     </div>
   }
 
   @if (error()) {
-    <div class="sources-state">
-      <div class="error-icon">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="10"/>
-          <line x1="12" y1="8" x2="12" y2="12"/>
-          <line x1="12" y1="16" x2="12.01" y2="16"/>
-        </svg>
-      </div>
-      <p class="error-text">{{ error() }}</p>
-      <button class="btn-outline" (click)="loadSources()">Retry</button>
+    <div
+      class="flex flex-1 flex-col items-center justify-center gap-4 p-16 text-center text-body-md"
+    >
+      <span class="flex text-danger">
+        <span class="material-symbols-outlined" style="font-size: 24px">error</span>
+      </span>
+      <p class="text-danger m-0">{{ error() }}</p>
+      <button
+        type="button"
+        class="cursor-pointer rounded-md border border-outline bg-transparent px-5 py-2 text-body-md text-on-surface-variant transition-colors hover:border-outline hover:text-on-surface"
+        (click)="loadSources()"
+      >
+        Retry
+      </button>
     </div>
   }
 
   @if (!loading() && !error() && sources().length > 0) {
-    <div class="sources-grid">
+    <div
+      class="grid gap-4"
+      style="grid-template-columns: repeat(auto-fill, minmax(300px, 1fr))"
+    >
       @for (source of sources(); track source) {
         @let m = metaFor(source);
-        <div class="src-card">
-          <div class="src-card-header">
-            <h3 class="src-name">{{ m?.name ?? source }}</h3>
-            <span class="src-badge" [class]="'src-badge--' + (m?.status ?? 'pending')">
-              {{ statusIcon(m?.status ?? 'pending') }} {{ statusLabel(m?.status ?? 'pending') }}
+        <article
+          class="flex flex-col gap-3 rounded-xl border border-outline-variant bg-surface p-5 transition-[border-color,box-shadow] duration-150 hover:border-primary"
+        >
+          <div class="flex items-center justify-between gap-3">
+            <h3 class="text-body-lg m-0 font-bold text-on-surface">
+              {{ m?.name ?? source }}
+            </h3>
+            <span
+              class="inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-1 text-[11px] font-bold tracking-wider uppercase"
+              [class.bg-success-dim]="m?.status === 'active'"
+              [class.text-success]="m?.status === 'active'"
+              [class.bg-warning-dim]="m?.status === 'extension'"
+              [class.text-warning]="m?.status === 'extension'"
+              [class.bg-tertiary-container]="m?.status === 'pending'"
+              [class.text-on-tertiary-container]="m?.status === 'pending'"
+            >
+              <span class="material-symbols-outlined" style="font-size: 14px">
+                @switch (m?.status ?? 'pending') {
+                  @case ('active') {
+                    check_circle
+                  }
+                  @case ('extension') {
+                    extension
+                  }
+                  @default {
+                    schedule
+                  }
+                }
+              </span>
+              {{ statusLabel(m?.status ?? 'pending') }}
             </span>
           </div>
 
           @if (m) {
-            <p class="src-desc">{{ m.description }}</p>
-            <p class="src-url">{{ m.url }}</p>
+            <p class="text-body-md m-0 leading-snug text-on-surface-variant">{{ m.description }}</p>
+            <p class="font-mono text-body-md m-0 text-on-surface-variant">{{ m.url }}</p>
           }
 
           @if (results()[source]; as result) {
-            <div class="src-result">
-              <span class="src-result-items">{{ result.totalScraped }} items</span>
-              <span class="src-result-duration">{{ result.durationMs }}ms</span>
+            <div
+              class="flex flex-wrap gap-3 rounded-md border border-outline-variant bg-surface-container-low p-2.5 text-body-md"
+            >
+              <span class="text-success font-semibold">{{ result.totalScraped }} items</span>
+              <span class="text-on-surface-variant">{{ result.durationMs }}ms</span>
               @if (result.errors.length > 0) {
-                <span class="src-result-errors">{{ result.errors.length }} error(s)</span>
+                <span class="text-danger font-semibold">{{ result.errors.length }} error(s)</span>
               }
             </div>
           }
 
           <button
-            class="btn-scrape"
+            type="button"
+            class="mt-auto flex cursor-pointer items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-body-md font-semibold text-on-primary transition-colors hover:bg-primary-container disabled:cursor-not-allowed disabled:opacity-60"
             [disabled]="scraping()[source]"
             (click)="scrape(source)"
+            data-testid="btn-scrape"
           >
             @if (scraping()[source]) {
-              <span class="btn-spinner"></span>
+              <span
+                class="inline-block h-3.5 w-3.5 rounded-full border-2 border-on-primary/30 border-t-on-primary"
+                style="animation: spin 0.6s linear infinite"
+              ></span>
               <span>Scraping…</span>
             } @else {
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polygon points="5 3 19 12 5 21 5 3"/>
-              </svg>
+              <span class="material-symbols-outlined" style="font-size: 16px">play_arrow</span>
               <span>Scrape now</span>
             }
           </button>
-        </div>
+        </article>
       }
     </div>
   }
 
   @if (!loading() && !error() && sources().length === 0) {
-    <div class="sources-state">
-      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-3)">
-        <circle cx="12" cy="12" r="3"/>
-        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-      </svg>
-      <p>No sources found.</p>
+    <div
+      class="flex flex-1 flex-col items-center justify-center gap-4 p-16 text-center text-body-md text-on-surface-variant"
+    >
+      <span class="material-symbols-outlined" style="font-size: 40px">settings</span>
+      <p class="m-0">No sources found.</p>
     </div>
   }
 </div>

@@ -73,11 +73,17 @@ export class SourcesComponent implements OnInit {
     });
   }
 
+  /**
+   * Material Symbols icon name for the given status. The template
+   * renders <span class="material-symbols-outlined">{{ icon }}</span>
+   * — keeping the icon name as a string lets us add future states
+   * (e.g. 'error', 'paused') without touching the template.
+   */
   statusIcon(status: SourceMeta['status']): string {
     switch (status) {
-      case 'active': return '✅';
-      case 'extension': return '⚠️';
-      case 'pending': return '❌';
+      case 'active': return 'check_circle';
+      case 'extension': return 'extension';
+      case 'pending': return 'schedule';
     }
   }
 
