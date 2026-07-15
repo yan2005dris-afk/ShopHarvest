@@ -101,4 +101,30 @@ describe('App', () => {
       'ETL',
     );
   });
+
+  it('should hide the logout button when unauthenticated', async () => {
+    authMock.isAuthenticated.mockReturnValue(false);
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('[data-testid="btn-logout"]')).toBeNull();
+  });
+
+  it('should call auth.logout() when the logout button is clicked', async () => {
+    authMock.isAuthenticated.mockReturnValue(true);
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const logoutBtn = compiled.querySelector(
+      '[data-testid="btn-logout"]',
+    ) as HTMLButtonElement;
+    expect(logoutBtn).toBeTruthy();
+
+    logoutBtn.click();
+    expect(authMock.logout).toHaveBeenCalledTimes(1);
+  });
 });
