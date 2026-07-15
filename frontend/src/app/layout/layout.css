@@ -27,6 +27,7 @@
   font-size: var(--text-body-md);
   font-weight: 500;
   line-height: 1;
+  min-height: 38px;
   transition:
     background-color 150ms ease,
     color 150ms ease,
@@ -100,3 +101,12 @@
 .bg-danger-dim {
   background-color: color-mix(in srgb, var(--color-danger) 12%, transparent);
 }
+
+/* ── Sidebar visual elevation ─────────────────────────────
+ *
+ * Removed: the previous .dark aside { background-color: ... } rule
+ * was replaced by changing the aside's utility class in
+ * sidebar.component.html from bg-surface to bg-surface-container.
+ * Tailwind generates the right token variant for light/dark so we
+ * don't need a manual override here.
+ */

@@ -14,7 +14,7 @@
     - <app-extension-status> — /setup link with ON/OFF badge
 -->
 <aside
-  class="sticky top-0 flex h-dvh shrink-0 flex-col border-r border-outline-variant bg-surface py-4 transition-[width] duration-200"
+  class="sticky top-0 flex h-dvh shrink-0 flex-col border-r border-outline-variant bg-surface-container-low py-4 transition-[width] duration-200"
   [class.w-sidebar]="!themeService.sidebarCollapsed()"
   [class.w-16]="themeService.sidebarCollapsed()"
   [attr.aria-label]="'Primary navigation'"
@@ -88,15 +88,31 @@
     }
   </nav>
 
-  <!-- Footer: theme toggle + extension status -->
+  <!--
+    Footer: extension status + theme toggle + logout.
+
+    Layout rationale: the aside is `flex flex-col` with the nav at
+    `flex-1`; this footer sits below with `mt-auto` so it always
+    hugs the bottom regardless of how long the nav list grows.
+    A single 1px border-t with border-outline-variant gives a
+    clean separation in both light and dark themes.
+
+    Each row is the .nav-item family (defined in layout.css) — the
+    sidebar guarantees identical height/padding by reusing the
+    class, so the three rows align vertically without per-row
+    overrides.
+  -->
   <footer
-    class="mt-2 space-y-1 border-t border-outline-variant px-2 pt-3"
+    class="mt-auto flex flex-col gap-1 border-t border-outline-variant px-2 pt-3"
     aria-label="Sidebar footer"
   >
-    <app-theme-toggle [collapsed]="themeService.sidebarCollapsed()" />
     <app-extension-status
       [available]="extensionAvailable()"
       [collapsed]="themeService.sidebarCollapsed()"
     />
+    <app-theme-toggle [collapsed]="themeService.sidebarCollapsed()" />
+    @if (auth.isAuthenticated()) {
+      <app-logout [collapsed]="themeService.sidebarCollapsed()" />
+    }
   </footer>
 </aside>

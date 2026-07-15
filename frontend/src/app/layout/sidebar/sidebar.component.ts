@@ -5,6 +5,7 @@ import { AuthService } from '../../services/auth.service';
 import { NAV_ITEMS, type SidebarNavItem } from '../layout.types';
 import { ThemeToggleComponent } from '../theme-toggle/theme-toggle.component';
 import { ExtensionStatusComponent } from '../extension-status/extension-status.component';
+import { LogoutComponent } from '../logout/logout.component';
 
 /**
  * SidebarComponent — the app's left side-nav. Reusable, standalone,
@@ -32,6 +33,7 @@ import { ExtensionStatusComponent } from '../extension-status/extension-status.c
     RouterLinkActive,
     ThemeToggleComponent,
     ExtensionStatusComponent,
+    LogoutComponent,
   ],
   templateUrl: './sidebar.component.html',
   styleUrls: ['../layout.css'],
