@@ -266,7 +266,7 @@ async function extractItems(
               titulo: titleEl?.textContent?.trim() ?? null,
               precio: priceEl?.textContent?.trim() ?? null,
               moneda: 'USD',
-              url_producto: urlEl?.href ?? null,
+              url_producto: (urlEl as HTMLAnchorElement)?.href ?? null,
             };
           });
         }
