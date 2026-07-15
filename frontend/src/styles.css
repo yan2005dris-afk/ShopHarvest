@@ -115,13 +115,24 @@
   --color-background: #f9f9ff;
   --color-on-background: #111c2d;
 
-  /* ── Status indicators (Emerald/Amber/Crimson per DESIGN.md) ── */
+  /* ── Status indicators (Emerald/Amber/Crimson per DESIGN.md) ──
+   * `-dim` = translucent tint for badge/chip backgrounds, `-border`
+   * = translucent border to match. Static rgba() literals, NOT
+   * color-mix() — Tailwind v4's standalone CLI (lightningcss) silently
+   * drops @theme custom properties whose value is a color-mix()
+   * expression, so those never reached the compiled CSS at all. */
   --color-success: #10b981;
   --color-on-success: #ffffff;
+  --color-success-dim: rgba(16, 185, 129, 0.15);
+  --color-success-border: rgba(16, 185, 129, 0.4);
   --color-warning: #f59e0b;
   --color-on-warning: #ffffff;
+  --color-warning-dim: rgba(245, 158, 11, 0.15);
+  --color-warning-border: rgba(245, 158, 11, 0.4);
   --color-danger: #ef4444;
   --color-on-danger: #ffffff;
+  --color-danger-dim: rgba(239, 68, 68, 0.15);
+  --color-danger-border: rgba(239, 68, 68, 0.4);
 
   /* ── Typography — Hanken Grotesk single typeface ─────────── */
   --font-sans: 'Hanken Grotesk', system-ui, -apple-system, BlinkMacSystemFont,

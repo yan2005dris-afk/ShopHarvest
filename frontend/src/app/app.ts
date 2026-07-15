@@ -1,5 +1,6 @@
-import { Component, DestroyRef, inject } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
+import { filter } from 'rxjs';
 import { ExtensionService } from './services/extension.service';
 import { ThemeService } from './services/theme.service';
 import { AuthService } from './services/auth.service';
@@ -47,8 +48,16 @@ export class App {
   readonly auth = inject(AuthService);
   readonly themeService = inject(ThemeService);
 
+  /**
+   * True while the router is inside `/dashboard`. The public BI
+   * dashboard owns its own full-page shell (header + tabs, no side
+   * nav), so `app.html` hides `<app-sidebar>` while this is true.
+   */
+  readonly isDashboardRoute = signal(false);
+
   constructor(
     private readonly extensionService: ExtensionService,
+    private readonly router: Router,
     private readonly toastService: ToastService,
   ) {
     // Tear down the toast service when the root component dies. The
@@ -61,5 +70,12 @@ export class App {
     this.extensionService.available$.subscribe((v) => {
       this.extensionAvailable = v;
     });
+
+    this.isDashboardRoute.set(this.router.url.startsWith('/dashboard'));
+    this.router.events
+      .pipe(filter((e) => e instanceof NavigationEnd))
+      .subscribe((e) => {
+        this.isDashboardRoute.set((e as NavigationEnd).urlAfterRedirects.startsWith('/dashboard'));
+      });
   }
 }

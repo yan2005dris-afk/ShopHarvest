@@ -27,7 +27,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
     <article
       class="chart-card"
       [class.chart-card--tight]="padding() === 'tight'"
-      [style.--accent]="accent() || 'var(--accent)'"
+      [style.--accent]="accent() || 'var(--color-primary)'"
     >
       <span class="chart-card__accent" aria-hidden="true"></span>
 
@@ -56,22 +56,19 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
         position: relative;
         padding: 1.25rem 1.25rem 1.25rem;
         border-radius: 14px;
-        background: var(--surface);
-        background-image: var(--card-glass, none);
+        background: var(--color-surface-container-low);
         backdrop-filter: blur(8px);
-        border: 1px solid var(--border);
-        font-family: var(--font);
+        border: 1px solid var(--color-outline-variant);
+        font-family: var(--font-sans);
         overflow: hidden;
         display: flex;
         flex-direction: column;
         gap: 1rem;
         transition: border-color 0.18s ease, box-shadow 0.18s ease;
-        box-shadow: var(--shadow-card, none);
       }
 
       .chart-card:hover {
-        border-color: var(--accent-border);
-        box-shadow: var(--shadow-card-hover, none);
+        border-color: color-mix(in srgb, var(--color-primary) 40%, transparent);
       }
 
       .chart-card__accent {
@@ -80,7 +77,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
         left: 0;
         right: 0;
         height: 2px;
-        background: var(--accent, var(--accent));
+        background: var(--accent);
         opacity: 0.7;
       }
 
@@ -102,7 +99,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
         margin: 0;
         font-size: 0.875rem;
         font-weight: 700;
-        color: var(--text-1);
+        color: var(--color-on-surface);
         letter-spacing: 0.01em;
         line-height: 1.3;
       }
@@ -110,7 +107,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
       .chart-card__caption {
         margin: 0;
         font-size: 0.6875rem;
-        color: var(--text-3);
+        color: var(--color-on-surface-variant);
         text-transform: uppercase;
         letter-spacing: 0.08em;
         font-weight: 500;

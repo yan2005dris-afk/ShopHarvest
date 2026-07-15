@@ -22,10 +22,10 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
     :host { display: flex; flex: 1; }
     .vm-centered { flex: 1; display: flex; align-items: center; justify-content: center; padding: 2rem; }
     .vm-error-card { text-align: center; max-width: 400px; display: flex; flex-direction: column; align-items: center; gap: 0.75rem; }
-    .vm-error-icon { display: flex; align-items: center; justify-content: center; width: 64px; height: 64px; border-radius: 50%; background: var(--danger-dim); border: 1px solid rgba(239,68,68,0.25); color: var(--danger); }
-    .vm-error-card h2 { margin: 0; font-size: 1.25rem; font-weight: 700; color: var(--text-1); }
-    .vm-error-msg { margin: 0; font-size: 0.9375rem; color: var(--text-2); background: var(--danger-dim); padding: 0.75rem 1rem; border-radius: var(--radius); border: 1px solid rgba(239,68,68,0.2); }
-    .btn-accent { padding: 0.625rem 1rem; font-size: 0.875rem; font-weight: 600; border: none; border-radius: var(--radius); background: var(--accent); color: white; cursor: pointer; transition: opacity 0.15s, transform 0.05s; font-family: var(--font); }
+    .vm-error-icon { display: flex; align-items: center; justify-content: center; width: 64px; height: 64px; border-radius: 50%; background: var(--color-danger-dim); border: 1px solid var(--color-danger-border); color: var(--color-danger); }
+    .vm-error-card h2 { margin: 0; font-size: 1.25rem; font-weight: 700; color: var(--color-on-surface); }
+    .vm-error-msg { margin: 0; font-size: 0.9375rem; color: var(--color-on-surface-variant); background: var(--color-danger-dim); padding: 0.75rem 1rem; border-radius: var(--radius-md); border: 1px solid var(--color-danger-border); }
+    .btn-accent { padding: 0.625rem 1rem; font-size: 0.875rem; font-weight: 600; border: none; border-radius: var(--radius-md); background: var(--color-primary); color: var(--color-on-primary); cursor: pointer; transition: opacity 0.15s, transform 0.05s; font-family: var(--font-sans); }
     .btn-accent:hover { opacity: 0.9; }
     .btn-accent:active { transform: scale(0.98); }
   `],

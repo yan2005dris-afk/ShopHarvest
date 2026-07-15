@@ -11,11 +11,18 @@
   app.ts `styleUrls`.
 -->
 <div class="flex min-h-dvh bg-background text-on-surface">
-  <!-- Left side-nav. Owns collapse state via ThemeService.sidebar. -->
-  <app-sidebar
-    [extensionAvailable]="extensionAvailable"
-    class="block"
-  />
+  <!--
+    Left side-nav. Hidden only on /dashboard while logged out — the
+    public BI dashboard is a full-page shell for anonymous visitors
+    (see DashboardShellComponent). Authenticated users keep the
+    sidebar everywhere, dashboard included.
+  -->
+  @if (!isDashboardRoute() || auth.isAuthenticated()) {
+    <app-sidebar
+      [extensionAvailable]="extensionAvailable"
+      class="block"
+    />
+  }
 
   <!-- Main stage — host for the routed page. -->
   <main class="app-stage min-w-0 flex-1 overflow-auto">

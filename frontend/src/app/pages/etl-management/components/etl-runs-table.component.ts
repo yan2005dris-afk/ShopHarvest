@@ -48,8 +48,8 @@ import type { EtlRunDto, EtlRunFiltersDto, EtlRunListResponseDto } from '@web-sc
       z-index: 1000;
     }
     .modal-content {
-      background: var(--surface);
-      border: 1px solid var(--border);
+      background: var(--color-surface-container-low);
+      border: 1px solid var(--color-outline-variant);
       border-radius: var(--radius-lg);
       width: 90%;
       max-width: 500px;
@@ -61,24 +61,24 @@ import type { EtlRunDto, EtlRunFiltersDto, EtlRunListResponseDto } from '@web-sc
       justify-content: space-between;
       align-items: center;
       padding: 16px 20px;
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid var(--color-outline-variant);
     }
     .modal-header h3 {
       margin: 0;
       font-size: 1.1rem;
-      color: var(--text-1);
+      color: var(--color-on-surface);
     }
     .close-btn {
       background: none;
       border: none;
       font-size: 1.5rem;
-      color: var(--text-2);
+      color: var(--color-on-surface-variant);
       cursor: pointer;
       padding: 0;
       line-height: 1;
     }
     .close-btn:hover {
-      color: var(--text-1);
+      color: var(--color-on-surface);
     }
     .modal-body {
       padding: 20px;
@@ -91,12 +91,12 @@ import type { EtlRunDto, EtlRunFiltersDto, EtlRunListResponseDto } from '@web-sc
     }
     .detail-grid dt {
       font-weight: 600;
-      color: var(--text-2);
+      color: var(--color-on-surface-variant);
       font-size: 0.85rem;
     }
     .detail-grid dd {
       margin: 0;
-      color: var(--text-1);
+      color: var(--color-on-surface);
       font-size: 0.9rem;
     }
     .status-badge {
@@ -106,19 +106,19 @@ import type { EtlRunDto, EtlRunFiltersDto, EtlRunListResponseDto } from '@web-sc
       font-weight: 600;
     }
     .status-badge[data-status="RUNNING"] {
-      background: var(--accent-dim);
-      color: var(--accent);
+      background: color-mix(in srgb, var(--color-primary) 15%, transparent);
+      color: var(--color-primary);
     }
     .status-badge[data-status="SUCCESS"] {
-      background: var(--success-dim);
-      color: var(--success);
+      background: var(--color-success-dim);
+      color: var(--color-success);
     }
     .status-badge[data-status="FAILED"] {
-      background: var(--danger-dim);
-      color: var(--danger);
+      background: var(--color-danger-dim);
+      color: var(--color-danger);
     }
     .error-text {
-      color: var(--danger);
+      color: var(--color-danger);
     }
   `]
 })
@@ -256,8 +256,8 @@ export class EtlRunDetailModalComponent {
       flex-wrap: wrap;
       gap: 16px;
       padding: 16px;
-      background: var(--surface);
-      border: 1px solid var(--border);
+      background: var(--color-surface-container-low);
+      border: 1px solid var(--color-outline-variant);
       border-radius: var(--radius-lg);
       margin-bottom: 20px;
       align-items: flex-end;
@@ -272,14 +272,14 @@ export class EtlRunDetailModalComponent {
     .filter-field label {
       font-size: 0.75rem;
       font-weight: 600;
-      color: var(--text-2);
+      color: var(--color-on-surface-variant);
     }
     .filter-field select, .filter-field input {
-      background: var(--surface-2);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
+      background: var(--color-surface-container);
+      border: 1px solid var(--color-outline-variant);
+      border-radius: var(--radius-md);
       padding: 8px 10px;
-      color: var(--text-1);
+      color: var(--color-on-surface);
       font-size: 0.85rem;
       width: 100%;
     }
@@ -289,7 +289,7 @@ export class EtlRunDetailModalComponent {
     }
     .btn {
       padding: 8px 16px;
-      border-radius: var(--radius);
+      border-radius: var(--radius-md);
       font-weight: 500;
       cursor: pointer;
       font-size: 0.85rem;
@@ -298,30 +298,30 @@ export class EtlRunDetailModalComponent {
       white-space: nowrap;
     }
     .btn-primary {
-      background: var(--accent);
-      color: #ffffff;
+      background: var(--color-primary);
+      color: var(--color-on-primary);
     }
     .btn-primary:hover {
-      background: var(--accent-hover);
+      background: var(--color-primary-container);
     }
     .btn-secondary {
-      background: var(--surface-2);
-      color: var(--text-2);
-      border: 1px solid var(--border);
+      background: var(--color-surface-container);
+      color: var(--color-on-surface-variant);
+      border: 1px solid var(--color-outline-variant);
     }
     .btn-secondary:hover {
-      background: var(--surface-3);
-      color: var(--text-1);
+      background: var(--color-surface-container-high);
+      color: var(--color-on-surface);
     }
     .btn-nav {
-      background: var(--surface);
-      color: var(--text-2);
-      border: 1px solid var(--border);
+      background: var(--color-surface-container-low);
+      color: var(--color-on-surface-variant);
+      border: 1px solid var(--color-outline-variant);
       padding: 6px 12px;
     }
     .btn-nav:hover:not(:disabled) {
-      background: var(--surface-2);
-      color: var(--text-1);
+      background: var(--color-surface-container);
+      color: var(--color-on-surface);
     }
     .btn-nav:disabled {
       opacity: 0.5;
@@ -329,8 +329,8 @@ export class EtlRunDetailModalComponent {
     }
     .table-container {
       position: relative;
-      background: var(--surface);
-      border: 1px solid var(--border);
+      background: var(--color-surface-container-low);
+      border: 1px solid var(--color-outline-variant);
       border-radius: var(--radius-lg);
       overflow: hidden;
     }
@@ -340,7 +340,7 @@ export class EtlRunDetailModalComponent {
       left: 0;
       width: 100%;
       height: 100%;
-      background: var(--surface-2);
+      background: var(--color-surface-container);
       opacity: 0.85;
       display: flex;
       flex-direction: column;
@@ -348,13 +348,13 @@ export class EtlRunDetailModalComponent {
       align-items: center;
       gap: 12px;
       z-index: 10;
-      color: var(--text-1);
+      color: var(--color-on-surface);
     }
     .spinner {
       width: 28px;
       height: 28px;
-      border: 3px solid var(--border);
-      border-top-color: var(--accent);
+      border: 3px solid var(--color-outline-variant);
+      border-top-color: var(--color-primary);
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
     }
@@ -368,18 +368,18 @@ export class EtlRunDetailModalComponent {
     .runs-table th {
       text-align: left;
       padding: 12px 16px;
-      background: var(--surface-2);
+      background: var(--color-surface-container);
       font-size: 0.75rem;
       font-weight: 600;
-      color: var(--text-2);
+      color: var(--color-on-surface-variant);
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid var(--color-outline-variant);
     }
     .runs-table td {
       padding: 12px 16px;
-      border-bottom: 1px solid var(--border);
-      color: var(--text-1);
+      border-bottom: 1px solid var(--color-outline-variant);
+      color: var(--color-on-surface);
       font-size: 0.9rem;
     }
     .runs-table tbody tr {
@@ -387,10 +387,10 @@ export class EtlRunDetailModalComponent {
       transition: background-color 0.15s ease;
     }
     .runs-table tbody tr:hover {
-      background: var(--surface-2);
+      background: var(--color-surface-container);
     }
     .runs-table tbody tr.selected {
-      background: var(--accent-dim);
+      background: color-mix(in srgb, var(--color-primary) 15%, transparent);
     }
     .runs-table tbody tr:last-child td {
       border-bottom: none;
@@ -405,20 +405,20 @@ export class EtlRunDetailModalComponent {
       font-weight: 600;
     }
     .status-badge[data-status="RUNNING"] {
-      background: var(--accent-dim);
-      color: var(--accent);
+      background: color-mix(in srgb, var(--color-primary) 15%, transparent);
+      color: var(--color-primary);
     }
     .status-badge[data-status="SUCCESS"] {
-      background: var(--success-dim);
-      color: var(--success);
+      background: var(--color-success-dim);
+      color: var(--color-success);
     }
     .status-badge[data-status="FAILED"] {
-      background: var(--danger-dim);
-      color: var(--danger);
+      background: var(--color-danger-dim);
+      color: var(--color-danger);
     }
     .empty-state {
       text-align: center;
-      color: var(--text-2);
+      color: var(--color-on-surface-variant);
       padding: 32px;
     }
     .pagination-bar {
@@ -428,7 +428,7 @@ export class EtlRunDetailModalComponent {
       padding: 12px 16px;
       margin-top: 16px;
       font-size: 0.85rem;
-      color: var(--text-2);
+      color: var(--color-on-surface-variant);
     }
     .pagination-controls {
       display: flex;

@@ -245,31 +245,31 @@ function fieldTypeBadge(name: string): { label: string; cls: string } | null {
   styles: [`
     :host { display: flex; flex-direction: column; gap: 1rem; }
     .vm-products-panel { flex: 1; overflow-y: auto; }
-    .vm-panel-header { margin: 0 0 0.75rem; font-size: 0.875rem; font-weight: 600; color: var(--text-2); }
+    .vm-panel-header { margin: 0 0 0.75rem; font-size: 0.875rem; font-weight: 600; color: var(--color-on-surface-variant); }
 
     .vm-extractall-layout { display: flex; gap: 1rem; height: 100%; overflow: hidden; }
     .vm-extractall-layout .vm-extractall-panel { width: 320px; min-width: 320px; overflow-y: auto; padding: 0.5rem 1rem; }
     .vm-extractall-layout .vm-products-panel { flex: 1; overflow-y: auto; }
-    .vm-extractall-hint { margin: 0.25rem 0 0; font-size: 0.8125rem; color: var(--text-3); font-weight: 400; }
-    .vm-extractall-field { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.75rem; margin-bottom: 0.75rem; }
+    .vm-extractall-hint { margin: 0.25rem 0 0; font-size: 0.8125rem; color: var(--color-on-surface-variant); font-weight: 400; }
+    .vm-extractall-field { background: var(--color-surface-container-low); border: 1px solid var(--color-outline-variant); border-radius: var(--radius-md); padding: 0.75rem; margin-bottom: 0.75rem; }
     .vm-extractall-field-header { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.5rem; }
-    .vm-extractall-field-label { font-size: 0.8125rem; font-weight: 600; color: var(--text-1); }
-    .vm-canonical-select { background: var(--surface-2); border: 1px solid var(--border); border-radius: 0.25rem; padding: 0.25rem 0.5rem; font-size: 0.75rem; color: var(--text-1); cursor: pointer; }
+    .vm-extractall-field-label { font-size: 0.8125rem; font-weight: 600; color: var(--color-on-surface); }
+    .vm-canonical-select { background: var(--color-surface-container); border: 1px solid var(--color-outline-variant); border-radius: 0.25rem; padding: 0.25rem 0.5rem; font-size: 0.75rem; color: var(--color-on-surface); cursor: pointer; }
     .vm-extractall-values { display: flex; flex-wrap: wrap; gap: 0.375rem; }
-    .vm-extractall-value { display: inline-flex; align-items: center; padding: 0.25rem 0.5rem; background: var(--surface-2); border: 1px solid var(--border); border-radius: 0.25rem; font-size: 0.6875rem; color: var(--text-2); max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .vm-extractall-value.selected { border-color: var(--accent); background: var(--accent-dim); color: var(--accent); }
-    .vm-extractall-value.is-price { color: var(--success); border-color: var(--success-border); }
+    .vm-extractall-value { display: inline-flex; align-items: center; padding: 0.25rem 0.5rem; background: var(--color-surface-container); border: 1px solid var(--color-outline-variant); border-radius: 0.25rem; font-size: 0.6875rem; color: var(--color-on-surface-variant); max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .vm-extractall-value.selected { border-color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 15%, transparent); color: var(--color-primary); }
+    .vm-extractall-value.is-price { color: var(--color-success); border-color: var(--color-success-border); }
     .vm-value-thumb { width: 24px; height: 24px; object-fit: cover; border-radius: 2px; }
-    .vm-mapping-summary { margin-top: 1rem; padding: 0.75rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
-    .vm-mapping-summary h4 { margin: 0 0 0.5rem; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-3); }
+    .vm-mapping-summary { margin-top: 1rem; padding: 0.75rem; background: var(--color-surface-container-low); border: 1px solid var(--color-outline-variant); border-radius: var(--radius-md); }
+    .vm-mapping-summary h4 { margin: 0 0 0.5rem; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--color-on-surface-variant); }
     .vm-mapping-list { display: flex; flex-wrap: wrap; gap: 0.375rem; }
-    .vm-mapping-chip { display: inline-flex; padding: 0.25rem 0.5rem; background: var(--accent-dim); color: var(--accent); border-radius: 999px; font-size: 0.75rem; font-weight: 600; }
+    .vm-mapping-chip { display: inline-flex; padding: 0.25rem 0.5rem; background: color-mix(in srgb, var(--color-primary) 15%, transparent); color: var(--color-primary); border-radius: 999px; font-size: 0.75rem; font-weight: 600; }
 
     .vm-product-cards { display: flex; flex-direction: column; gap: 1rem; }
 
     .vm-product-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
+      background: var(--color-surface-container-low);
+      border: 1px solid var(--color-outline-variant);
       border-radius: var(--radius-lg);
       overflow: hidden;
       display: flex;
@@ -280,11 +280,11 @@ function fieldTypeBadge(name: string): { label: string; cls: string } | null {
       width: 100%;
       max-height: 200px;
       overflow: hidden;
-      background: var(--surface-2);
+      background: var(--color-surface-container);
       display: flex;
       align-items: center;
       justify-content: center;
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid var(--color-outline-variant);
     }
     .vm-prod-image {
       display: block;
@@ -298,36 +298,36 @@ function fieldTypeBadge(name: string): { label: string; cls: string } | null {
     .vm-prod-title {
       font-size: 0.9375rem;
       font-weight: 700;
-      color: var(--text-1);
+      color: var(--color-on-surface);
       line-height: 1.4;
     }
     .vm-prod-price {
       font-size: 1.125rem;
       font-weight: 800;
-      color: var(--accent);
+      color: var(--color-primary);
     }
 
     .vm-prod-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.375rem 1rem; margin-top: 0.25rem; }
     .vm-prod-field { display: flex; flex-direction: column; gap: 0.0625rem; }
     .vm-prod-field:has(.vm-prod-label:is(:empty)) { grid-column: 1 / -1; }
-    .vm-prod-label { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-3); }
-    .vm-prod-value { font-size: 0.75rem; color: var(--text-2); word-break: break-all; }
+    .vm-prod-label { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-on-surface-variant); }
+    .vm-prod-value { font-size: 0.75rem; color: var(--color-on-surface-variant); word-break: break-all; }
 
     /* Field-type badges row */
-    .vm-prod-badges { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--border); }
+    .vm-prod-badges { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--color-outline-variant); }
     .vm-badge { font-size: 0.75rem; padding: 0.125rem 0.375rem; border-radius: 0.25rem; line-height: 1.4; }
-    .vm-badge.badge-img   { background: var(--accent-dim); color: var(--accent); }
-    .vm-badge.badge-title { background: var(--warning-dim); color: var(--warning); }
-    .vm-badge.badge-price { background: var(--success-dim); color: var(--success); }
+    .vm-badge.badge-img   { background: color-mix(in srgb, var(--color-primary) 15%, transparent); color: var(--color-primary); }
+    .vm-badge.badge-title { background: var(--color-warning-dim); color: var(--color-warning); }
+    .vm-badge.badge-price { background: var(--color-success-dim); color: var(--color-success); }
 
-    .vm-preview-msg { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 2rem; gap: 1rem; color: var(--text-3); }
-    .vm-preview-msg svg { color: var(--success); }
-    .vm-preview-msg p { margin: 0; font-size: 0.9375rem; color: var(--text-2); }
-    .vm-summary-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.25rem; text-align: left; max-width: 400px; font-size: 0.875rem; color: var(--text-2); line-height: 1.6; }
-    .vm-summary-box code { font-family: var(--font-mono); font-size: 0.75rem; background: var(--surface-2); padding: 0.125rem 0.375rem; border-radius: 0.25rem; color: var(--text-1); }
-    .vm-preview-sub { font-size: 0.8125rem; color: var(--text-3) !important; }
-    .vm-retry-link { cursor: pointer; text-decoration: underline; color: var(--accent); }
-    .vm-preview-saved-badge { font-size: 0.875rem; font-weight: 600; color: var(--success); margin-top: 0.5rem; }
+    .vm-preview-msg { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 2rem; gap: 1rem; color: var(--color-on-surface-variant); }
+    .vm-preview-msg svg { color: var(--color-success); }
+    .vm-preview-msg p { margin: 0; font-size: 0.9375rem; color: var(--color-on-surface-variant); }
+    .vm-summary-box { background: var(--color-surface-container-low); border: 1px solid var(--color-outline-variant); border-radius: var(--radius-lg); padding: 1rem 1.25rem; text-align: left; max-width: 400px; font-size: 0.875rem; color: var(--color-on-surface-variant); line-height: 1.6; }
+    .vm-summary-box code { font-family: var(--font-mono); font-size: 0.75rem; background: var(--color-surface-container); padding: 0.125rem 0.375rem; border-radius: 0.25rem; color: var(--color-on-surface); }
+    .vm-preview-sub { font-size: 0.8125rem; color: var(--color-on-surface-variant) !important; }
+    .vm-retry-link { cursor: pointer; text-decoration: underline; color: var(--color-primary); }
+    .vm-preview-saved-badge { font-size: 0.875rem; font-weight: 600; color: var(--color-success); margin-top: 0.5rem; }
   `],
 })
 export class ExtractedPreviewComponent {

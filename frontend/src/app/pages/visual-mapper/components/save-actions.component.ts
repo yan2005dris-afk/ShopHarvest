@@ -34,13 +34,13 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
   `,
   styles: [`
     :host { display: flex; flex-direction: column; gap: 0.75rem; }
-    .btn-accent { padding: 0.625rem 1rem; font-size: 0.875rem; font-weight: 600; border: none; border-radius: var(--radius); background: var(--accent); color: white; cursor: pointer; transition: opacity 0.15s, transform 0.05s; }
+    .btn-accent { padding: 0.625rem 1rem; font-size: 0.875rem; font-weight: 600; border: none; border-radius: var(--radius-md); background: var(--color-primary); color: var(--color-on-primary); cursor: pointer; transition: opacity 0.15s, transform 0.05s; }
     .btn-accent:hover:not(:disabled) { opacity: 0.9; }
     .btn-accent:active:not(:disabled) { transform: scale(0.98); }
     .btn-accent:disabled { opacity: 0.5; cursor: not-allowed; }
     .btn-full { width: 100%; }
-    .vm-save-hint { margin: 0; font-size: 0.75rem; color: var(--text-2); }
-    .vm-validation-error { margin: 0; font-size: 0.8125rem; color: var(--danger); background: var(--danger-dim); padding: 0.5rem 0.75rem; border-radius: var(--radius); border: 1px solid rgba(239, 68, 68, 0.2); }
+    .vm-save-hint { margin: 0; font-size: 0.75rem; color: var(--color-on-surface-variant); }
+    .vm-validation-error { margin: 0; font-size: 0.8125rem; color: var(--color-danger); background: var(--color-danger-dim); padding: 0.5rem 0.75rem; border-radius: var(--radius-md); border: 1px solid var(--color-danger-border); }
   `],
 })
 export class SaveActionsComponent {

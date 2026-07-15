@@ -67,18 +67,18 @@ import type { EtlRunDto } from '@web-scraping/contracts/pipeline';
   `,
   styles: [`
     .preview-panel {
-      background: var(--surface);
-      border: 1px solid var(--border);
+      background: var(--color-surface-container-low);
+      border: 1px solid var(--color-outline-variant);
       border-radius: var(--radius-lg);
       overflow: hidden;
     }
     .panel-header {
       padding: 12px 16px;
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid var(--color-outline-variant);
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: var(--surface-2);
+      background: var(--color-surface-container);
     }
     .header-left {
       display: flex;
@@ -88,21 +88,21 @@ import type { EtlRunDto } from '@web-scraping/contracts/pipeline';
     .panel-title {
       font-size: 0.9rem;
       font-weight: 600;
-      color: var(--text-1);
+      color: var(--color-on-surface);
     }
     .pulse-dot {
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      background: var(--accent);
+      background: var(--color-primary);
       animation: pulse 1.5s infinite;
     }
     @keyframes pulse {
       0%, 100% { opacity: 1; transform: scale(1); }
       50% { opacity: 0.5; transform: scale(0.8); }
     }
-    .check-icon { color: var(--success); font-weight: 700; }
-    .error-icon { color: var(--danger); font-weight: 700; }
+    .check-icon { color: var(--color-success); font-weight: 700; }
+    .error-icon { color: var(--color-danger); font-weight: 700; }
     .status-badge {
       font-size: 0.7rem;
       padding: 2px 6px;
@@ -110,24 +110,24 @@ import type { EtlRunDto } from '@web-scraping/contracts/pipeline';
       font-weight: 700;
       text-transform: uppercase;
     }
-    .status-badge[data-status="RUNNING"] { background: var(--accent-dim); color: var(--accent); }
-    .status-badge[data-status="SUCCESS"] { background: var(--success-dim); color: var(--success); }
-    .status-badge[data-status="FAILED"] { background: var(--danger-dim); color: var(--danger); }
+    .status-badge[data-status="RUNNING"] { background: color-mix(in srgb, var(--color-primary) 15%, transparent); color: var(--color-primary); }
+    .status-badge[data-status="SUCCESS"] { background: var(--color-success-dim); color: var(--color-success); }
+    .status-badge[data-status="FAILED"] { background: var(--color-danger-dim); color: var(--color-danger); }
     .panel-body { padding: 16px; }
     .running-indicator {
       display: flex;
       align-items: center;
       gap: 8px;
       font-size: 0.85rem;
-      color: var(--accent);
+      color: var(--color-primary);
       margin-bottom: 12px;
       font-weight: 500;
     }
     .spinner-sm {
       width: 14px;
       height: 14px;
-      border: 2px solid var(--border);
-      border-top-color: var(--accent);
+      border: 2px solid var(--color-outline-variant);
+      border-top-color: var(--color-primary);
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
     }
@@ -140,8 +140,8 @@ import type { EtlRunDto } from '@web-scraping/contracts/pipeline';
     }
     .metric-card {
       padding: 12px;
-      border-radius: var(--radius);
-      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--color-outline-variant);
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -162,29 +162,29 @@ import type { EtlRunDto } from '@web-scraping/contracts/pipeline';
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.04em;
-      color: var(--text-2);
+      color: var(--color-on-surface-variant);
     }
     .success-msg {
       font-size: 0.85rem;
-      color: var(--success);
+      color: var(--color-success);
       margin: 0;
       font-weight: 500;
     }
     .error-box {
-      background: var(--danger-dim);
+      background: var(--color-danger-dim);
       border: 1px solid rgba(239, 68, 68, 0.2);
-      border-radius: var(--radius);
+      border-radius: var(--radius-md);
       padding: 10px 12px;
       font-size: 0.85rem;
-      color: var(--danger);
+      color: var(--color-danger);
     }
     .preview-placeholder {
-      background: var(--surface);
-      border: 1px dashed var(--border);
+      background: var(--color-surface-container-low);
+      border: 1px dashed var(--color-outline-variant);
       border-radius: var(--radius-lg);
       padding: 20px;
       text-align: center;
-      color: var(--text-2);
+      color: var(--color-on-surface-variant);
       font-size: 0.875rem;
     }
   `]

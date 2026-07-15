@@ -4,7 +4,9 @@
   Layout: centered max-w-[1100px] container, flex-col. Source cards
   in a responsive grid (auto-fill, min 300px). Status badges map to
   Insight Flow status colors: success for "Active", warning for
-  "Needs extension", tertiary (neutral grey) for "Pending".
+  "Needs extension". "Pending" is an outline chip (no fill) so it
+  reads as "not yet" instead of a flat grey block next to the two
+  filled, colored badges.
 -->
 <div class="mx-auto flex w-full max-w-[1100px] flex-col px-8 pt-6 pb-12 min-h-full">
   <header class="mb-6 flex items-baseline gap-2.5">
@@ -68,8 +70,9 @@
               [class.text-success]="m?.status === 'active'"
               [class.bg-warning-dim]="m?.status === 'extension'"
               [class.text-warning]="m?.status === 'extension'"
-              [class.bg-tertiary-container]="m?.status === 'pending'"
-              [class.text-on-tertiary-container]="m?.status === 'pending'"
+              [class.border]="m?.status === 'pending'"
+              [class.border-outline-variant]="m?.status === 'pending'"
+              [class.text-on-surface-variant]="m?.status === 'pending'"
             >
               <span class="material-symbols-outlined" style="font-size: 14px">
                 @switch (m?.status ?? 'pending') {

@@ -9,7 +9,9 @@ import { authGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
-  { path: '', component: VisualMapperPage, canActivate: [authGuard] },
+  // Default entry point is the public BI dashboard (PLAN §2.3 decision row 1).
+  { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
+  { path: 'mapper', component: VisualMapperPage, canActivate: [authGuard] },
   { path: 'products', component: ProductsComponent, canActivate: [authGuard] },
   { path: 'categories', component: CategoriesComponent, canActivate: [authGuard] },
   { path: 'setup', component: ExtensionSetupComponent, canActivate: [authGuard] },

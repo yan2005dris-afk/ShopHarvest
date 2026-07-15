@@ -28,7 +28,7 @@ export interface SidebarNavItem {
  */
 export const NAV_ITEMS: readonly SidebarNavItem[] = [
   {
-    routerLink: '/',
+    routerLink: '/mapper',
     exact: true,
     icon: 'account_tree',
     label: 'Visual Mapper',

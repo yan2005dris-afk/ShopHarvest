@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { DashboardStore } from '../core/dashboard.store';
+import { AuthService } from '../../../services/auth.service';
+import { ThemeService } from '../../../services/theme.service';
 
 /**
  * Dashboard shell — inline tab nav + content outlet for the 3 dashboard
@@ -8,10 +10,10 @@ import { DashboardStore } from '../core/dashboard.store';
  *
  * Visual: glass header with accent on the active tab, full-bleed
  * content background, max-width gutter so the chart cards keep
- * a comfortable line length even on wide monitors. Adapts to the
- * global dark / light theme via CSS vars defined in `styles.css`.
- *
- * Includes a small theme toggle that flips `<html data-theme="...">`.
+ * a comfortable line length even on wide monitors. Uses the same
+ * Insight Flow `--color-*` tokens (styles.css) and the shared
+ * `ThemeService` (`.dark` class on <html>) as the rest of the app —
+ * toggling theme here stays in sync with the sidebar toggle.
  */
 @Component({
   selector: 'app-dashboard-shell',
@@ -49,24 +51,38 @@ import { DashboardStore } from '../core/dashboard.store';
           <button
             type="button"
             class="theme-toggle"
-            (click)="toggleTheme()"
+            (click)="themeService.toggleTheme()"
             [attr.aria-label]="
-              currentTheme() === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'
+              themeService.isDark() ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'
             "
             [title]="
-              currentTheme() === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'
+              themeService.isDark() ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'
             "
           >
-            @if (currentTheme() === 'dark') {
+            @if (themeService.isDark()) {
               <span aria-hidden="true">☀</span>
             } @else {
               <span aria-hidden="true">☾</span>
             }
           </button>
 
-          <a class="dashboard-back" href="/" aria-label="Volver al scraper">
-            ← Scraper
-          </a>
+          @if (auth.isAuthenticated()) {
+            <a
+              class="dashboard-back"
+              routerLink="/mapper"
+              aria-label="Volver al scraper"
+            >
+              ← Scraper
+            </a>
+          } @else {
+            <a
+              class="dashboard-login"
+              routerLink="/login"
+              aria-label="Iniciar sesión"
+            >
+              Iniciar sesión
+            </a>
+          }
         </div>
       </header>
 
@@ -81,11 +97,9 @@ import { DashboardStore } from '../core/dashboard.store';
         display: block;
         width: 100%;
         min-height: 100dvh;
-        background: var(--bg);
-        background-image: var(--card-glow, none);
-        background-attachment: fixed;
-        font-family: var(--font);
-        color: var(--text-1);
+        background: var(--color-background);
+        font-family: var(--font-sans);
+        color: var(--color-on-surface);
       }
 
       .dashboard-shell {
@@ -95,9 +109,9 @@ import { DashboardStore } from '../core/dashboard.store';
       }
 
       .dashboard-header {
-        background: var(--header-bg);
+        background: color-mix(in srgb, var(--color-surface-container-low) 85%, transparent);
         backdrop-filter: blur(12px);
-        border-bottom: 1px solid var(--border);
+        border-bottom: 1px solid var(--color-outline-variant);
         padding: 1rem 2rem;
         display: flex;
         align-items: center;
@@ -118,11 +132,11 @@ import { DashboardStore } from '../core/dashboard.store';
         width: 32px;
         height: 32px;
         border-radius: 8px;
-        background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+        background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
         display: flex;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 0 16px var(--accent-dim);
+        box-shadow: 0 0 16px color-mix(in srgb, var(--color-primary) 30%, transparent);
       }
 
       .dashboard-header__logo-dot {
@@ -135,14 +149,14 @@ import { DashboardStore } from '../core/dashboard.store';
       .dashboard-header__titles h2 {
         font-size: 0.95rem;
         margin: 0;
-        color: var(--text-1);
+        color: var(--color-on-surface);
         font-weight: 700;
         letter-spacing: -0.01em;
       }
 
       .dashboard-header__sub {
         font-size: 0.6875rem;
-        color: var(--text-3);
+        color: var(--color-on-surface-variant);
         margin: 0.125rem 0 0;
         letter-spacing: 0.02em;
       }
@@ -151,15 +165,15 @@ import { DashboardStore } from '../core/dashboard.store';
         display: flex;
         gap: 0.25rem;
         padding: 0.25rem;
-        background: var(--surface);
+        background: var(--color-surface-container-low);
         border-radius: 8px;
-        border: 1px solid var(--border);
+        border: 1px solid var(--color-outline-variant);
       }
 
       .dashboard-tabs a {
         padding: 0.5rem 1rem;
         border-radius: 6px;
-        color: var(--text-3);
+        color: var(--color-on-surface-variant);
         text-decoration: none;
         font-size: 0.8125rem;
         font-weight: 500;
@@ -167,15 +181,15 @@ import { DashboardStore } from '../core/dashboard.store';
       }
 
       .dashboard-tabs a:hover {
-        color: var(--text-1);
-        background: var(--accent-dim);
+        color: var(--color-on-surface);
+        background: color-mix(in srgb, var(--color-primary) 12%, transparent);
       }
 
       .dashboard-tabs a.active {
-        color: var(--text-1);
+        color: var(--color-on-surface);
         font-weight: 600;
-        background: var(--accent-dim);
-        box-shadow: 0 0 0 1px var(--accent-border);
+        background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+        box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-primary) 40%, transparent);
       }
 
       .dashboard-header__footer {
@@ -190,21 +204,20 @@ import { DashboardStore } from '../core/dashboard.store';
         gap: 0.5rem;
         align-items: center;
         font-size: 0.75rem;
-        color: var(--warning);
+        color: var(--color-warning);
         margin: 0;
         padding: 0.375rem 0.625rem;
-        background: var(--warning-dim);
+        background: var(--color-warning-dim);
         border-radius: 999px;
-        border: 1px solid var(--warning);
-        border-color: color-mix(in srgb, var(--warning) 40%, transparent);
+        border: 1px solid var(--color-warning-border);
       }
 
       .snapshot-line__dot {
         width: 6px;
         height: 6px;
         border-radius: 50%;
-        background: var(--warning);
-        box-shadow: 0 0 6px var(--warning);
+        background: var(--color-warning);
+        box-shadow: 0 0 6px var(--color-warning);
       }
 
       .snapshot-line__label {
@@ -216,7 +229,7 @@ import { DashboardStore } from '../core/dashboard.store';
 
       .snapshot-line__value {
         font-weight: 700;
-        color: var(--text-1);
+        color: var(--color-on-surface);
         font-variant-numeric: tabular-nums;
       }
 
@@ -227,32 +240,47 @@ import { DashboardStore } from '../core/dashboard.store';
         width: 36px;
         height: 36px;
         font-size: 1rem;
-        background: var(--surface);
-        border: 1px solid var(--border);
+        background: var(--color-surface-container-low);
+        border: 1px solid var(--color-outline-variant);
         border-radius: 8px;
         cursor: pointer;
-        color: var(--text-2);
+        color: var(--color-on-surface-variant);
         transition: color 120ms ease, background 120ms ease, border-color 120ms ease;
       }
 
       .theme-toggle:hover {
-        color: var(--text-1);
-        background: var(--accent-dim);
-        border-color: var(--accent-border);
+        color: var(--color-on-surface);
+        background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+        border-color: color-mix(in srgb, var(--color-primary) 40%, transparent);
       }
 
       .dashboard-back {
         font-size: 0.8125rem;
-        color: var(--accent);
+        color: var(--color-primary);
         text-decoration: none;
         padding: 0.375rem 0.75rem;
         border-radius: 6px;
-        border: 1px solid var(--accent-border);
+        border: 1px solid color-mix(in srgb, var(--color-primary) 40%, transparent);
         transition: background 120ms ease;
       }
 
       .dashboard-back:hover {
-        background: var(--accent-dim);
+        background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+      }
+
+      .dashboard-login {
+        font-size: 0.8125rem;
+        font-weight: 600;
+        color: var(--color-on-primary);
+        text-decoration: none;
+        padding: 0.375rem 0.875rem;
+        border-radius: 6px;
+        background: var(--color-primary);
+        transition: filter 120ms ease;
+      }
+
+      .dashboard-login:hover {
+        filter: brightness(1.08);
       }
 
       .dashboard-content {
@@ -275,6 +303,8 @@ import { DashboardStore } from '../core/dashboard.store';
 })
 export class DashboardShellComponent {
   readonly store = inject(DashboardStore);
+  readonly auth = inject(AuthService);
+  readonly themeService = inject(ThemeService);
 
   /** DW summary signal — drives the header snapshot chip. */
   readonly snapshot = computed<string>(() => {
@@ -283,28 +313,7 @@ export class DashboardShellComponent {
     return summary.snapshot?.fecha_min ?? '—';
   });
 
-  /** Resolved current theme (user override > system preference > dark). */
-  readonly currentTheme = computed<'light' | 'dark'>(() => {
-    if (typeof document === 'undefined') return 'dark';
-    return (document.documentElement.getAttribute('data-theme') as
-      | 'light'
-      | 'dark'
-      | null) ?? 'dark';
-  });
-
   constructor() {
     this.store.initialize();
-  }
-
-  /** Flip the `data-theme` attribute on <html> and remember the choice. */
-  toggleTheme(): void {
-    if (typeof document === 'undefined') return;
-    const next = this.currentTheme() === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', next);
-    try {
-      localStorage.setItem('dashboard-theme', next);
-    } catch {
-      // ignore — private mode or storage disabled
-    }
   }
 }
