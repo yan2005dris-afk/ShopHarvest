@@ -35,7 +35,7 @@ import {
   PipelineRunSummary,
 } from '@web-scraping/contracts/pipeline';
 import type { EtlRunDto } from '@web-scraping/contracts/pipeline';
-import { Public } from '../../operational/auth/public.decorator';
+import { Public } from '../../operational/auth/common/public.decorator';
 import { OperationalPrismaService } from '../../../common/prisma/operational-prisma.service';
 import { PipelineService } from './pipeline.service';
 import { EtlSchedulerService } from './etl-scheduler.service';

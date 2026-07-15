@@ -6,7 +6,7 @@ import { InvalidCredentialsError } from '../domain/auth.errors';
 import { normalizeEmail } from '../domain/user.entity';
 import { USERS_REPOSITORY } from '../domain/users.repository';
 import type { UsersRepository } from '../domain/users.repository';
-import type { JwtPayload } from './register.use-case';
+import type { JwtPayload } from '../common/jwt.strategy';
 
 @Injectable()
 export class LoginUseCase {

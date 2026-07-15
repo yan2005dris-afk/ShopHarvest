@@ -9,11 +9,7 @@ import {
 import { User, normalizeEmail } from '../domain/user.entity';
 import { USERS_REPOSITORY } from '../domain/users.repository';
 import type { UsersRepository } from '../domain/users.repository';
-
-export interface JwtPayload {
-  sub: string;
-  email: string;
-}
+import type { JwtPayload } from '../common/jwt.strategy';
 
 @Injectable()
 export class RegisterUseCase {

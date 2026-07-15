@@ -13,7 +13,7 @@ import {
   OutlierRowDto,
   EncuestaRowDto,
 } from '@web-scraping/contracts/analytics';
-import { Public } from '../../operational/auth/public.decorator';
+import { Public } from '../../operational/auth/common/public.decorator';
 import { AnalyticsService } from './analytics.service';
 import { AnalyticsQueryService } from './analytics-query.service';
 import { DwLoaderService } from './dw-loader.service';

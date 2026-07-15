@@ -4,7 +4,7 @@ import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { PrismaModule } from './common/prisma/prisma.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { AuthModule } from './modules/operational/auth/auth.module';
-import { JwtAuthGuard } from './modules/operational/auth/jwt-auth.guard';
+import { JwtAuthGuard } from './modules/operational/auth/common/jwt-auth.guard';
 import { DomainsModule } from './modules/operational/domains/domains.module';
 import { ProductsModule } from './modules/operational/products/products.module';
 import { SourcesModule } from './modules/operational/sources/sources.module';

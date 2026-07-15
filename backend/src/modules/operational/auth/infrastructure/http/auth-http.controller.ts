@@ -21,7 +21,7 @@ import {
   InvalidCredentialsError,
 } from '../../domain/auth.errors';
 import { AuthResponseMapper } from './auth-response.mapper';
-import { Public } from '../../public.decorator';
+import { Public } from '../../common/public.decorator';
 
 @ApiTags('Auth')
 @Controller('auth')
