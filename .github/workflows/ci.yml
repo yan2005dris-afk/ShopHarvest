@@ -3,15 +3,25 @@ name: CI
 on:
   push:
     branches:
-      - feat/bi-dashboard-analytics
+      - develop
   pull_request:
     branches:
-      - feat/bi-dashboard-analytics
+      - develop
 
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "20"
+  PNPM_VERSION: "11"
+
 jobs:
+  # Project-specific sanity checks (demo domains, banned patterns, etc).
+  # Kept from the previous CI as-is.
   pipeline-consolidation-guardrails:
     name: Pipeline consolidation guardrails
     runs-on: ubuntu-latest
@@ -49,8 +59,8 @@ jobs:
             fi
           fi
 
-  backend-build-smoke:
-    name: Backend build + boot smoke
+  dependency-audit:
+    name: Dependency audit
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -58,22 +68,100 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
-
-      - name: Install pnpm
-        run: npm install -g pnpm@9
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
 
       - name: pnpm install
         run: pnpm install --frozen-lockfile
 
-      - name: pnpm build (backend)
+      # Blocks on high/critical advisories across the whole workspace
+      # (single lockfile). Moderate/low are noisy and mostly transitive
+      # dev-dependency noise — raise/lower --audit-level if you want a
+      # stricter or looser bar.
+      - name: pnpm audit (high + critical)
+        run: pnpm audit --audit-level=high
+
+  contracts:
+    name: Contracts (lint, test, build)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: pnpm install
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint (tsc --noEmit)
+        run: pnpm --filter @web-scraping/contracts lint
+
+      - name: Test
+        run: pnpm --filter @web-scraping/contracts test
+
+      - name: Build
+        run: pnpm --filter @web-scraping/contracts build
+
+  backend:
+    name: Backend (lint, format, test, build)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: pnpm install
+        run: pnpm install --frozen-lockfile
+
+      # backend depends on the contracts workspace package's compiled dist.
+      - name: Build contracts (dependency)
+        run: pnpm --filter @web-scraping/contracts build
+
+      - name: Lint
+        run: pnpm --filter backend exec eslint "{src,apps,libs,test}/**/*.ts"
+
+      - name: Format check
+        run: pnpm --filter backend exec prettier --check "src/**/*.ts" "test/**/*.ts"
+
+      - name: Test
+        run: pnpm --filter backend test
+
+      - name: Build
         run: pnpm --filter backend build
 
-  backend-tests:
-    name: Backend tests
+  frontend:
+    name: Frontend (format, test, build)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -81,16 +169,66 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
-
-      - name: Install pnpm
-        run: npm install -g pnpm@9
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
 
       - name: pnpm install
         run: pnpm install --frozen-lockfile
 
-      - name: pnpm test (backend)
-        run: pnpm --filter backend test
+      # frontend depends on the contracts workspace package's compiled dist.
+      - name: Build contracts (dependency)
+        run: pnpm --filter @web-scraping/contracts build
+
+      # No ESLint config exists for this app yet — format check + the
+      # typecheck baked into `ng build` are the lint-equivalent coverage
+      # available today.
+      - name: Format check
+        run: pnpm --filter ./frontend exec prettier --check "src/**/*.ts"
+
+      - name: Test
+        run: pnpm --filter ./frontend test
+
+      - name: Build
+        run: pnpm --filter ./frontend build
+
+  extension:
+    name: Extension (typecheck, test, build)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: pnpm install
+        run: pnpm install --frozen-lockfile
+
+      # No ESLint config exists for the extension yet — tsc --noEmit is
+      # the lint-equivalent coverage available today.
+      - name: Typecheck
+        run: pnpm --filter visual-scraper-extension exec tsc --noEmit -p tsconfig.json
+
+      - name: Test
+        run: pnpm --filter visual-scraper-extension test
+
+      - name: Build
+        run: pnpm --filter visual-scraper-extension build:chrome
