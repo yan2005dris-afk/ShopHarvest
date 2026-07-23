@@ -23,13 +23,16 @@ function flattenHtmlPlugin(): Plugin {
  * Generates browser-specific manifest.json based on the BROWSER env var.
  *
  *   BROWSER=chrome  → Chrome MV3 manifest (+ externally_connectable)
- *   BROWSER=firefox → Firefox MV3 manifest (+ browser_specific_settings)
  *   BROWSER=edge    → Edge (Chromium, same as Chrome)
  *   BROWSER=opera   → Opera (Chromium, same as Chrome)
  *   BROWSER=brave   → Brave (Chromium, same as Chrome)
- *   BROWSER=safari  → Safari (no externally_connectable)
  *
  * Defaults to Chrome if BROWSER is unset.
+ *
+ * Firefox and Safari are not supported: the page↔extension bridge
+ * (frontend ExtensionService) talks to `window.chrome.runtime` directly,
+ * which those browsers don't expose to web pages, so the extension's
+ * core mapping feature cannot work there regardless of manifest shape.
  */
 function generateManifestPlugin(): Plugin {
   type Manifest = Record<string, unknown>;
@@ -53,24 +56,6 @@ function generateManifestPlugin(): Plugin {
         minimum_chrome_version: '112',
       },
       remove: [],
-    },
-    firefox: {
-      patch: {
-        background: { scripts: ['background.js'] },
-        browser_specific_settings: {
-          gecko: {
-            id: '{b7cdf983-8415-7235-dc7b-95b7dcb7b2ca}',
-            strict_min_version: '112.0',
-          },
-        },
-      },
-      remove: ['externally_connectable', 'minimum_chrome_version'],
-    },
-    safari: {
-      patch: {
-        background: { scripts: ['background.js'] },
-      },
-      remove: ['externally_connectable', 'minimum_chrome_version'],
     },
   };
 

@@ -107,7 +107,7 @@
           Installation steps
         </h3>
         <ol class="m-0 flex flex-col gap-3 p-0 list-none">
-          @for (step of getSteps(selected.browser); track step.number) {
+          @for (step of getSteps(); track step.number) {
             <li class="flex items-start gap-3 text-body-md leading-relaxed text-on-surface-variant">
               <span
                 class="mt-0.5 inline-flex size-[22px] shrink-0 items-center justify-center rounded-full border border-primary bg-primary-fixed text-[11px] font-bold text-primary"
@@ -126,54 +126,23 @@
         <h3 class="text-body-md m-0 mb-3 font-bold text-on-surface">
           Tips for {{ selected.label }}
         </h3>
-        @if (selected.browser === 'firefox') {
-          <p class="m-0 mb-2 text-on-surface-variant leading-relaxed">
-            The extension loads temporarily — it won't survive a browser restart.
-          </p>
-          <p class="m-0 text-on-surface-variant leading-relaxed">
-            For permanent install, sign it through
-            <a
-              class="font-medium text-primary no-underline hover:underline"
-              [href]="selected.docsUrl"
-              target="_blank"
-              rel="noopener"
-              >Firefox Add-ons</a
-            >.
-          </p>
-        } @else if (selected.browser === 'safari') {
-          <p class="m-0 mb-2 text-on-surface-variant leading-relaxed">
-            Xcode is required to build the Safari native wrapper.
-          </p>
-          <p class="m-0 text-on-surface-variant leading-relaxed">
-            See
-            <a
-              class="font-medium text-primary no-underline hover:underline"
-              [href]="selected.docsUrl"
-              target="_blank"
-              rel="noopener"
-              >Apple's guide</a
-            >
-            for details.
-          </p>
-        } @else {
-          <p class="m-0 mb-2 text-on-surface-variant leading-relaxed">
-            Developer mode must be enabled — Chrome blocks unsigned extensions without it.
-          </p>
-          <p class="m-0 text-on-surface-variant leading-relaxed">
-            For permanent distribution, package as
-            <code class="rounded-xs bg-surface-container-low px-1.5 py-0.5 font-mono text-body-md text-on-surface"
-              >.crx</code
-            >
-            or publish to the
-            <a
-              class="font-medium text-primary no-underline hover:underline"
-              [href]="selected.docsUrl"
-              target="_blank"
-              rel="noopener"
-              >Chrome Web Store</a
-            >.
-          </p>
-        }
+        <p class="m-0 mb-2 text-on-surface-variant leading-relaxed">
+          Developer mode must be enabled — Chrome blocks unsigned extensions without it.
+        </p>
+        <p class="m-0 text-on-surface-variant leading-relaxed">
+          For permanent distribution, package as
+          <code class="rounded-xs bg-surface-container-low px-1.5 py-0.5 font-mono text-body-md text-on-surface"
+            >.crx</code
+          >
+          or publish to the
+          <a
+            class="font-medium text-primary no-underline hover:underline"
+            [href]="selected.docsUrl"
+            target="_blank"
+            rel="noopener"
+            >Chrome Web Store</a
+          >.
+        </p>
       </section>
     }
 

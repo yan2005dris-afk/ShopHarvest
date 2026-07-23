@@ -11,13 +11,11 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { resolve } from 'path';
 
 const ROOT = resolve(__dirname, '..');
-const BROWSERS = ['chrome', 'firefox', 'edge', 'safari'] as const;
+const BROWSERS = ['chrome', 'edge'] as const;
 
 const BROWSER_LABELS: Record<string, string> = {
-  chrome:  'Chrome / Brave / Opera',
-  firefox: 'Firefox',
-  edge:    'Edge',
-  safari:  'Safari',
+  chrome: 'Chrome / Brave / Opera',
+  edge:   'Edge',
 };
 
 function build(browser: string, outDir: string): void {
@@ -96,20 +94,16 @@ function main(): void {
 
 function getConfigUrl(browser: string): string {
   const urls: Record<string, string> = {
-    chrome:  'chrome://extensions/',
-    firefox: 'about:debugging#/runtime/this-firefox',
-    edge:    'edge://extensions/',
-    safari:  'x-apple.systempreferences:com.apple.Safari-Settings.extension',
+    chrome: 'chrome://extensions/',
+    edge:   'edge://extensions/',
   };
   return urls[browser] ?? urls.chrome;
 }
 
 function getDocsUrl(browser: string): string {
   const urls: Record<string, string> = {
-    chrome:  'https://developer.chrome.com/docs/extensions/get-started/tutorial/hello-world#load-unpacked',
-    firefox: 'https://extensionworkshop.com/documentation/develop/temporary-installation-in-firefox/',
-    edge:    'https://learn.microsoft.com/en-us/microsoft-edge/extensions-chromium/getting-started/extension-sideloading',
-    safari:  'https://developer.apple.com/documentation/safariservices/safari_web_extensions/installing_and_managing_safari_extensions',
+    chrome: 'https://developer.chrome.com/docs/extensions/get-started/tutorial/hello-world#load-unpacked',
+    edge:   'https://learn.microsoft.com/en-us/microsoft-edge/extensions-chromium/getting-started/extension-sideloading',
   };
   return urls[browser] ?? urls.chrome;
 }
