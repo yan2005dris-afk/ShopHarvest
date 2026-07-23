@@ -16,10 +16,18 @@ describe('App', () => {
     const storage: Record<string, string> = {};
     const lsMock: Storage = {
       getItem: (key: string) => storage[key] ?? null,
-      setItem: (key: string, value: string) => { storage[key] = value; },
-      removeItem: (key: string) => { delete storage[key]; },
-      clear: () => { Object.keys(storage).forEach(k => delete storage[k]); },
-      get length() { return Object.keys(storage).length; },
+      setItem: (key: string, value: string) => {
+        storage[key] = value;
+      },
+      removeItem: (key: string) => {
+        delete storage[key];
+      },
+      clear: () => {
+        Object.keys(storage).forEach((k) => delete storage[k]);
+      },
+      get length() {
+        return Object.keys(storage).length;
+      },
       key: (index: number) => Object.keys(storage)[index] ?? null,
     };
     Object.defineProperty(globalThis, 'localStorage', { value: lsMock, configurable: true });
@@ -50,7 +58,7 @@ describe('App', () => {
     await TestBed.configureTestingModule({
       imports: [App],
       providers: [
-        provideRouter([]),
+        provideRouter([{ path: 'login', children: [] }]),
         { provide: AuthService, useValue: authMock },
       ],
     }).compileComponents();
@@ -97,9 +105,7 @@ describe('App', () => {
     // Sprint 8: nav-item now contains a Material Symbols icon
     // ('memory') followed by the label 'ETL', so textContent is no
     // longer just 'ETL'. Assert on the label child instead.
-    expect(etlLink?.querySelector('.nav-item__label')?.textContent?.trim()).toBe(
-      'ETL',
-    );
+    expect(etlLink?.querySelector('.nav-item__label')?.textContent?.trim()).toBe('ETL');
   });
 
   it('should hide the logout button when unauthenticated', async () => {
@@ -119,9 +125,7 @@ describe('App', () => {
     await fixture.whenStable();
 
     const compiled = fixture.nativeElement as HTMLElement;
-    const logoutBtn = compiled.querySelector(
-      '[data-testid="btn-logout"]',
-    ) as HTMLButtonElement;
+    const logoutBtn = compiled.querySelector('[data-testid="btn-logout"]') as HTMLButtonElement;
     expect(logoutBtn).toBeTruthy();
 
     logoutBtn.click();

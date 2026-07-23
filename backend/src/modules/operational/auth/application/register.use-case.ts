@@ -3,9 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { Prisma } from '../../../../generated/operational';
 import * as bcrypt from 'bcryptjs';
 import type { AuthResponseDto } from '@web-scraping/contracts/auth';
-import {
-  EmailAlreadyRegisteredError,
-} from '../domain/auth.errors';
+import { EmailAlreadyRegisteredError } from '../domain/auth.errors';
 import { User, normalizeEmail } from '../domain/user.entity';
 import { USERS_REPOSITORY } from '../domain/users.repository';
 import type { UsersRepository } from '../domain/users.repository';
@@ -27,7 +25,10 @@ export class RegisterUseCase {
     if (existing) {
       throw new EmailAlreadyRegisteredError(normalizedEmail);
     }
-    const passwordHash = await bcrypt.hash(password, RegisterUseCase.SALT_ROUNDS);
+    const passwordHash = await bcrypt.hash(
+      password,
+      RegisterUseCase.SALT_ROUNDS,
+    );
     try {
       const user = await this.repository.create(normalizedEmail, passwordHash);
       return this.issueToken(user.id, user.email);

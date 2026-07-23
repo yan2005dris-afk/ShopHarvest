@@ -20,18 +20,15 @@ export const DASHBOARD_ROUTES: Routes = [
       { path: '', redirectTo: 'resumen', pathMatch: 'full' },
       {
         path: 'resumen',
-        loadComponent: () =>
-          import('./pages/resumen/resumen.page').then((m) => m.ResumenPage),
+        loadComponent: () => import('./pages/resumen/resumen.page').then((m) => m.ResumenPage),
       },
       {
         path: 'analisis',
-        loadComponent: () =>
-          import('./pages/analisis/analisis.page').then((m) => m.AnalisisPage),
+        loadComponent: () => import('./pages/analisis/analisis.page').then((m) => m.AnalisisPage),
       },
       {
         path: 'encuesta',
-        loadComponent: () =>
-          import('./pages/encuesta/encuesta.page').then((m) => m.EncuestaPage),
+        loadComponent: () => import('./pages/encuesta/encuesta.page').then((m) => m.EncuestaPage),
       },
     ],
   },

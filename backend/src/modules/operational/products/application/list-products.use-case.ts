@@ -18,9 +18,7 @@ export class ListProductsUseCase {
     private readonly repository: ProductsRepository,
   ) {}
 
-  async execute(
-    includeHistory: boolean = true,
-  ): Promise<Product[]> {
+  async execute(includeHistory: boolean = true): Promise<Product[]> {
     return this.repository.findAll({ includeHistory });
   }
 

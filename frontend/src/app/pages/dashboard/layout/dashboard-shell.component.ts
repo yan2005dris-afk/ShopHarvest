@@ -55,9 +55,7 @@ import { ThemeService } from '../../../services/theme.service';
             [attr.aria-label]="
               themeService.isDark() ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'
             "
-            [title]="
-              themeService.isDark() ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'
-            "
+            [title]="themeService.isDark() ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'"
           >
             @if (themeService.isDark()) {
               <span aria-hidden="true">☀</span>
@@ -67,19 +65,11 @@ import { ThemeService } from '../../../services/theme.service';
           </button>
 
           @if (auth.isAuthenticated()) {
-            <a
-              class="dashboard-back"
-              routerLink="/mapper"
-              aria-label="Volver al scraper"
-            >
+            <a class="dashboard-back" routerLink="/mapper" aria-label="Volver al scraper">
               ← Scraper
             </a>
           } @else {
-            <a
-              class="dashboard-login"
-              routerLink="/login"
-              aria-label="Iniciar sesión"
-            >
+            <a class="dashboard-login" routerLink="/login" aria-label="Iniciar sesión">
               Iniciar sesión
             </a>
           }
@@ -177,7 +167,9 @@ import { ThemeService } from '../../../services/theme.service';
         text-decoration: none;
         font-size: 0.8125rem;
         font-weight: 500;
-        transition: color 120ms ease, background 120ms ease;
+        transition:
+          color 120ms ease,
+          background 120ms ease;
       }
 
       .dashboard-tabs a:hover {
@@ -245,7 +237,10 @@ import { ThemeService } from '../../../services/theme.service';
         border-radius: 8px;
         cursor: pointer;
         color: var(--color-on-surface-variant);
-        transition: color 120ms ease, background 120ms ease, border-color 120ms ease;
+        transition:
+          color 120ms ease,
+          background 120ms ease,
+          border-color 120ms ease;
       }
 
       .theme-toggle:hover {

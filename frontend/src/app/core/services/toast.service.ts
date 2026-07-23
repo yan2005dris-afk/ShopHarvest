@@ -75,10 +75,7 @@ export class ToastService {
     }
 
     const id = this.nextId++;
-    const timeoutId =
-      durationMs > 0
-        ? setTimeout(() => this.dismiss(id), durationMs)
-        : undefined;
+    const timeoutId = durationMs > 0 ? setTimeout(() => this.dismiss(id), durationMs) : undefined;
     const toast: Toast = { id, message, level, timeoutId };
     this._toasts.update((stack) => [...stack, toast]);
     return id;

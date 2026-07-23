@@ -91,24 +91,36 @@ export interface StreamedProduct {
                 <span>Transfiriendo...</span>
               </div>
 
-              <div
-                class="max-h-96 overflow-y-auto rounded-md border border-outline-variant"
-              >
+              <div class="max-h-96 overflow-y-auto rounded-md border border-outline-variant">
                 <table class="w-full border-collapse text-body-md">
                   <thead>
                     <tr class="bg-surface-container-low">
                       <th class="px-3 py-2.5 text-left font-semibold text-on-surface-variant">#</th>
-                      <th class="px-3 py-2.5 text-left font-semibold text-on-surface-variant">Producto</th>
-                      <th class="px-3 py-2.5 text-left font-semibold text-on-surface-variant">Precio</th>
-                      <th class="px-3 py-2.5 text-left font-semibold text-on-surface-variant">Fuente</th>
-                      <th class="px-3 py-2.5 text-left font-semibold text-on-surface-variant">Estado</th>
+                      <th class="px-3 py-2.5 text-left font-semibold text-on-surface-variant">
+                        Producto
+                      </th>
+                      <th class="px-3 py-2.5 text-left font-semibold text-on-surface-variant">
+                        Precio
+                      </th>
+                      <th class="px-3 py-2.5 text-left font-semibold text-on-surface-variant">
+                        Fuente
+                      </th>
+                      <th class="px-3 py-2.5 text-left font-semibold text-on-surface-variant">
+                        Estado
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     @for (product of streamedProducts(); track product.seq) {
-                      <tr class="border-b border-outline-variant transition-colors hover:bg-surface-container-low">
+                      <tr
+                        class="border-b border-outline-variant transition-colors hover:bg-surface-container-low"
+                      >
                         <td class="w-12 px-3 py-2 text-on-surface-variant">{{ product.seq }}</td>
-                        <td class="max-w-xs overflow-hidden px-3 py-2 text-ellipsis whitespace-nowrap">{{ product.producto }}</td>
+                        <td
+                          class="max-w-xs overflow-hidden px-3 py-2 text-ellipsis whitespace-nowrap"
+                        >
+                          {{ product.producto }}
+                        </td>
                         <td class="w-24 px-3 py-2">{{ product.precio }}</td>
                         <td class="w-24 px-3 py-2">{{ product.fuente }}</td>
                         <td class="w-20 px-3 py-2">
@@ -131,15 +143,23 @@ export interface StreamedProduct {
               </div>
             } @else {
               <div class="mb-4 grid grid-cols-3 gap-4">
-                <div class="flex flex-col items-center rounded-md border border-outline-variant bg-surface-container-low p-3">
+                <div
+                  class="flex flex-col items-center rounded-md border border-outline-variant bg-surface-container-low p-3"
+                >
                   <span class="mb-1 text-label-caps text-on-surface-variant">Filas Extraídas</span>
                   <span class="text-xl font-bold">{{ selectedRun.rowsScraped | number }}</span>
                 </div>
-                <div class="flex flex-col items-center rounded-md border border-outline-variant bg-surface-container-low p-3">
-                  <span class="mb-1 text-label-caps text-on-surface-variant">Filas Persistidas</span>
+                <div
+                  class="flex flex-col items-center rounded-md border border-outline-variant bg-surface-container-low p-3"
+                >
+                  <span class="mb-1 text-label-caps text-on-surface-variant"
+                    >Filas Persistidas</span
+                  >
                   <span class="text-xl font-bold">{{ selectedRun.rowsPersisted | number }}</span>
                 </div>
-                <div class="flex flex-col items-center rounded-md border border-outline-variant bg-surface-container-low p-3">
+                <div
+                  class="flex flex-col items-center rounded-md border border-outline-variant bg-surface-container-low p-3"
+                >
                   <span class="mb-1 text-label-caps text-on-surface-variant">Duración</span>
                   <span class="text-xl font-bold">
                     {{
@@ -152,16 +172,22 @@ export interface StreamedProduct {
               </div>
 
               <div class="mb-4 flex flex-col gap-2 text-body-md">
-                <div class="flex justify-between border-b border-dashed border-outline-variant pb-1.5">
+                <div
+                  class="flex justify-between border-b border-dashed border-outline-variant pb-1.5"
+                >
                   <span class="text-on-surface-variant">ID de Ejecución:</span>
                   <span class="font-medium">{{ selectedRun.id }}</span>
                 </div>
-                <div class="flex justify-between border-b border-dashed border-outline-variant pb-1.5">
+                <div
+                  class="flex justify-between border-b border-dashed border-outline-variant pb-1.5"
+                >
                   <span class="text-on-surface-variant">Inicio:</span>
                   <span class="font-medium">{{ selectedRun.startedAt | date: 'medium' }}</span>
                 </div>
                 @if (selectedRun.finishedAt) {
-                  <div class="flex justify-between border-b border-dashed border-outline-variant pb-1.5">
+                  <div
+                    class="flex justify-between border-b border-dashed border-outline-variant pb-1.5"
+                  >
                     <span class="text-on-surface-variant">Fin:</span>
                     <span class="font-medium">{{ selectedRun.finishedAt | date: 'medium' }}</span>
                   </div>
@@ -173,10 +199,11 @@ export interface StreamedProduct {
                   class="mb-4 rounded-md border border-outline-variant bg-danger-dim p-3"
                   data-testid="error-box"
                 >
-                  <h5 class="m-0 mb-2 text-body-md font-semibold text-danger">
-                    Detalle del Error
-                  </h5>
-                  <pre class="m-0 font-mono text-body-md text-danger whitespace-pre-wrap break-all">{{ selectedRun.errorSummary }}</pre>
+                  <h5 class="m-0 mb-2 text-body-md font-semibold text-danger">Detalle del Error</h5>
+                  <pre
+                    class="m-0 font-mono text-body-md text-danger whitespace-pre-wrap break-all"
+                    >{{ selectedRun.errorSummary }}</pre
+                  >
                 </div>
               }
 

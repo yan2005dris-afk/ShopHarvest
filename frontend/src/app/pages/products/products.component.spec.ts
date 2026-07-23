@@ -1,9 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
-import {
-  HttpTestingController,
-  provideHttpClientTesting,
-} from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { ProductsComponent } from './products.component';
@@ -17,17 +14,49 @@ import { ProductsComponent } from './products.component';
  * stack (matching `dashboard.service.spec.ts`'s convention) so we exercise
  * the actual `ApiService` calls, not a hand-rolled mock.
  */
+if (typeof globalThis.ResizeObserver === 'undefined') {
+  (globalThis as any).ResizeObserver = class {
+    observe(): void {}
+    unobserve(): void {}
+    disconnect(): void {}
+  };
+}
+
+if (typeof globalThis.MutationObserver === 'undefined') {
+  (globalThis as any).MutationObserver = class {
+    constructor(_cb: any) {}
+    observe(): void {}
+    disconnect(): void {}
+    takeRecords(): any[] {
+      return [];
+    }
+  };
+}
+
+if (typeof window !== 'undefined' && typeof window.matchMedia !== 'function') {
+  Object.defineProperty(window, 'matchMedia', {
+    configurable: true,
+    writable: true,
+    value: (query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    }),
+  });
+}
+
 describe('ProductsComponent (offer-level model)', () => {
   let httpMock: HttpTestingController;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [ProductsComponent],
-      providers: [
-        provideHttpClient(),
-        provideHttpClientTesting(),
-        provideRouter([]),
-      ],
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
     });
     httpMock = TestBed.inject(HttpTestingController);
   });
@@ -71,13 +100,11 @@ describe('ProductsComponent (offer-level model)', () => {
     };
   }
 
-  it('renders one row per Offer, with each offer\'s own price/url (no flat product.price)', () => {
+  it("renders one row per Offer, with each offer's own price/url (no flat product.price)", () => {
     const fixture = TestBed.createComponent(ProductsComponent);
     fixture.detectChanges();
 
-    const req = httpMock.expectOne(
-      (r) => r.url === '/api/products' && r.method === 'GET',
-    );
+    const req = httpMock.expectOne((r) => r.url === '/api/products' && r.method === 'GET');
     req.flush([productFixture()]);
     fixture.detectChanges();
 
@@ -86,9 +113,7 @@ describe('ProductsComponent (offer-level model)', () => {
     const component = fixture.componentInstance;
     component.selectProduct(component.products[0]);
     fixture.detectChanges();
-    httpMock
-      .expectOne((r) => r.url === '/api/products/p1/history')
-      .flush([]);
+    httpMock.expectOne((r) => r.url === '/api/products/p1/history').flush([]);
     fixture.detectChanges();
 
     const host = fixture.nativeElement as HTMLElement;
@@ -102,9 +127,7 @@ describe('ProductsComponent (offer-level model)', () => {
     const fixture = TestBed.createComponent(ProductsComponent);
     fixture.detectChanges();
 
-    const listReq = httpMock.expectOne(
-      (r) => r.url === '/api/products' && r.method === 'GET',
-    );
+    const listReq = httpMock.expectOne((r) => r.url === '/api/products' && r.method === 'GET');
     listReq.flush([productFixture()]);
     fixture.detectChanges();
 
@@ -149,9 +172,7 @@ describe('ProductsComponent (offer-level model)', () => {
     const fixture = TestBed.createComponent(ProductsComponent);
     fixture.detectChanges();
 
-    const listReq = httpMock.expectOne(
-      (r) => r.url === '/api/products' && r.method === 'GET',
-    );
+    const listReq = httpMock.expectOne((r) => r.url === '/api/products' && r.method === 'GET');
     listReq.flush([productFixture()]);
     fixture.detectChanges();
 

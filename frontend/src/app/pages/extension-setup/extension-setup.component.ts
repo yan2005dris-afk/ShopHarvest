@@ -36,7 +36,8 @@ export class ExtensionSetupComponent implements OnInit {
       pattern: /chrome/i,
       size: '11 KB',
       configUrl: 'chrome://extensions/',
-      docsUrl: 'https://developer.chrome.com/docs/extensions/get-started/tutorial/hello-world#load-unpacked',
+      docsUrl:
+        'https://developer.chrome.com/docs/extensions/get-started/tutorial/hello-world#load-unpacked',
       backgroundType: 'service_worker',
     },
     {
@@ -46,7 +47,8 @@ export class ExtensionSetupComponent implements OnInit {
       pattern: /edg/i,
       size: '11 KB',
       configUrl: 'edge://extensions/',
-      docsUrl: 'https://learn.microsoft.com/en-us/microsoft-edge/extensions-chromium/getting-started/extension-sideloading',
+      docsUrl:
+        'https://learn.microsoft.com/en-us/microsoft-edge/extensions-chromium/getting-started/extension-sideloading',
       backgroundType: 'service_worker',
     },
     {
@@ -66,7 +68,8 @@ export class ExtensionSetupComponent implements OnInit {
       pattern: /brave/i,
       size: '11 KB',
       configUrl: 'brave://extensions/',
-      docsUrl: 'https://support.brave.com/hc/en-us/articles/360039229992-How-do-I-load-an-extension-in-Brave',
+      docsUrl:
+        'https://support.brave.com/hc/en-us/articles/360039229992-How-do-I-load-an-extension-in-Brave',
       backgroundType: 'service_worker',
     },
   ];

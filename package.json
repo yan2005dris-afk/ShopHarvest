@@ -24,11 +24,7 @@
     "docker:down": "docker compose down",
     "docker:logs": "docker compose logs -f"
   },
-  "pnpm": {
-    "overrides": {
-      "@scarf/scarf": "0.0.0"
-    }
-  },
+
   "engines": {
     "node": ">=20",
     "pnpm": ">=9"

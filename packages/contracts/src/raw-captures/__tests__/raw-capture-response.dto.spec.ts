@@ -13,7 +13,7 @@ describe('RawCaptureResponseDto (@Expose whitelist)', () => {
     };
     const dto = plainToInstance(RawCaptureResponseDto, raw, {
       excludeExtraneousValues: true,
-    }) as Record<string, unknown>;
+    }) as unknown as Record<string, unknown>;
 
     expect(dto.offerId).toBe('offer-1');
     expect(dto.sourceId).toBe('src-1');

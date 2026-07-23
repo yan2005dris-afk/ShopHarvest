@@ -1,7 +1,16 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { NgApexchartsModule } from 'ng-apexcharts';
 import { ThemeTokenService } from '../../core/theme-token.service';
-import type { ApexAxisChartSeries, ApexChart, ApexXAxis, ApexTitleSubtitle, ApexLegend, ApexGrid, ApexDataLabels, ApexPlotOptions } from 'ng-apexcharts';
+import type {
+  ApexAxisChartSeries,
+  ApexChart,
+  ApexXAxis,
+  ApexTitleSubtitle,
+  ApexLegend,
+  ApexGrid,
+  ApexDataLabels,
+  ApexPlotOptions,
+} from 'ng-apexcharts';
 import type { OutlierRow } from '../../core/dashboard.types';
 
 /**

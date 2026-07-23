@@ -24,9 +24,7 @@ export class ThemeService {
   private readonly SIDEBAR_KEY = 'sidebar-collapsed';
 
   private readonly _isDark = signal<boolean>(this.resolveInitialDark());
-  private readonly _sidebarCollapsed = signal<boolean>(
-    this.resolveInitialSidebar(),
-  );
+  private readonly _sidebarCollapsed = signal<boolean>(this.resolveInitialSidebar());
 
   /** Current theme — true = dark, false = light. */
   readonly isDark = this._isDark.asReadonly();
@@ -35,9 +33,7 @@ export class ThemeService {
   readonly sidebarCollapsed = this._sidebarCollapsed.asReadonly();
 
   /** Material Symbols icon name shown next to the theme toggle button. */
-  readonly themeIcon = computed(() =>
-    this._isDark() ? 'light_mode' : 'dark_mode',
-  );
+  readonly themeIcon = computed(() => (this._isDark() ? 'light_mode' : 'dark_mode'));
 
   constructor() {
     // Apply initial state to <html> on boot.

@@ -14,7 +14,7 @@ describe('CategoryResponseDto (@Expose whitelist)', () => {
     };
     const dto = plainToInstance(CategoryResponseDto, raw, {
       excludeExtraneousValues: true,
-    }) as Record<string, unknown>;
+    }) as unknown as Record<string, unknown>;
 
     expect(dto.id).toBe('cat-1');
     expect(dto.name).toBe('Celulares');

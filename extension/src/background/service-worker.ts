@@ -108,4 +108,5 @@ chrome.runtime.onMessage.addListener((message: Message, sender, sendResponse) =>
   // No other message types are handled. The popup's chrome.storage.local
   // rule/product flow was removed in review batch 3 — rules now persist in the
   // backend via the Angular web app, the single source of truth.
+  return false;
 });

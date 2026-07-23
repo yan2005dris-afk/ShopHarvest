@@ -57,10 +57,7 @@ describe('authInterceptor', () => {
     bootstrapWithToken(token);
     const captured: { req: HttpRequest<unknown> | null } = { req: null };
     TestBed.runInInjectionContext(() => {
-      authInterceptor(
-        new HttpRequest('GET', url),
-        captureHandler(captured),
-      ).subscribe();
+      authInterceptor(new HttpRequest('GET', url), captureHandler(captured)).subscribe();
     });
     if (captured.req === null) {
       throw new Error('interceptor did not forward the request');

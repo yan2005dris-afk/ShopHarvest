@@ -53,9 +53,7 @@ import type { EtlRunDto } from '@web-scraping/contracts/pipeline';
           }
 
           @if (r.errorSummary && r.status === 'FAILED') {
-            <div class="error-box">
-              <strong>Error:</strong> {{ r.errorSummary }}
-            </div>
+            <div class="error-box"><strong>Error:</strong> {{ r.errorSummary }}</div>
           }
         </div>
       </div>
@@ -65,129 +63,171 @@ import type { EtlRunDto } from '@web-scraping/contracts/pipeline';
       </div>
     }
   `,
-  styles: [`
-    .preview-panel {
-      background: var(--color-surface-container-low);
-      border: 1px solid var(--color-outline-variant);
-      border-radius: var(--radius-lg);
-      overflow: hidden;
-    }
-    .panel-header {
-      padding: 12px 16px;
-      border-bottom: 1px solid var(--color-outline-variant);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: var(--color-surface-container);
-    }
-    .header-left {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .panel-title {
-      font-size: 0.9rem;
-      font-weight: 600;
-      color: var(--color-on-surface);
-    }
-    .pulse-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--color-primary);
-      animation: pulse 1.5s infinite;
-    }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.5; transform: scale(0.8); }
-    }
-    .check-icon { color: var(--color-success); font-weight: 700; }
-    .error-icon { color: var(--color-danger); font-weight: 700; }
-    .status-badge {
-      font-size: 0.7rem;
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-weight: 700;
-      text-transform: uppercase;
-    }
-    .status-badge[data-status="RUNNING"] { background: color-mix(in srgb, var(--color-primary) 15%, transparent); color: var(--color-primary); }
-    .status-badge[data-status="SUCCESS"] { background: var(--color-success-dim); color: var(--color-success); }
-    .status-badge[data-status="FAILED"] { background: var(--color-danger-dim); color: var(--color-danger); }
-    .panel-body { padding: 16px; }
-    .running-indicator {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 0.85rem;
-      color: var(--color-primary);
-      margin-bottom: 12px;
-      font-weight: 500;
-    }
-    .spinner-sm {
-      width: 14px;
-      height: 14px;
-      border: 2px solid var(--color-outline-variant);
-      border-top-color: var(--color-primary);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .metric-row {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-      margin-bottom: 12px;
-    }
-    .metric-card {
-      padding: 12px;
-      border-radius: var(--radius-md);
-      border: 1px solid var(--color-outline-variant);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-    }
-    .metric-extracted { background: rgba(59, 130, 246, 0.08); }
-    .metric-loaded { background: rgba(16, 185, 129, 0.08); }
-    .metric-failed { background: rgba(239, 68, 68, 0.08); }
-    .metric-num {
-      font-size: 1.4rem;
-      font-weight: 800;
-    }
-    .metric-extracted .metric-num { color: #3b82f6; }
-    .metric-loaded .metric-num { color: #10b981; }
-    .metric-failed .metric-num { color: #ef4444; }
-    .metric-label {
-      font-size: 0.72rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      color: var(--color-on-surface-variant);
-    }
-    .success-msg {
-      font-size: 0.85rem;
-      color: var(--color-success);
-      margin: 0;
-      font-weight: 500;
-    }
-    .error-box {
-      background: var(--color-danger-dim);
-      border: 1px solid rgba(239, 68, 68, 0.2);
-      border-radius: var(--radius-md);
-      padding: 10px 12px;
-      font-size: 0.85rem;
-      color: var(--color-danger);
-    }
-    .preview-placeholder {
-      background: var(--color-surface-container-low);
-      border: 1px dashed var(--color-outline-variant);
-      border-radius: var(--radius-lg);
-      padding: 20px;
-      text-align: center;
-      color: var(--color-on-surface-variant);
-      font-size: 0.875rem;
-    }
-  `]
+  styles: [
+    `
+      .preview-panel {
+        background: var(--color-surface-container-low);
+        border: 1px solid var(--color-outline-variant);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+      }
+      .panel-header {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--color-outline-variant);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: var(--color-surface-container);
+      }
+      .header-left {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .panel-title {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--color-on-surface);
+      }
+      .pulse-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--color-primary);
+        animation: pulse 1.5s infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 0.5;
+          transform: scale(0.8);
+        }
+      }
+      .check-icon {
+        color: var(--color-success);
+        font-weight: 700;
+      }
+      .error-icon {
+        color: var(--color-danger);
+        font-weight: 700;
+      }
+      .status-badge {
+        font-size: 0.7rem;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+      .status-badge[data-status='RUNNING'] {
+        background: color-mix(in srgb, var(--color-primary) 15%, transparent);
+        color: var(--color-primary);
+      }
+      .status-badge[data-status='SUCCESS'] {
+        background: var(--color-success-dim);
+        color: var(--color-success);
+      }
+      .status-badge[data-status='FAILED'] {
+        background: var(--color-danger-dim);
+        color: var(--color-danger);
+      }
+      .panel-body {
+        padding: 16px;
+      }
+      .running-indicator {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.85rem;
+        color: var(--color-primary);
+        margin-bottom: 12px;
+        font-weight: 500;
+      }
+      .spinner-sm {
+        width: 14px;
+        height: 14px;
+        border: 2px solid var(--color-outline-variant);
+        border-top-color: var(--color-primary);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      .metric-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+      .metric-card {
+        padding: 12px;
+        border-radius: var(--radius-md);
+        border: 1px solid var(--color-outline-variant);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+      }
+      .metric-extracted {
+        background: rgba(59, 130, 246, 0.08);
+      }
+      .metric-loaded {
+        background: rgba(16, 185, 129, 0.08);
+      }
+      .metric-failed {
+        background: rgba(239, 68, 68, 0.08);
+      }
+      .metric-num {
+        font-size: 1.4rem;
+        font-weight: 800;
+      }
+      .metric-extracted .metric-num {
+        color: #3b82f6;
+      }
+      .metric-loaded .metric-num {
+        color: #10b981;
+      }
+      .metric-failed .metric-num {
+        color: #ef4444;
+      }
+      .metric-label {
+        font-size: 0.72rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--color-on-surface-variant);
+      }
+      .success-msg {
+        font-size: 0.85rem;
+        color: var(--color-success);
+        margin: 0;
+        font-weight: 500;
+      }
+      .error-box {
+        background: var(--color-danger-dim);
+        border: 1px solid rgba(239, 68, 68, 0.2);
+        border-radius: var(--radius-md);
+        padding: 10px 12px;
+        font-size: 0.85rem;
+        color: var(--color-danger);
+      }
+      .preview-placeholder {
+        background: var(--color-surface-container-low);
+        border: 1px dashed var(--color-outline-variant);
+        border-radius: var(--radius-lg);
+        padding: 20px;
+        text-align: center;
+        color: var(--color-on-surface-variant);
+        font-size: 0.875rem;
+      }
+    `,
+  ],
 })
 export class EtlLoadPreviewComponent {
   run = input<EtlRunDto | null>(null);

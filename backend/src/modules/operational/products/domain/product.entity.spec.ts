@@ -122,7 +122,7 @@ describe('Product entity', () => {
       const offer = buildOffer();
       product.offers.push(offer);
       const snap = product.toJSON();
-      const reloaded = Product.fromPersistence(snap as ProductProps);
+      const reloaded = Product.fromPersistence(snap);
       expect(reloaded.id).toBe('p_1');
       expect(reloaded.title).toBe('Wireless Earbuds');
       expect(reloaded.offers).toHaveLength(1);

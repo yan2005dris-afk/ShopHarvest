@@ -30,6 +30,10 @@ export class CategoryResponseDto {
   @Expose()
   parentId?: string;
 
+  @ApiProperty({ example: '/cat-1' })
+  @Expose()
+  path!: string;
+
   @ApiProperty({ format: 'date-time' })
   @Expose()
   createdAt!: string;

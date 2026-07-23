@@ -71,14 +71,13 @@ type ProductRecord = Record<string, string | number | null | string[] | number[]
           <div class="pp-summary">
             <div class="pp-summary__head">
               <span>Mapped Fields</span>
-              <span class="pp-summary__ratio">{{ matchedCount(p) }}/{{ canonicalFields.length }} Match</span>
+              <span class="pp-summary__ratio"
+                >{{ matchedCount(p) }}/{{ canonicalFields.length }} Match</span
+              >
             </div>
             <div class="pp-badges">
               @for (field of canonicalFields; track field.key) {
-                <span
-                  class="pp-badge"
-                  [class.pp-badge--ok]="hasValue(p, field.key)"
-                >
+                <span class="pp-badge" [class.pp-badge--ok]="hasValue(p, field.key)">
                   {{ field.label }} {{ hasValue(p, field.key) ? 'OK' : '—' }}
                 </span>
               }
@@ -92,7 +91,10 @@ type ProductRecord = Record<string, string | number | null | string[] | number[]
   `,
   styles: [
     `
-      :host { display: block; height: 100%; }
+      :host {
+        display: block;
+        height: 100%;
+      }
 
       .pp-panel {
         display: flex;

@@ -34,9 +34,7 @@ import { CANONICAL_FIELDS } from '../services/canonical-fields';
           <div class="fc-row">
             <div class="fc-row__head">
               <label class="fc-row__label">Internal: {{ field.label }}</label>
-              <span class="fc-row__source">
-                Source: {{ effectiveSource(field.key) || '—' }}
-              </span>
+              <span class="fc-row__source"> Source: {{ effectiveSource(field.key) || '—' }} </span>
             </div>
             <select
               class="fc-select"
@@ -46,7 +44,10 @@ import { CANONICAL_FIELDS } from '../services/canonical-fields';
               <option value="">— Skip —</option>
               @for (opt of session().availableFields(); track opt.key) {
                 <option [value]="opt.key">
-                  {{ opt.label }}@if (previewValue(opt); as pv) { — {{ pv }} }
+                  {{ opt.label }}
+                  @if (previewValue(opt); as pv) {
+                    — {{ pv }}
+                  }
                 </option>
               }
             </select>
@@ -57,7 +58,10 @@ import { CANONICAL_FIELDS } from '../services/canonical-fields';
   `,
   styles: [
     `
-      :host { display: block; height: 100%; }
+      :host {
+        display: block;
+        height: 100%;
+      }
 
       .fc-panel {
         display: flex;

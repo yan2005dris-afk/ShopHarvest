@@ -41,7 +41,7 @@ describe('OfferResponseDto (Decimal→number + @Expose whitelist)', () => {
     };
     const dto = plainToInstance(OfferResponseDto, raw, {
       excludeExtraneousValues: true,
-    }) as Record<string, unknown>;
+    }) as unknown as Record<string, unknown>;
 
     expect(dto).not.toHaveProperty('internalScore');
   });

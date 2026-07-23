@@ -43,41 +43,26 @@ describe('KpiCardComponent', () => {
     }>,
   ): HTMLElement {
     const fixture = TestBed.createComponent(KpiCardComponent);
-    if (inputs.label !== undefined)
-      fixture.componentRef.setInput('label', inputs.label);
-    if (inputs.value !== undefined)
-      fixture.componentRef.setInput('value', inputs.value);
-    if (inputs.delta !== undefined)
-      fixture.componentRef.setInput('delta', inputs.delta);
-    if (inputs.trend !== undefined)
-      fixture.componentRef.setInput('trend', inputs.trend);
-    if (inputs.icon !== undefined)
-      fixture.componentRef.setInput('icon', inputs.icon);
-    if (inputs.accent !== undefined)
-      fixture.componentRef.setInput('accent', inputs.accent);
-    if (inputs.loading !== undefined)
-      fixture.componentRef.setInput('loading', inputs.loading);
+    if (inputs.label !== undefined) fixture.componentRef.setInput('label', inputs.label);
+    if (inputs.value !== undefined) fixture.componentRef.setInput('value', inputs.value);
+    if (inputs.delta !== undefined) fixture.componentRef.setInput('delta', inputs.delta);
+    if (inputs.trend !== undefined) fixture.componentRef.setInput('trend', inputs.trend);
+    if (inputs.icon !== undefined) fixture.componentRef.setInput('icon', inputs.icon);
+    if (inputs.accent !== undefined) fixture.componentRef.setInput('accent', inputs.accent);
+    if (inputs.loading !== undefined) fixture.componentRef.setInput('loading', inputs.loading);
     fixture.detectChanges();
     return fixture.nativeElement as HTMLElement;
   }
 
   it('renders label, value and delta when supplied', () => {
     const host = render({ label: 'Total', value: 42, delta: '+10%', icon: 'inventory_2' });
-    expect(host.querySelector('[data-testid="kpi-label"]')?.textContent).toContain(
-      'Total',
-    );
-    expect(host.querySelector('[data-testid="kpi-value"]')?.textContent).toContain(
-      '42',
-    );
-    expect(host.querySelector('[data-testid="kpi-delta"]')?.textContent).toContain(
-      '+10%',
-    );
+    expect(host.querySelector('[data-testid="kpi-label"]')?.textContent).toContain('Total');
+    expect(host.querySelector('[data-testid="kpi-value"]')?.textContent).toContain('42');
+    expect(host.querySelector('[data-testid="kpi-delta"]')?.textContent).toContain('+10%');
     // Icon is rendered as a Material Symbols span.
-    expect(
-      host
-        .querySelector('header .material-symbols-outlined')
-        ?.textContent?.trim(),
-    ).toBe('inventory_2');
+    expect(host.querySelector('header .material-symbols-outlined')?.textContent?.trim()).toBe(
+      'inventory_2',
+    );
   });
 
   it('omits the delta row when delta is empty', () => {
@@ -97,9 +82,7 @@ describe('KpiCardComponent', () => {
     expect(host.querySelector('[data-testid="kpi-label"]')).toBeNull();
     expect(host.querySelector('[data-testid="kpi-delta"]')).toBeNull();
     // Root element still exists with aria-busy=true.
-    expect(host.querySelector('.kpi-card')?.getAttribute('aria-busy')).toBe(
-      'true',
-    );
+    expect(host.querySelector('.kpi-card')?.getAttribute('aria-busy')).toBe('true');
   });
 
   it('renders the trend glyph for trend=up', () => {

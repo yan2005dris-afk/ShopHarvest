@@ -95,10 +95,7 @@ import { KpiCardComponent } from '../../shared/kpi-card/kpi-card.component';
           title="Sitio preferido × frecuencia"
           caption="Cantidad de encuestados por combinación"
         >
-          <app-encuesta-frecuencia-chart
-            [rows]="store.filteredEncuesta()"
-            [colors]="palette"
-          />
+          <app-encuesta-frecuencia-chart [rows]="store.filteredEncuesta()" [colors]="palette" />
         </app-chart-card>
       </div>
 
@@ -107,10 +104,7 @@ import { KpiCardComponent } from '../../shared/kpi-card/kpi-card.component';
           title="Heatmap sitio × gasto"
           caption="Distribución de los niveles de gasto promedio"
         >
-          <app-encuesta-heatmap-chart
-            [rows]="store.filteredEncuesta()"
-            color="#60a5fa"
-          />
+          <app-encuesta-heatmap-chart [rows]="store.filteredEncuesta()" color="#60a5fa" />
         </app-chart-card>
       </div>
 
@@ -119,10 +113,7 @@ import { KpiCardComponent } from '../../shared/kpi-card/kpi-card.component';
           title="Distribución por género"
           caption="Participación por género en la encuesta"
         >
-          <app-encuesta-genero-chart
-            [rows]="store.filteredEncuesta()"
-            [colors]="palette"
-          />
+          <app-encuesta-genero-chart [rows]="store.filteredEncuesta()" [colors]="palette" />
         </app-chart-card>
       </div>
     </section>
@@ -131,14 +122,7 @@ import { KpiCardComponent } from '../../shared/kpi-card/kpi-card.component';
 export class EncuestaPage {
   readonly store = inject(DashboardStore);
 
-  readonly palette = [
-    '#60a5fa',
-    '#34d399',
-    '#fbbf24',
-    '#fb7185',
-    '#a78bfa',
-    '#f472b6',
-  ];
+  readonly palette = ['#60a5fa', '#34d399', '#fbbf24', '#fb7185', '#a78bfa', '#f472b6'];
 
   // ─── Encuesta KPIs derivations ────────────────────────────
 
@@ -191,10 +175,7 @@ export class EncuestaPage {
     if (!rows.length) return '—';
     const byFreq = new Map<string, number>();
     for (const r of rows) {
-      byFreq.set(
-        r.frecuencia,
-        (byFreq.get(r.frecuencia) ?? 0) + (r.total_encuestados ?? 0),
-      );
+      byFreq.set(r.frecuencia, (byFreq.get(r.frecuencia) ?? 0) + (r.total_encuestados ?? 0));
     }
     const sorted = [...byFreq.entries()].sort((a, b) => b[1] - a[1]);
     return sorted[0]?.[0] ?? '—';

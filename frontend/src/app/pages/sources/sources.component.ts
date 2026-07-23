@@ -11,13 +11,55 @@ interface SourceMeta {
 }
 
 const SOURCE_METADATA: SourceMeta[] = [
-  { id: 'mercadolibre', name: 'MercadoLibre', description: 'MercadoLibre Ecuador', url: 'mercadolibre.com.ec', status: 'active' },
-  { id: 'aliexpress', name: 'AliExpress', description: 'AliExpress', url: 'aliexpress.com', status: 'active' },
-  { id: 'temu', name: 'Temu', description: 'Temu — via Chrome extension export', url: 'temu.com', status: 'extension' },
-  { id: 'shein', name: 'SHEIN', description: 'SHEIN — via Chrome extension export', url: 'shein.com', status: 'extension' },
-  { id: 'api_rates', name: 'Exchange Rates API', description: 'Exchange rates API', url: 'api.exchangerate', status: 'pending' },
-  { id: 'csv_dataset', name: 'CSV Dataset', description: 'CSV dataset import', url: '—', status: 'pending' },
-  { id: 'encuesta', name: 'Encuesta', description: 'Encuesta de consumo', url: '—', status: 'pending' },
+  {
+    id: 'mercadolibre',
+    name: 'MercadoLibre',
+    description: 'MercadoLibre Ecuador',
+    url: 'mercadolibre.com.ec',
+    status: 'active',
+  },
+  {
+    id: 'aliexpress',
+    name: 'AliExpress',
+    description: 'AliExpress',
+    url: 'aliexpress.com',
+    status: 'active',
+  },
+  {
+    id: 'temu',
+    name: 'Temu',
+    description: 'Temu — via Chrome extension export',
+    url: 'temu.com',
+    status: 'extension',
+  },
+  {
+    id: 'shein',
+    name: 'SHEIN',
+    description: 'SHEIN — via Chrome extension export',
+    url: 'shein.com',
+    status: 'extension',
+  },
+  {
+    id: 'api_rates',
+    name: 'Exchange Rates API',
+    description: 'Exchange rates API',
+    url: 'api.exchangerate',
+    status: 'pending',
+  },
+  {
+    id: 'csv_dataset',
+    name: 'CSV Dataset',
+    description: 'CSV dataset import',
+    url: '—',
+    status: 'pending',
+  },
+  {
+    id: 'encuesta',
+    name: 'Encuesta',
+    description: 'Encuesta de consumo',
+    url: '—',
+    status: 'pending',
+  },
 ];
 
 @Component({
@@ -81,17 +123,23 @@ export class SourcesComponent implements OnInit {
    */
   statusIcon(status: SourceMeta['status']): string {
     switch (status) {
-      case 'active': return 'check_circle';
-      case 'extension': return 'extension';
-      case 'pending': return 'schedule';
+      case 'active':
+        return 'check_circle';
+      case 'extension':
+        return 'extension';
+      case 'pending':
+        return 'schedule';
     }
   }
 
   statusLabel(status: SourceMeta['status']): string {
     switch (status) {
-      case 'active': return 'Active';
-      case 'extension': return 'Needs extension';
-      case 'pending': return 'Pending';
+      case 'active':
+        return 'Active';
+      case 'extension':
+        return 'Needs extension';
+      case 'pending':
+        return 'Pending';
     }
   }
 

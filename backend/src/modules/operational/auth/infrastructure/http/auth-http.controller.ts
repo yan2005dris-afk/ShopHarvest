@@ -55,7 +55,7 @@ export class AuthHttpController {
       );
       return AuthResponseMapper.toDto(result);
     } catch (error) {
-      throw AuthHttpController.mapAuthError(error);
+      AuthHttpController.mapAuthError(error);
     }
   }
 
@@ -79,7 +79,7 @@ export class AuthHttpController {
       const result = await this.loginUseCase.execute(dto.email, dto.password);
       return AuthResponseMapper.toDto(result);
     } catch (error) {
-      throw AuthHttpController.mapAuthError(error);
+      AuthHttpController.mapAuthError(error);
     }
   }
 

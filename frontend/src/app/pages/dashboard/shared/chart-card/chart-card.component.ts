@@ -64,7 +64,9 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
         display: flex;
         flex-direction: column;
         gap: 1rem;
-        transition: border-color 0.18s ease, box-shadow 0.18s ease;
+        transition:
+          border-color 0.18s ease,
+          box-shadow 0.18s ease;
       }
 
       .chart-card:hover {
