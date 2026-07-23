@@ -25,7 +25,9 @@ import { ProductPreviewCardComponent } from './product-preview-card.component';
       <header class="ms-header">
         <div>
           <h2 class="ms-header__title">Visual Data Mapping</h2>
-          <p class="ms-header__sub">Review the auto-detected fields and save when it looks right.</p>
+          <p class="ms-header__sub">
+            Review the auto-detected fields and save when it looks right.
+          </p>
         </div>
         @if (pageTitle()) {
           <div class="ms-header__chip">
@@ -38,7 +40,9 @@ import { ProductPreviewCardComponent } from './product-preview-card.component';
       @if (extractedProductsLength() === 0) {
         <div class="ms-empty">
           <p>No products were found inside that container.</p>
-          <button type="button" class="ms-empty__retry" (click)="onTryAgain.emit()">Try Again</button>
+          <button type="button" class="ms-empty__retry" (click)="onTryAgain.emit()">
+            Try Again
+          </button>
         </div>
       } @else {
         <div class="ms-grid">
@@ -84,7 +88,9 @@ import { ProductPreviewCardComponent } from './product-preview-card.component';
             <div class="ms-card">
               <div class="ms-card__head">
                 <h3 class="ms-card__title">All Detected Fields</h3>
-                <span class="ms-count-badge ms-count-badge--muted">{{ availableFields().length }}</span>
+                <span class="ms-count-badge ms-count-badge--muted">{{
+                  availableFields().length
+                }}</span>
               </div>
               <p class="ms-card__hint">
                 Everything the extension found in the first product — not just what's mapped.
@@ -92,7 +98,10 @@ import { ProductPreviewCardComponent } from './product-preview-card.component';
               <div class="ms-fields-list">
                 @for (field of availableFields(); track field.key) {
                   <div class="ms-raw-field" [class.ms-raw-field--used]="isUsedSource(field.key)">
-                    <span class="ms-field-dot" [class.ms-field-dot--used]="isUsedSource(field.key)"></span>
+                    <span
+                      class="ms-field-dot"
+                      [class.ms-field-dot--used]="isUsedSource(field.key)"
+                    ></span>
                     <span class="ms-raw-field__key">{{ field.label }}</span>
                     <span class="ms-raw-field__value">{{ previewValue(field) }}</span>
                   </div>
@@ -130,9 +139,21 @@ import { ProductPreviewCardComponent } from './product-preview-card.component';
   `,
   styles: [
     `
-      :host { display: flex; flex-direction: column; flex: 1; height: 100dvh; overflow: hidden; background: var(--color-background); }
+      :host {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        height: 100dvh;
+        overflow: hidden;
+        background: var(--color-background);
+      }
 
-      .ms-shell { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+      .ms-shell {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        overflow: hidden;
+      }
 
       .ms-header {
         padding: 1.5rem 2rem 1.25rem;
@@ -143,8 +164,17 @@ import { ProductPreviewCardComponent } from './product-preview-card.component';
         flex-wrap: wrap;
       }
 
-      .ms-header__title { margin: 0; font-size: 1.5rem; font-weight: 700; color: var(--color-on-surface); }
-      .ms-header__sub { margin: 0.25rem 0 0; font-size: 0.875rem; color: var(--color-on-surface-variant); }
+      .ms-header__title {
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--color-on-surface);
+      }
+      .ms-header__sub {
+        margin: 0.25rem 0 0;
+        font-size: 0.875rem;
+        color: var(--color-on-surface-variant);
+      }
 
       .ms-header__chip {
         display: inline-flex;
@@ -176,8 +206,17 @@ import { ProductPreviewCardComponent } from './product-preview-card.component';
         min-height: 0;
       }
 
-      .ms-col { min-height: 0; display: flex; flex-direction: column; gap: 1.5rem; overflow-y: auto; }
-      .ms-col--config, .ms-col--preview { overflow: hidden; }
+      .ms-col {
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        overflow-y: auto;
+      }
+      .ms-col--config,
+      .ms-col--preview {
+        overflow: hidden;
+      }
 
       .ms-card {
         background: var(--color-surface-container-low);
@@ -195,7 +234,12 @@ import { ProductPreviewCardComponent } from './product-preview-card.component';
         align-items: center;
       }
 
-      .ms-card__title { margin: 0; font-size: 0.875rem; font-weight: 700; color: var(--color-on-surface); }
+      .ms-card__title {
+        margin: 0;
+        font-size: 0.875rem;
+        font-weight: 700;
+        color: var(--color-on-surface);
+      }
       .ms-card__title--sub {
         padding: 0.875rem 1rem 0;
         text-transform: uppercase;
@@ -214,7 +258,12 @@ import { ProductPreviewCardComponent } from './product-preview-card.component';
         border-radius: 999px;
       }
 
-      .ms-fields-list { padding: 0.5rem; display: flex; flex-direction: column; gap: 0.25rem; }
+      .ms-fields-list {
+        padding: 0.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+      }
 
       .ms-field-row {
         display: flex;
@@ -225,10 +274,22 @@ import { ProductPreviewCardComponent } from './product-preview-card.component';
         transition: background 120ms ease;
       }
 
-      .ms-field-row:hover { background: var(--color-surface-container); }
+      .ms-field-row:hover {
+        background: var(--color-surface-container);
+      }
 
-      .ms-field-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--color-outline-variant); flex-shrink: 0; }
-      .ms-field-name { flex: 1; font-size: 0.8125rem; color: var(--color-on-surface); }
+      .ms-field-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--color-outline-variant);
+        flex-shrink: 0;
+      }
+      .ms-field-name {
+        flex: 1;
+        font-size: 0.8125rem;
+        color: var(--color-on-surface);
+      }
 
       .ms-count-badge--muted {
         color: var(--color-on-surface-variant);
@@ -250,9 +311,13 @@ import { ProductPreviewCardComponent } from './product-preview-card.component';
         border-radius: 0.5rem;
       }
 
-      .ms-raw-field--used { background: color-mix(in srgb, var(--color-success) 8%, transparent); }
+      .ms-raw-field--used {
+        background: color-mix(in srgb, var(--color-success) 8%, transparent);
+      }
 
-      .ms-field-dot--used { background: var(--color-success); }
+      .ms-field-dot--used {
+        background: var(--color-success);
+      }
 
       .ms-raw-field__key {
         font-size: 0.75rem;
@@ -281,7 +346,9 @@ import { ProductPreviewCardComponent } from './product-preview-card.component';
         border-radius: 0.25rem;
       }
 
-      .ms-remove-btn:hover { background: var(--color-danger-dim); }
+      .ms-remove-btn:hover {
+        background: var(--color-danger-dim);
+      }
 
       .ms-selector {
         display: block;
@@ -353,7 +420,10 @@ import { ProductPreviewCardComponent } from './product-preview-card.component';
       }
 
       @media (max-width: 1100px) {
-        .ms-grid { grid-template-columns: 1fr; overflow-y: auto; }
+        .ms-grid {
+          grid-template-columns: 1fr;
+          overflow-y: auto;
+        }
       }
     `,
   ],
@@ -384,7 +454,9 @@ export class MappingStateComponent {
 
   /** True when a raw detected key is currently feeding some canonical field. */
   isUsedSource(rawKey: string): boolean {
-    return this.session().fieldMappings().some((m) => m.extractedKey === rawKey);
+    return this.session()
+      .fieldMappings()
+      .some((m) => m.extractedKey === rawKey);
   }
 
   previewValue(field: { selectedValue: string | number | null }): string {

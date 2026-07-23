@@ -255,8 +255,7 @@ export class DashboardStore {
       name: fuente,
       data: categorias.map(
         (cat) =>
-          rows.find((r) => r.fuente === fuente && r.categoria === cat)?.precio_promedio_usd ??
-          0,
+          rows.find((r) => r.fuente === fuente && r.categoria === cat)?.precio_promedio_usd ?? 0,
       ),
     }));
   });
@@ -275,9 +274,7 @@ export class DashboardStore {
     return fuentes.map((fuente) => ({
       name: fuente,
       data: keys.map((key) => {
-        const row = rows.find(
-          (r) => r.fuente === fuente && `${r.anio}-Q${r.trimestre}` === key,
-        );
+        const row = rows.find((r) => r.fuente === fuente && `${r.anio}-Q${r.trimestre}` === key);
         return row ? row.precio_promedio : null;
       }),
     }));
@@ -374,7 +371,12 @@ export class DashboardStore {
         });
       }
     }
-    const name = sitios.length === 1 ? sitios[0] : sitios.length === 0 ? 'Sin datos' : `${sitios.length} sitios`;
+    const name =
+      sitios.length === 1
+        ? sitios[0]
+        : sitios.length === 0
+          ? 'Sin datos'
+          : `${sitios.length} sitios`;
     return [{ name, data }];
   });
 
@@ -436,78 +438,66 @@ export class DashboardStore {
 
   private async loadSummary(): Promise<void> {
     const s = await firstValueFrom(
-      this.http
-        .get<Summary>(`${this.base}/analytics/summary`)
-        .pipe(
-          retry({ count: 1, delay: 500 }),
-          catchError(() => of(null)),
-          shareReplay({ bufferSize: 1, refCount: true, windowTime: CACHE_TTL_MS }),
-        )
+      this.http.get<Summary>(`${this.base}/analytics/summary`).pipe(
+        retry({ count: 1, delay: 500 }),
+        catchError(() => of(null)),
+        shareReplay({ bufferSize: 1, refCount: true, windowTime: CACHE_TTL_MS }),
+      ),
     );
     this.summary.set(s);
   }
 
   private async loadKpis(): Promise<void> {
     const k = await firstValueFrom(
-      this.http
-        .get<AllKpis>(`${this.base}/analytics/kpis`)
-        .pipe(
-          retry({ count: 1, delay: 500 }),
-          catchError(() => of(null)),
-        )
+      this.http.get<AllKpis>(`${this.base}/analytics/kpis`).pipe(
+        retry({ count: 1, delay: 500 }),
+        catchError(() => of(null)),
+      ),
     );
     this.kpis.set(k);
   }
 
   private async loadPreguntaPrincipal(): Promise<void> {
     const rows = await firstValueFrom(
-      this.http
-        .get<PreguntaPrincipalRow[]>(`${this.base}/analytics/queries/main`)
-        .pipe(
-          retry({ count: 1, delay: 500 }),
-          catchError(() => of([])),
-        )
+      this.http.get<PreguntaPrincipalRow[]>(`${this.base}/analytics/queries/main`).pipe(
+        retry({ count: 1, delay: 500 }),
+        catchError(() => of([])),
+      ),
     );
     this.preguntaPrincipal.set(rows ?? []);
   }
 
   private async loadOutliers(): Promise<void> {
     const rows = await firstValueFrom(
-      this.http
-        .get<OutlierRow[]>(`${this.base}/analytics/queries/outliers`)
-        .pipe(
-          retry({ count: 1, delay: 500 }),
-          catchError(() => of([])),
-        )
+      this.http.get<OutlierRow[]>(`${this.base}/analytics/queries/outliers`).pipe(
+        retry({ count: 1, delay: 500 }),
+        catchError(() => of([])),
+      ),
     );
     this.outliers.set(rows ?? []);
   }
 
   private async loadTimeSeries(): Promise<void> {
     const resp = await firstValueFrom(
-      this.http
-        .get<TimeSeriesResponse>(`${this.base}/analytics/queries/time-series`)
-        .pipe(
-          retry({ count: 1, delay: 500 }),
-          catchError(() =>
-            of({
-              series: [],
-              snapshot: { fecha_min: null, fecha_max: null, fechas_distintas: 0 },
-            } as TimeSeriesResponse),
-          ),
-        )
+      this.http.get<TimeSeriesResponse>(`${this.base}/analytics/queries/time-series`).pipe(
+        retry({ count: 1, delay: 500 }),
+        catchError(() =>
+          of({
+            series: [],
+            snapshot: { fecha_min: null, fecha_max: null, fechas_distintas: 0 },
+          } as TimeSeriesResponse),
+        ),
+      ),
     );
     this.timeSeries.set(resp?.series ?? []);
   }
 
   private async loadEncuesta(): Promise<void> {
     const rows = await firstValueFrom(
-      this.http
-        .get<EncuestaRow[]>(`${this.base}/analytics/queries/encuesta`)
-        .pipe(
-          retry({ count: 1, delay: 500 }),
-          catchError(() => of([])),
-        )
+      this.http.get<EncuestaRow[]>(`${this.base}/analytics/queries/encuesta`).pipe(
+        retry({ count: 1, delay: 500 }),
+        catchError(() => of([])),
+      ),
     );
     this.encuesta.set(rows ?? []);
   }

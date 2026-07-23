@@ -68,9 +68,7 @@ describe('EtlManagementPage', () => {
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
-    const triggerBtn = compiled.querySelector(
-      '[data-testid="btn-trigger"]',
-    ) as HTMLButtonElement;
+    const triggerBtn = compiled.querySelector('[data-testid="btn-trigger"]') as HTMLButtonElement;
     expect(triggerBtn).toBeTruthy();
     expect(triggerBtn.disabled).toBe(false);
 
@@ -97,9 +95,7 @@ describe('EtlManagementPage', () => {
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
-    const triggerBtn = compiled.querySelector(
-      '[data-testid="btn-trigger"]',
-    ) as HTMLButtonElement;
+    const triggerBtn = compiled.querySelector('[data-testid="btn-trigger"]') as HTMLButtonElement;
     expect(triggerBtn).toBeTruthy();
     expect(triggerBtn.disabled).toBe(true);
   });

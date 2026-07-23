@@ -16,7 +16,7 @@ describe('SourceResponseDto (@Expose whitelist)', () => {
     };
     const dto = plainToInstance(SourceResponseDto, raw, {
       excludeExtraneousValues: true,
-    }) as Record<string, unknown>;
+    }) as unknown as Record<string, unknown>;
 
     expect(dto.id).toBe('src-1');
     expect(dto.code).toBe('ML_AR');

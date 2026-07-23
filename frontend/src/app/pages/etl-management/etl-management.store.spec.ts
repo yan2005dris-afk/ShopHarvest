@@ -59,7 +59,7 @@ describe('EtlManagementStore', () => {
   afterEach(() => {
     // Flush any pending captures summary requests
     const pendingReqs = httpMock.match('/api/pipeline/pending-captures');
-    pendingReqs.forEach(req => req.flush({ total: 0, sources: {} }));
+    pendingReqs.forEach((req) => req.flush({ total: 0, sources: {} }));
 
     httpMock.verify();
     store.ngOnDestroy();
@@ -69,16 +69,20 @@ describe('EtlManagementStore', () => {
   it('should load runs with filters and pagination', () => {
     // Set filters/page and flush initial requests triggered by the signals
     store.setFilters({ status: 'SUCCESS', source: 'mercadolibre' });
-    const reqsFilter = httpMock.match(req => req.url === '/api/pipeline/etl-runs');
-    reqsFilter.forEach(r => r.flush({ data: [], meta: { page: 1, limit: 20, total: 0, totalPages: 0 } }));
+    const reqsFilter = httpMock.match((req) => req.url === '/api/pipeline/etl-runs');
+    reqsFilter.forEach((r) =>
+      r.flush({ data: [], meta: { page: 1, limit: 20, total: 0, totalPages: 0 } }),
+    );
 
     store.setPage(2);
-    const reqsPage = httpMock.match(req => req.url === '/api/pipeline/etl-runs');
-    reqsPage.forEach(r => r.flush({ data: [], meta: { page: 2, limit: 20, total: 0, totalPages: 0 } }));
+    const reqsPage = httpMock.match((req) => req.url === '/api/pipeline/etl-runs');
+    reqsPage.forEach((r) =>
+      r.flush({ data: [], meta: { page: 2, limit: 20, total: 0, totalPages: 0 } }),
+    );
 
     // Explicit loadRuns check
     store.loadRuns();
-    const req = httpMock.expectOne(r => {
+    const req = httpMock.expectOne((r) => {
       return r.url === '/api/pipeline/etl-runs' && r.params.get('page') === '2';
     });
     expect(req.request.method).toBe('GET');
@@ -87,11 +91,35 @@ describe('EtlManagementStore', () => {
     expect(req.request.params.get('source')).toBe('mercadolibre');
 
     req.flush({
-      data: [{ id: '1', source: 'mercadolibre', status: 'SUCCESS', startedAt: '2026-07-12T00:00:00.000Z', finishedAt: null, rowsScraped: 10, rowsPersisted: 5, durationMs: null, errorSummary: null }],
+      data: [
+        {
+          id: '1',
+          source: 'mercadolibre',
+          status: 'SUCCESS',
+          startedAt: '2026-07-12T00:00:00.000Z',
+          finishedAt: null,
+          rowsScraped: 10,
+          rowsPersisted: 5,
+          durationMs: null,
+          errorSummary: null,
+        },
+      ],
       meta: { page: 2, limit: 20, total: 100, totalPages: 5 },
     });
 
-    expect(store.runs()).toEqual([{ id: '1', source: 'mercadolibre', status: 'SUCCESS', startedAt: '2026-07-12T00:00:00.000Z', finishedAt: null, rowsScraped: 10, rowsPersisted: 5, durationMs: null, errorSummary: null }]);
+    expect(store.runs()).toEqual([
+      {
+        id: '1',
+        source: 'mercadolibre',
+        status: 'SUCCESS',
+        startedAt: '2026-07-12T00:00:00.000Z',
+        finishedAt: null,
+        rowsScraped: 10,
+        rowsPersisted: 5,
+        durationMs: null,
+        errorSummary: null,
+      },
+    ]);
     expect(store.meta()).toEqual({ page: 2, limit: 20, total: 100, totalPages: 5 });
     expect(store.loading()).toBe(false);
   });
@@ -105,13 +133,25 @@ describe('EtlManagementStore', () => {
 
     const detailReq = httpMock.expectOne('/api/pipeline/etl-runs/new-run-id');
     expect(detailReq.request.method).toBe('GET');
-    detailReq.flush({ id: 'new-run-id', source: 'all', status: 'RUNNING', startedAt: '2026-07-12T00:00:00.000Z', finishedAt: null, rowsScraped: 0, rowsPersisted: 0, durationMs: null, errorSummary: null });
+    detailReq.flush({
+      id: 'new-run-id',
+      source: 'all',
+      status: 'RUNNING',
+      startedAt: '2026-07-12T00:00:00.000Z',
+      finishedAt: null,
+      rowsScraped: 0,
+      rowsPersisted: 0,
+      durationMs: null,
+      errorSummary: null,
+    });
 
-    const listReq = httpMock.expectOne(r => r.url === '/api/pipeline/etl-runs');
+    const listReq = httpMock.expectOne((r) => r.url === '/api/pipeline/etl-runs');
     listReq.flush({ data: [], meta: { page: 1, limit: 20, total: 0, totalPages: 0 } });
 
     expect(MockEventSource.instances.length).toBe(1);
-    expect(MockEventSource.instances[0].url).toContain('/api/pipeline/etl-runs/new-run-id/stream?token=test-token');
+    expect(MockEventSource.instances[0].url).toContain(
+      '/api/pipeline/etl-runs/new-run-id/stream?token=test-token',
+    );
     expect(store.streamActive()).toBe(true);
   });
 
@@ -119,7 +159,17 @@ describe('EtlManagementStore', () => {
     store.selectRunId('run-123');
 
     const detailReq = httpMock.expectOne('/api/pipeline/etl-runs/run-123');
-    detailReq.flush({ id: 'run-123', status: 'RUNNING', source: 'amazon', startedAt: '2026-07-12T00:00:00.000Z', finishedAt: null, rowsScraped: 0, rowsPersisted: 0, durationMs: null, errorSummary: null });
+    detailReq.flush({
+      id: 'run-123',
+      status: 'RUNNING',
+      source: 'amazon',
+      startedAt: '2026-07-12T00:00:00.000Z',
+      finishedAt: null,
+      rowsScraped: 0,
+      rowsPersisted: 0,
+      durationMs: null,
+      errorSummary: null,
+    });
 
     expect(MockEventSource.instances.length).toBe(1);
     const sse = MockEventSource.instances[0];
@@ -167,7 +217,7 @@ describe('EtlManagementStore', () => {
     expect(sse.close).toHaveBeenCalled();
     expect(store.streamActive()).toBe(false);
 
-    const listReq = httpMock.expectOne(r => r.url === '/api/pipeline/etl-runs');
+    const listReq = httpMock.expectOne((r) => r.url === '/api/pipeline/etl-runs');
     listReq.flush({ data: [], meta: { page: 1, limit: 20, total: 0, totalPages: 0 } });
   });
 
@@ -176,7 +226,17 @@ describe('EtlManagementStore', () => {
     store.selectRunId('run-456');
 
     const detailReq = httpMock.expectOne('/api/pipeline/etl-runs/run-456');
-    detailReq.flush({ id: 'run-456', status: 'RUNNING', source: 'ebay', startedAt: '2026-07-12T00:00:00.000Z', finishedAt: null, rowsScraped: 0, rowsPersisted: 0, durationMs: null, errorSummary: null });
+    detailReq.flush({
+      id: 'run-456',
+      status: 'RUNNING',
+      source: 'ebay',
+      startedAt: '2026-07-12T00:00:00.000Z',
+      finishedAt: null,
+      rowsScraped: 0,
+      rowsPersisted: 0,
+      durationMs: null,
+      errorSummary: null,
+    });
 
     expect(MockEventSource.instances.length).toBe(1);
     const sse = MockEventSource.instances[0];
@@ -192,10 +252,20 @@ describe('EtlManagementStore', () => {
 
     const pollReq = httpMock.expectOne('/api/pipeline/etl-runs/run-456');
     expect(pollReq.request.method).toBe('GET');
-    pollReq.flush({ id: 'run-456', status: 'SUCCESS', source: 'ebay', startedAt: '2026-07-12T00:00:00.000Z', finishedAt: '2026-07-12T01:00:00.000Z', rowsScraped: 50, rowsPersisted: 50, durationMs: 3600000, errorSummary: null });
+    pollReq.flush({
+      id: 'run-456',
+      status: 'SUCCESS',
+      source: 'ebay',
+      startedAt: '2026-07-12T00:00:00.000Z',
+      finishedAt: '2026-07-12T01:00:00.000Z',
+      rowsScraped: 50,
+      rowsPersisted: 50,
+      durationMs: 3600000,
+      errorSummary: null,
+    });
 
     // Once status is terminal (SUCCESS), polling stops and list is reloaded
-    const listReq = httpMock.expectOne(r => r.url === '/api/pipeline/etl-runs');
+    const listReq = httpMock.expectOne((r) => r.url === '/api/pipeline/etl-runs');
     listReq.flush({ data: [], meta: { page: 1, limit: 20, total: 0, totalPages: 0 } });
   });
 });

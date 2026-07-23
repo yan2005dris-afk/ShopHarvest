@@ -1,9 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  HostListener,
-  inject,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostListener, inject } from '@angular/core';
 import { ToastService, ToastLevel } from '../services/toast.service';
 
 /**
@@ -31,11 +26,7 @@ import { ToastService, ToastLevel } from '../services/toast.service';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div
-      class="toast-stack"
-      role="region"
-      aria-label="Notifications"
-    >
+    <div class="toast-stack" role="region" aria-label="Notifications">
       @for (toast of toasts(); track toast.id) {
         <div
           class="toast toast--{{ toast.level }}"

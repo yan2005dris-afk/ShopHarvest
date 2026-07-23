@@ -52,9 +52,9 @@ describe('LoginUseCase', () => {
   it('rejects an unknown user with the same error (no user enumeration)', async () => {
     repository.findByEmail.mockResolvedValue(null);
 
-    await expect(
-      useCase.execute('nope@b.com', 'whatever'),
-    ).rejects.toThrow('Invalid credentials');
+    await expect(useCase.execute('nope@b.com', 'whatever')).rejects.toThrow(
+      'Invalid credentials',
+    );
   });
 
   it('normalizes email (trim + lowercase) before lookup on login', async () => {

@@ -38,7 +38,7 @@ describe('PriceObservationResponseDto (Decimal→number + @Expose whitelist)', (
     };
     const dto = plainToInstance(PriceObservationResponseDto, raw, {
       excludeExtraneousValues: true,
-    }) as Record<string, unknown>;
+    }) as unknown as Record<string, unknown>;
 
     expect(dto).not.toHaveProperty('productId');
     expect(dto.offerId).toBe('o1');

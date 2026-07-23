@@ -178,8 +178,7 @@ export class ProductsHttpController {
   async findByDomain(
     @Param('domainRuleId') domainRuleId: string,
   ): Promise<ProductResponseDto[]> {
-    const products =
-      await this.listUseCase.findAllByDomainRule(domainRuleId);
+    const products = await this.listUseCase.findAllByDomainRule(domainRuleId);
     return products.map((product) => ProductResponseMapper.toDto(product));
   }
 

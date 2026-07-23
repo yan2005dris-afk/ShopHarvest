@@ -1,9 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  inject,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DashboardStore } from '../../core/dashboard.store';
 import { PrecioPromedioFuenteCategoriaChartComponent } from '../../shared/charts/precio-promedio-fuente-categoria.chart';
@@ -44,8 +39,8 @@ import { ChartCardComponent } from '../../shared/chart-card/chart-card.component
         Análisis de precios
       </h1>
       <p class="text-body-md text-on-surface-variant m-0">
-        4 familias de gráficos con filtros reactivos. Cambiá un filtro y los
-        gráficos se recalculan automáticamente.
+        4 familias de gráficos con filtros reactivos. Cambiá un filtro y los gráficos se recalculan
+        automáticamente.
       </p>
     </header>
 
@@ -60,8 +55,8 @@ import { ChartCardComponent } from '../../shared/chart-card/chart-card.component
           style="box-shadow: 0 0 8px var(--color-warning)"
         ></span>
         <span>
-          Serie temporal · <strong>UN SOLO DÍA</strong> ({{ store.snapshotDate() }}).
-          La línea es representativa del snapshot, no de una tendencia real.
+          Serie temporal · <strong>UN SOLO DÍA</strong> ({{ store.snapshotDate() }}). La línea es
+          representativa del snapshot, no de una tendencia real.
         </span>
       </div>
     }
@@ -71,12 +66,12 @@ import { ChartCardComponent } from '../../shared/chart-card/chart-card.component
         class="sticky top-4 flex flex-col gap-5 rounded-xl border border-outline-variant bg-surface p-5 font-sans"
         aria-label="Filtros globales"
       >
-        <h3 class="text-body-lg text-on-surface m-0 font-bold tracking-tight">
-          Filtros
-        </h3>
+        <h3 class="text-body-lg text-on-surface m-0 font-bold tracking-tight">Filtros</h3>
 
         <fieldset class="m-0 flex flex-col gap-1.5 border-none p-0">
-          <legend class="text-label-caps text-on-surface-variant mb-2 font-semibold tracking-wider uppercase">
+          <legend
+            class="text-label-caps text-on-surface-variant mb-2 font-semibold tracking-wider uppercase"
+          >
             Fuentes
           </legend>
           @for (f of availableFuentes(); track f) {
@@ -95,13 +90,13 @@ import { ChartCardComponent } from '../../shared/chart-card/chart-card.component
         </fieldset>
 
         <fieldset class="m-0 flex flex-col gap-1.5 border-none p-0">
-          <legend class="text-label-caps text-on-surface-variant mb-2 font-semibold tracking-wider uppercase">
+          <legend
+            class="text-label-caps text-on-surface-variant mb-2 font-semibold tracking-wider uppercase"
+          >
             Categorías
           </legend>
           @if (availableCategorias().length === 0) {
-            <p class="text-body-md text-on-surface-variant m-0 italic">
-              Cargando categorías…
-            </p>
+            <p class="text-body-md text-on-surface-variant m-0 italic">Cargando categorías…</p>
           }
           @for (c of availableCategorias(); track c) {
             <label
@@ -119,7 +114,9 @@ import { ChartCardComponent } from '../../shared/chart-card/chart-card.component
         </fieldset>
 
         <fieldset class="m-0 flex flex-col gap-1.5 border-none p-0">
-          <legend class="text-label-caps text-on-surface-variant mb-2 font-semibold tracking-wider uppercase">
+          <legend
+            class="text-label-caps text-on-surface-variant mb-2 font-semibold tracking-wider uppercase"
+          >
             Rango de precio (USD)
           </legend>
           <div class="flex items-center gap-2">
@@ -146,7 +143,9 @@ import { ChartCardComponent } from '../../shared/chart-card/chart-card.component
         </fieldset>
 
         <fieldset class="m-0 flex flex-col gap-1.5 border-none p-0">
-          <legend class="text-label-caps text-on-surface-variant mb-2 font-semibold tracking-wider uppercase">
+          <legend
+            class="text-label-caps text-on-surface-variant mb-2 font-semibold tracking-wider uppercase"
+          >
             Rango de fechas
           </legend>
           @if (!store.timeRangeIsApplicable()) {
@@ -154,15 +153,19 @@ import { ChartCardComponent } from '../../shared/chart-card/chart-card.component
               El DW es un snapshot de un solo día
               @if (store.timeRangeBounds().min) {
                 ({{ store.timeRangeBounds().min }})
-              }. El filtro temporal se activa cuando hay más de una fecha
-              capturada en <code class="rounded-xs bg-surface-container-low px-1 py-0.5 font-mono text-body-md">dim_tiempo</code>.
+              }
+              . El filtro temporal se activa cuando hay más de una fecha capturada en
+              <code class="rounded-xs bg-surface-container-low px-1 py-0.5 font-mono text-body-md"
+                >dim_tiempo</code
+              >.
             </p>
           } @else {
             <div class="flex flex-col gap-2">
               <label
                 class="text-body-md text-on-surface-variant grid grid-cols-[60px_1fr] cursor-pointer items-center gap-2 py-1"
               >
-                <span class="text-label-caps text-on-surface-variant font-semibold tracking-wider uppercase"
+                <span
+                  class="text-label-caps text-on-surface-variant font-semibold tracking-wider uppercase"
                   >Desde</span
                 >
                 <input
@@ -179,7 +182,8 @@ import { ChartCardComponent } from '../../shared/chart-card/chart-card.component
               <label
                 class="text-body-md text-on-surface-variant grid grid-cols-[60px_1fr] cursor-pointer items-center gap-2 py-1"
               >
-                <span class="text-label-caps text-on-surface-variant font-semibold tracking-wider uppercase"
+                <span
+                  class="text-label-caps text-on-surface-variant font-semibold tracking-wider uppercase"
                   >Hasta</span
                 >
                 <input
@@ -194,14 +198,18 @@ import { ChartCardComponent } from '../../shared/chart-card/chart-card.component
                 />
               </label>
             </div>
-            <p class="text-label-caps text-on-surface-variant mt-2 leading-snug tracking-wider uppercase">
+            <p
+              class="text-label-caps text-on-surface-variant mt-2 leading-snug tracking-wider uppercase"
+            >
               Aplica a la serie temporal. La granularidad del DW es trimestral.
             </p>
           }
         </fieldset>
 
         <fieldset class="m-0 flex flex-col gap-1.5 border-none p-0">
-          <legend class="text-label-caps text-on-surface-variant mb-2 font-semibold tracking-wider uppercase">
+          <legend
+            class="text-label-caps text-on-surface-variant mb-2 font-semibold tracking-wider uppercase"
+          >
             Restricciones
           </legend>
           <label
@@ -255,10 +263,7 @@ import { ChartCardComponent } from '../../shared/chart-card/chart-card.component
         </div>
 
         <div class="col-span-12">
-          <app-chart-card
-            title="Serie temporal"
-            caption="Precio promedio por trimestre"
-          >
+          <app-chart-card title="Serie temporal" caption="Precio promedio por trimestre">
             <app-serie-temporal-precios-chart
               [rows]="store.filteredTimeSeries()"
               [colors]="palette"
@@ -285,10 +290,7 @@ import { ChartCardComponent } from '../../shared/chart-card/chart-card.component
             title="Box plot por fuente"
             caption="Distribución del rango de precios detectado como outlier"
           >
-            <app-boxplot-por-fuente-chart
-              [rows]="store.filteredOutliers()"
-              [colors]="palette"
-            />
+            <app-boxplot-por-fuente-chart [rows]="store.filteredOutliers()" [colors]="palette" />
           </app-chart-card>
         </div>
       </section>

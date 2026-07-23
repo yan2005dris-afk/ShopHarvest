@@ -1,7 +1,16 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { NgApexchartsModule } from 'ng-apexcharts';
 import { ThemeTokenService } from '../../core/theme-token.service';
-import type { ApexAxisChartSeries, ApexChart, ApexXAxis, ApexTitleSubtitle, ApexLegend, ApexGrid, ApexDataLabels, ApexPlotOptions } from 'ng-apexcharts';
+import type {
+  ApexAxisChartSeries,
+  ApexChart,
+  ApexXAxis,
+  ApexTitleSubtitle,
+  ApexLegend,
+  ApexGrid,
+  ApexDataLabels,
+  ApexPlotOptions,
+} from 'ng-apexcharts';
 import type { EncuestaRow } from '../../core/dashboard.types';
 
 /**
@@ -53,7 +62,14 @@ import type { EncuestaRow } from '../../core/dashboard.types';
 export class EncuestaFrecuenciaChartComponent {
   private readonly theme = inject(ThemeTokenService);
   readonly rows = input.required<EncuestaRow[]>();
-  readonly colors = input<string[]>(['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899']);
+  readonly colors = input<string[]>([
+    '#3b82f6',
+    '#10b981',
+    '#f59e0b',
+    '#ef4444',
+    '#8b5cf6',
+    '#ec4899',
+  ]);
   readonly height = input<number>(380);
 
   readonly chart = computed<ApexChart>(() => ({
@@ -80,9 +96,7 @@ export class EncuestaFrecuenciaChartComponent {
   });
 
   readonly xaxis = computed<ApexXAxis>(() => {
-    const sitios = Array.from(
-      new Set(this.rows().map((r) => r.sitio_preferido)),
-    ).sort();
+    const sitios = Array.from(new Set(this.rows().map((r) => r.sitio_preferido))).sort();
     return { categories: sitios };
   });
 

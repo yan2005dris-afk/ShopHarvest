@@ -5,10 +5,7 @@ import type {
 } from '../../../../../generated/operational';
 import { Prisma } from '../../../../../generated/operational';
 import { Offer } from '../../domain/offer.entity';
-import type {
-  OfferProps,
-  CreateOfferInput,
-} from '../../domain/offer.entity';
+import type { OfferProps, CreateOfferInput } from '../../domain/offer.entity';
 import { PriceObservation } from '../../domain/price-observation.entity';
 import type { PriceObservationProps } from '../../domain/price-observation.entity';
 import { Product } from '../../domain/product.entity';
@@ -43,7 +40,10 @@ function coercePrice(value: unknown): number {
   if (typeof value === 'number') return value;
   // Prisma's Decimal has toJSON() returning a string. Use it when
   // available, else coerce via Number() if the value is numeric-shaped.
-  if (typeof value === 'object' && typeof (value as { toJSON?: () => string }).toJSON === 'function') {
+  if (
+    typeof value === 'object' &&
+    typeof (value as { toJSON?: () => string }).toJSON === 'function'
+  ) {
     const json = (value as { toJSON: () => string }).toJSON();
     const n = Number(json);
     return Number.isFinite(n) ? n : 0;
@@ -84,7 +84,9 @@ export class ProductMapper {
     return Product.fromPersistence(props);
   }
 
-  static offerToDomain(row: PrismaOffer & { priceObservations?: PrismaPriceObservation[] }): Offer {
+  static offerToDomain(
+    row: PrismaOffer & { priceObservations?: PrismaPriceObservation[] },
+  ): Offer {
     const props: OfferProps = {
       id: row.id,
       productId: row.productId,
@@ -112,7 +114,9 @@ export class ProductMapper {
     return offer;
   }
 
-  static priceObservationToDomain(row: PrismaPriceObservation): PriceObservation {
+  static priceObservationToDomain(
+    row: PrismaPriceObservation,
+  ): PriceObservation {
     const props: PriceObservationProps = {
       id: row.id,
       offerId: row.offerId,
@@ -178,8 +182,7 @@ export class ProductMapper {
       sku: input.sku ?? null,
       currency: input.currency,
       price: input.price,
-      rawData:
-        (input.rawData ?? Prisma.JsonNull) as Prisma.InputJsonValue,
+      rawData: (input.rawData ?? Prisma.JsonNull) as Prisma.InputJsonValue,
       extractedAt: input.extractedAt ?? new Date(),
     };
   }

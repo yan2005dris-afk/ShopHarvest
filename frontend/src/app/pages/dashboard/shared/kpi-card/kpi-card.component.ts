@@ -71,18 +71,12 @@ const ACCENT_VAR: Record<AccentToken, string> = {
               >{{ icon() }}</span
             >
           }
-          <span
-            class="text-label-caps text-on-surface-variant"
-            data-testid="kpi-label"
-          >
+          <span class="text-label-caps text-on-surface-variant" data-testid="kpi-label">
             {{ label() }}
           </span>
         </header>
 
-        <div
-          class="text-metric-value text-on-surface"
-          data-testid="kpi-value"
-        >
+        <div class="text-metric-value text-on-surface" data-testid="kpi-value">
           {{ value() }}
         </div>
 
@@ -95,14 +89,10 @@ const ACCENT_VAR: Record<AccentToken, string> = {
             data-testid="kpi-delta"
           >
             @if (trend() === 'up') {
-              <span class="material-symbols-outlined" style="font-size: 14px"
-                >trending_up</span
-              >
+              <span class="material-symbols-outlined" style="font-size: 14px">trending_up</span>
             }
             @if (trend() === 'down') {
-              <span class="material-symbols-outlined" style="font-size: 14px"
-                >trending_down</span
-              >
+              <span class="material-symbols-outlined" style="font-size: 14px">trending_down</span>
             }
             <span>{{ delta() }}</span>
           </div>

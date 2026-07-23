@@ -12,7 +12,7 @@ import { postIngest } from './scheduler';
  * where the bug actually lives; a false return means "do not mark success".
  */
 describe('postIngest', () => {
-  let fetchSpy: ReturnType<typeof vi.spyOn>;
+  let fetchSpy: any;
 
   beforeEach(() => {
     fetchSpy = vi.spyOn(globalThis, 'fetch');

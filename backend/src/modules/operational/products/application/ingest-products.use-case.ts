@@ -71,10 +71,7 @@ export class IngestProductsUseCase {
     this.warnIfNoTitleMapping(dto.domain, effectiveMappings);
 
     const items: IngestItem[] = dto.products.map((product, index) => {
-      const derived = this.mapProductByRule(
-        product as Record<string, unknown>,
-        effectiveMappings,
-      );
+      const derived = this.mapProductByRule(product, effectiveMappings);
       const titleSlug = derived.title
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
@@ -93,7 +90,7 @@ export class IngestProductsUseCase {
         sku: derived.sku,
         imageUrl: derived.imageUrl,
         description: derived.description,
-        raw: product as Record<string, unknown>,
+        raw: product,
       };
     });
 
@@ -175,9 +172,7 @@ export class IngestProductsUseCase {
     return {
       title,
       price,
-      imageUrl: asString(
-        valueFor(/^image$|^img$|^foto$|^picture$|^imagen$/i),
-      ),
+      imageUrl: asString(valueFor(/^image$|^img$|^foto$|^picture$|^imagen$/i)),
       sku: asString(valueFor(/^sku$/i)),
       description: asString(valueFor(/^desc/i)),
     };

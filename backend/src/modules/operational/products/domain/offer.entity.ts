@@ -120,7 +120,10 @@ export class Offer {
     if (input.price !== undefined && input.price !== this.props.price) {
       this.props.price = input.price;
     }
-    if (input.currency !== undefined && input.currency !== this.props.currency) {
+    if (
+      input.currency !== undefined &&
+      input.currency !== this.props.currency
+    ) {
       this.props.currency = input.currency;
     }
     if (input.sku !== undefined) {

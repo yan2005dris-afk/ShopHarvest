@@ -49,6 +49,8 @@ function makeFakePage(opts: FakePageOpts = {}) {
     }
     return Promise.resolve({ status: () => status });
   });
+  const bodyHtml = opts.bodyHtml ?? '<html></html>';
+  const content = jest.fn().mockResolvedValue(bodyHtml);
   const close = jest.fn().mockResolvedValue(undefined);
   const waitForTimeout = jest.fn().mockResolvedValue(undefined);
   const mouse = {
@@ -57,6 +59,7 @@ function makeFakePage(opts: FakePageOpts = {}) {
   return {
     goto,
     evaluate,
+    content,
     close,
     waitForTimeout,
     mouse,

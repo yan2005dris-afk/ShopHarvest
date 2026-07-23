@@ -23,10 +23,14 @@ export class MappingSessionService {
   readonly fieldMappings = signal<ExtensionFieldMapping[]>([]);
   readonly containerSelector = signal<string | null>(null);
   readonly pageTitle = signal<string | null>(null);
-  readonly extractedProducts = signal<Record<string, string | number | null | string[] | number[] | null>[]>([]);
+  readonly extractedProducts = signal<
+    Record<string, string | number | null | string[] | number[] | null>[]
+  >([]);
 
   /** Original products from extension — never mutated */
-  private readonly _originalProducts = signal<Record<string, string | number | null | string[] | number[] | null>[]>([]);
+  private readonly _originalProducts = signal<
+    Record<string, string | number | null | string[] | number[] | null>[]
+  >([]);
   readonly extractAllMode = signal<boolean>(false);
 
   /** All available fields when in extractAll mode */
@@ -107,7 +111,7 @@ export class MappingSessionService {
     }
 
     // Always transform from ORIGINAL products to avoid data loss
-    const canonicalProducts = this._originalProducts().map(product => {
+    const canonicalProducts = this._originalProducts().map((product) => {
       const canonical: Record<string, string | number | null | string[] | number[] | null> = {};
       for (const [canonicalName, extractedKey] of mappingByCanonical) {
         if (extractedKey in product) {
@@ -124,7 +128,9 @@ export class MappingSessionService {
    * When in extractAll mode, compute all available fields from the first product
    * and let user pick which ones to map to canonical names
    */
-  private computeAvailableFields(product: Record<string, string | number | null | string[] | number[] | null>): void {
+  private computeAvailableFields(
+    product: Record<string, string | number | null | string[] | number[] | null>,
+  ): void {
     const options: ExtractedFieldOption[] = [];
 
     for (const [key, value] of Object.entries(product)) {
@@ -144,7 +150,9 @@ export class MappingSessionService {
     this.availableFields.set(options);
   }
 
-  private collectAllValues(value: string | number | null | string[] | number[] | null): (string | number | null)[] {
+  private collectAllValues(
+    value: string | number | null | string[] | number[] | null,
+  ): (string | number | null)[] {
     if (value === null || value === undefined) return [];
     if (Array.isArray(value)) return value;
     return [value];
@@ -155,7 +163,7 @@ export class MappingSessionService {
     return key
       .replace(/_/g, ' ')
       .replace(/([a-z])([A-Z])/g, '$1 $2')
-      .replace(/^./, str => str.toUpperCase());
+      .replace(/^./, (str) => str.toUpperCase());
   }
 
   /**
@@ -163,9 +171,7 @@ export class MappingSessionService {
    */
   selectFieldForMapping(extractedKey: string, canonicalName: string): void {
     // Remove any existing mapping for this canonical name
-    this.fieldMappings.update(arr =>
-      arr.filter(m => m.canonicalField !== canonicalName)
-    );
+    this.fieldMappings.update((arr) => arr.filter((m) => m.canonicalField !== canonicalName));
 
     // Add new mapping with the extracted key
     const mapping: ExtensionFieldMapping = {
@@ -175,16 +181,14 @@ export class MappingSessionService {
       extractedKey,
     };
 
-    this.fieldMappings.update(arr => [...arr, mapping]);
+    this.fieldMappings.update((arr) => [...arr, mapping]);
 
     // Transform products to use canonical names
     this.applyCanonicalMappings();
   }
 
   removeAssignment(fieldKey: string): void {
-    this.fieldMappings.update((arr) =>
-      arr.filter((m) => m.canonicalField !== fieldKey),
-    );
+    this.fieldMappings.update((arr) => arr.filter((m) => m.canonicalField !== fieldKey));
   }
 
   reset(): void {

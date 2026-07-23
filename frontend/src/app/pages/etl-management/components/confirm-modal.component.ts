@@ -1,12 +1,4 @@
-import {
-  Component,
-  computed,
-  effect,
-  input,
-  output,
-  signal,
-  HostListener,
-} from '@angular/core';
+import { Component, computed, effect, input, output, signal, HostListener } from '@angular/core';
 
 export interface EtlSourceOption {
   code: string;
@@ -50,9 +42,7 @@ export interface EtlSourceOption {
               aria-label="Cerrar"
               (click)="onCancel()"
             >
-              <span class="material-symbols-outlined" style="font-size: 20px"
-                >close</span
-              >
+              <span class="material-symbols-outlined" style="font-size: 20px">close</span>
             </button>
           </header>
 
@@ -76,9 +66,7 @@ export interface EtlSourceOption {
 
             <div class="flex flex-col gap-1.5 text-left">
               <label class="text-label-caps text-on-surface-variant">
-                {{
-                  action() === 'full' ? 'Fuentes a Scraping' : 'Fuentes a Procesar'
-                }}
+                {{ action() === 'full' ? 'Fuentes a Scraping' : 'Fuentes a Procesar' }}
               </label>
               <div
                 class="flex max-h-52 flex-col gap-1 overflow-y-auto rounded-md border border-outline-variant bg-surface-container-low p-3"
@@ -109,9 +97,7 @@ export interface EtlSourceOption {
             </div>
           </div>
 
-          <footer
-            class="flex justify-end gap-2.5 border-t border-outline-variant px-4 py-3"
-          >
+          <footer class="flex justify-end gap-2.5 border-t border-outline-variant px-4 py-3">
             <button
               type="button"
               class="rounded-md border border-outline-variant bg-surface-container-low px-4 py-2 text-body-md font-medium text-on-surface-variant transition-colors hover:bg-surface-container hover:text-on-surface"

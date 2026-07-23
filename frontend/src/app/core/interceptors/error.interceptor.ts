@@ -91,9 +91,7 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
       const firstField = body?.errors?.[0];
       const fieldMsg = firstField?.messages?.[0];
       const userMessage =
-        (fieldMsg && body?.detail
-          ? `${body.detail}: ${fieldMsg}`
-          : null) ||
+        (fieldMsg && body?.detail ? `${body.detail}: ${fieldMsg}` : null) ||
         (typeof body?.detail === 'string' && body.detail) ||
         (Array.isArray(body?.message) ? body.message.join('; ') : body?.message) ||
         err.statusText ||

@@ -10,9 +10,16 @@ export class ProductsPageStore {
   // ─── Data ──────────────────────────────────────────────
   readonly products = signal<Product[]>([]);
   readonly filteredProducts = computed(() => {
-    const term = this.searchTerm().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    return this.products().filter(p =>
-      p.title.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(term),
+    const term = this.searchTerm()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+    return this.products().filter((p) =>
+      p.title
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .includes(term),
     );
   });
 

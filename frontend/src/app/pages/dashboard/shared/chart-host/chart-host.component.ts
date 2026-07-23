@@ -94,8 +94,7 @@ export class ChartHostComponent {
       height: this.height(),
       toolbar: { show: false },
       animations: { enabled: true, speed: 400 },
-      fontFamily:
-        '"Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+      fontFamily: '"Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
       background: 'transparent',
       foreColor: tokens.foreColor,
     };

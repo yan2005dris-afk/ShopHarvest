@@ -38,22 +38,18 @@ export class PrismaProductsRepository implements ProductsRepository {
   constructor(private readonly prisma: OperationalPrismaService) {}
 
   async findAll(options: ProductLoadOptions) {
-    const rows: PrismaProductWithOffers[] =
-      await this.prisma.product.findMany({
-        include: {
-          offers: {
-            include: { priceObservations: options.includeHistory },
-          },
+    const rows: PrismaProductWithOffers[] = await this.prisma.product.findMany({
+      include: {
+        offers: {
+          include: { priceObservations: options.includeHistory },
         },
-        orderBy: { updatedAt: 'desc' },
-      });
+      },
+      orderBy: { updatedAt: 'desc' },
+    });
     return rows.map((row) => ProductMapper.toDomain(row));
   }
 
-  async findById(
-    id: string,
-    options: ProductLoadOptions,
-  ) {
+  async findById(id: string, options: ProductLoadOptions) {
     const row: PrismaProductWithOffers | null =
       await this.prisma.product.findUnique({
         where: { id },
@@ -67,16 +63,15 @@ export class PrismaProductsRepository implements ProductsRepository {
   }
 
   async findAllByDomainRule(domainRuleId: string) {
-    const rows: PrismaProductWithOffers[] =
-      await this.prisma.product.findMany({
-        where: { offers: { some: { domainRuleId } } },
-        include: {
-          offers: {
-            where: { domainRuleId },
-            include: { priceObservations: true },
-          },
+    const rows: PrismaProductWithOffers[] = await this.prisma.product.findMany({
+      where: { offers: { some: { domainRuleId } } },
+      include: {
+        offers: {
+          where: { domainRuleId },
+          include: { priceObservations: true },
         },
-      });
+      },
+    });
     return rows.map((row) => ProductMapper.toDomain(row));
   }
 
@@ -108,7 +103,7 @@ export class PrismaProductsRepository implements ProductsRepository {
     return this.prisma.$transaction(async (tx) => {
       // 1. Upsert Source keyed by code = domain. The legacy service
       // derived `baseUrl = https://{domain}` here; preserve that.
-      let source =
+      const source =
         (await tx.source.findUnique({ where: { code: command.domain } })) ??
         (await tx.source.create({
           data: {
@@ -188,8 +183,7 @@ export class PrismaProductsRepository implements ProductsRepository {
               price: item.price,
               currency: item.currency,
               sku: item.sku ?? undefined,
-              rawData:
-                (item.raw as Prisma.InputJsonValue) ?? Prisma.JsonNull,
+              rawData: (item.raw as Prisma.InputJsonValue) ?? Prisma.JsonNull,
               extractedAt: new Date(),
             },
           });
@@ -251,14 +245,12 @@ export class PrismaProductsRepository implements ProductsRepository {
           create: {
             offerId: offer.id,
             sourceId: source.id,
-            payload:
-              (item.raw as Prisma.InputJsonValue) ?? Prisma.JsonNull,
+            payload: (item.raw as Prisma.InputJsonValue) ?? Prisma.JsonNull,
             status: RawCaptureStatus.UNPROCESSED,
             attempts: 0,
           },
           update: {
-            payload:
-              (item.raw as Prisma.InputJsonValue) ?? Prisma.JsonNull,
+            payload: (item.raw as Prisma.InputJsonValue) ?? Prisma.JsonNull,
             capturedAt: new Date(),
             status: RawCaptureStatus.UNPROCESSED,
             attempts: 0,

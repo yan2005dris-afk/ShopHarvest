@@ -639,7 +639,7 @@ function extractFieldsFromElement(
       // the Math.min() below.
       const allEls = root.querySelectorAll(mapping.selector);
       const prices: number[] = [];
-      for (const el of allEls) {
+      for (const el of Array.from(allEls)) {
         if (isRatingElement(el) || isNonPriceAmountElement(el)) continue;
         const raw = el.textContent?.trim() ?? '';
         const parsed = parseLocalizedPrice(raw);

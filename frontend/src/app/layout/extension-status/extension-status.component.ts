@@ -1,9 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  input,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 
 /**
@@ -28,9 +23,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
       class="nav-item"
       [class.nav-item--collapsed]="collapsed()"
     >
-      <span class="material-symbols-outlined nav-item__icon" aria-hidden="true"
-        >extension</span
-      >
+      <span class="material-symbols-outlined nav-item__icon" aria-hidden="true">extension</span>
       @if (!collapsed()) {
         <span class="nav-item__label">Extensión</span>
         <span

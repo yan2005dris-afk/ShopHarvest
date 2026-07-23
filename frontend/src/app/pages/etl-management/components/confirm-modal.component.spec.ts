@@ -41,9 +41,9 @@ describe('ConfirmModalComponent', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('[data-testid="modal-backdrop"]')).toBeTruthy();
     expect(compiled.querySelector('h3')?.textContent).toContain('Custom Title');
-    expect(
-      compiled.querySelector('[data-testid="modal-content"] p')?.textContent,
-    ).toContain('Custom Message');
+    expect(compiled.querySelector('[data-testid="modal-content"] p')?.textContent).toContain(
+      'Custom Message',
+    );
   });
 
   it('should pre-select every source on open so confirm emits source=all with one click', () => {

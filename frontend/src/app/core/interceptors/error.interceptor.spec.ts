@@ -23,9 +23,7 @@ describe('errorInterceptor', () => {
     toastShow = vi.fn();
     consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     TestBed.configureTestingModule({
-      providers: [
-        { provide: ToastService, useValue: { show: toastShow } },
-      ],
+      providers: [{ provide: ToastService, useValue: { show: toastShow } }],
     });
   });
 
@@ -50,9 +48,7 @@ describe('errorInterceptor', () => {
     next: () => Observable<HttpEvent<unknown>>,
     req: Parameters<typeof errorInterceptor>[0] = makeRequest(),
   ) {
-    return TestBed.runInInjectionContext(() =>
-      errorInterceptor(req, next),
-    );
+    return TestBed.runInInjectionContext(() => errorInterceptor(req, next));
   }
 
   it('shows a toast with the backend detail on 422 (validation error)', () => {

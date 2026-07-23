@@ -20,3 +20,14 @@ allowBuilds:
   'class-transformer': true
   'class-validator': true
   '@scarf/scarf': false
+
+overrides:
+  tar: '^7.5.19'
+  piscina: '^5.1.5'
+  fast-uri: '^3.1.4'
+  brace-expansion: '^2.1.2'
+  js-yaml: '^4.3.0'
+  vitest: '^3.2.6'
+  vite: '^6.4.3'
+  immutable: '^5.1.8'
+  multer: '^2.2.0'

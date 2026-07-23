@@ -1,11 +1,23 @@
-import { Component, inject, OnInit, OnDestroy, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import {
+  Component,
+  inject,
+  OnInit,
+  OnDestroy,
+  signal,
+  computed,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { ApiService, DomainRule, Category } from '../../services/api.service';
 import { ExtensionService } from '../../services/extension.service';
 import { MappingSessionService } from './services/mapping-session.service';
-import { DomainRulePersistenceService, SaveDomainRuleParams, SaveProductsParams } from './services/domain-rule.persistence';
+import {
+  DomainRulePersistenceService,
+  SaveDomainRuleParams,
+  SaveProductsParams,
+} from './services/domain-rule.persistence';
 import { MapperHeroComponent } from './components/mapper-hero.component';
 import { ExtensionMappingStateComponent } from './components/extension-mapping-state.component';
 import { MappingStateComponent } from './components/mapping-state.component';
@@ -13,13 +25,7 @@ import { SavingStateComponent } from './components/saving-state.component';
 import { DoneStateComponent } from './components/done-state.component';
 import { ErrorStateComponent } from './components/error-state.component';
 
-type MapperState =
-  | 'idle'
-  | 'extension-mapping'
-  | 'mapping'
-  | 'saving'
-  | 'done'
-  | 'error';
+type MapperState = 'idle' | 'extension-mapping' | 'mapping' | 'saving' | 'done' | 'error';
 
 @Component({
   selector: 'app-visual-mapper',
@@ -49,9 +55,7 @@ type MapperState =
           />
         }
         @case ('extension-mapping') {
-          <app-extension-mapping-state
-            (onCancel)="cancelExtensionMapping()"
-          />
+          <app-extension-mapping-state (onCancel)="cancelExtensionMapping()" />
         }
         @case ('mapping') {
           <app-mapping-state
@@ -88,10 +92,7 @@ type MapperState =
           />
         }
         @case ('error') {
-          <app-error-state
-            [errorMessage]="errorMessage"
-            (onTryAgain)="tryAgain()"
-          />
+          <app-error-state [errorMessage]="errorMessage" (onTryAgain)="tryAgain()" />
         }
       }
     </div>
