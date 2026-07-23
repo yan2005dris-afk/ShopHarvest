@@ -57,7 +57,10 @@ describe('App', () => {
 
     await TestBed.configureTestingModule({
       imports: [App],
-      providers: [provideRouter([{ path: 'login', children: [] }]), { provide: AuthService, useValue: authMock }],
+      providers: [
+        provideRouter([{ path: 'login', children: [] }]),
+        { provide: AuthService, useValue: authMock },
+      ],
     }).compileComponents();
   });
 
