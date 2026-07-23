@@ -20,12 +20,10 @@ import { ApiService, Category } from '../../services/api.service';
   template: `
     <div class="mx-auto block max-w-3xl p-8">
       <header class="mb-8 flex flex-col gap-2">
-        <h1 class="text-headline-lg m-0 font-bold text-on-surface tracking-tight">
-          Categories
-        </h1>
+        <h1 class="text-headline-lg m-0 font-bold text-on-surface tracking-tight">Categories</h1>
         <p class="text-body-lg m-0 text-on-surface-variant">
-          Define categories to organize scraped domains and set default field
-          mappings (e.g. Ropa → title, image, price).
+          Define categories to organize scraped domains and set default field mappings (e.g. Ropa →
+          title, image, price).
         </p>
         <button
           type="button"
@@ -69,13 +67,27 @@ import { ApiService, Category } from '../../services/api.service';
             <label class="flex flex-col gap-1.5 text-body-md font-semibold text-on-surface">
               Default Field Mappings
               <span class="text-label-caps font-normal text-on-surface-variant"
-                >One per line: <code class="rounded-xs bg-surface-container-low px-1.5 py-0.5 font-mono">canonicalField:type</code> (e.g.
-                <code class="rounded-xs bg-surface-container-low px-1.5 py-0.5 font-mono">title:text</code>,
-                <code class="rounded-xs bg-surface-container-low px-1.5 py-0.5 font-mono">image:text</code>,
-                <code class="rounded-xs bg-surface-container-low px-1.5 py-0.5 font-mono">price:text</code>). Type can be
-                <code class="rounded-xs bg-surface-container-low px-1.5 py-0.5 font-mono">text</code>,
-                <code class="rounded-xs bg-surface-container-low px-1.5 py-0.5 font-mono">attribute</code>, or
-                <code class="rounded-xs bg-surface-container-low px-1.5 py-0.5 font-mono">html</code>.</span
+                >One per line:
+                <code class="rounded-xs bg-surface-container-low px-1.5 py-0.5 font-mono"
+                  >canonicalField:type</code
+                >
+                (e.g.
+                <code class="rounded-xs bg-surface-container-low px-1.5 py-0.5 font-mono"
+                  >title:text</code
+                >,
+                <code class="rounded-xs bg-surface-container-low px-1.5 py-0.5 font-mono"
+                  >image:text</code
+                >,
+                <code class="rounded-xs bg-surface-container-low px-1.5 py-0.5 font-mono"
+                  >price:text</code
+                >). Type can be
+                <code class="rounded-xs bg-surface-container-low px-1.5 py-0.5 font-mono">text</code
+                >,
+                <code class="rounded-xs bg-surface-container-low px-1.5 py-0.5 font-mono"
+                  >attribute</code
+                >, or
+                <code class="rounded-xs bg-surface-container-low px-1.5 py-0.5 font-mono">html</code
+                >.</span
               >
               <textarea
                 class="min-h-15 resize-y rounded-md border border-outline-variant bg-surface-container-low px-3 py-2.5 font-mono text-body-md text-on-surface outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary"

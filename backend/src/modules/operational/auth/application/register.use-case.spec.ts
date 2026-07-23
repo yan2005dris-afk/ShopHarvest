@@ -21,20 +21,21 @@ describe('RegisterUseCase', () => {
 
   it('hashes the password, creates the user, and returns a token', async () => {
     repository.findByEmail.mockResolvedValue(null);
-    repository.create.mockImplementation((email: string, passwordHash: string) =>
-      Promise.resolve({
-        id: 'u1',
-        email,
-        passwordHash,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      } as any),
+    repository.create.mockImplementation(
+      (email: string, passwordHash: string) =>
+        Promise.resolve({
+          id: 'u1',
+          email,
+          passwordHash,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        } as any),
     );
 
     const res = await useCase.execute('a@b.com', 'password123');
 
     expect(repository.create).toHaveBeenCalledTimes(1);
-    const storedHash = repository.create.mock.calls[0][1] as string;
+    const storedHash = repository.create.mock.calls[0][1];
     // Never store plaintext; the stored value must verify against the password.
     expect(storedHash).not.toBe('password123');
     expect(await bcrypt.compare('password123', storedHash)).toBe(true);
@@ -53,9 +54,9 @@ describe('RegisterUseCase', () => {
       updatedAt: new Date(),
     } as any);
 
-    await expect(
-      useCase.execute('a@b.com', 'password123'),
-    ).rejects.toThrow('already registered');
+    await expect(useCase.execute('a@b.com', 'password123')).rejects.toThrow(
+      'already registered',
+    );
     expect(repository.create).not.toHaveBeenCalled();
   });
 
@@ -67,9 +68,9 @@ describe('RegisterUseCase', () => {
     );
     repository.create.mockRejectedValue(p2002);
 
-    await expect(
-      useCase.execute('a@b.com', 'password123'),
-    ).rejects.toThrow('already registered');
+    await expect(useCase.execute('a@b.com', 'password123')).rejects.toThrow(
+      'already registered',
+    );
   });
 
   it('rethrows non-P2002 create errors unchanged', async () => {
@@ -77,27 +78,29 @@ describe('RegisterUseCase', () => {
     const other = new Error('disk on fire');
     repository.create.mockRejectedValue(other);
 
-    await expect(useCase.execute('a@b.com', 'password123')).rejects.toBe(
-      other,
-    );
+    await expect(useCase.execute('a@b.com', 'password123')).rejects.toBe(other);
   });
 
   it('normalizes email (trim + lowercase) before lookup and creation', async () => {
     repository.findByEmail.mockResolvedValue(null);
-    repository.create.mockImplementation((email: string, passwordHash: string) =>
-      Promise.resolve({
-        id: 'u1',
-        email,
-        passwordHash,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      } as any),
+    repository.create.mockImplementation(
+      (email: string, passwordHash: string) =>
+        Promise.resolve({
+          id: 'u1',
+          email,
+          passwordHash,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        } as any),
     );
 
     const res = await useCase.execute('  A@B.COM  ', 'password123');
 
     expect(repository.findByEmail).toHaveBeenCalledWith('a@b.com');
-    expect(repository.create).toHaveBeenCalledWith('a@b.com', expect.any(String));
+    expect(repository.create).toHaveBeenCalledWith(
+      'a@b.com',
+      expect.any(String),
+    );
     expect(res.user.email).toBe('a@b.com');
   });
 });

@@ -28,11 +28,7 @@ import { ThemeService } from '../../services/theme.service';
       data-testid="btn-logout"
       [attr.aria-label]="'Cerrar sesión'"
     >
-      <span
-        class="material-symbols-outlined nav-item__icon"
-        aria-hidden="true"
-        >logout</span
-      >
+      <span class="material-symbols-outlined nav-item__icon" aria-hidden="true">logout</span>
       @if (!collapsed()) {
         <span class="nav-item__label">Cerrar sesión</span>
       }

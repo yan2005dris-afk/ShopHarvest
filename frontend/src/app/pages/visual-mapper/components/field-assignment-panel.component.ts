@@ -23,7 +23,13 @@ import { MappingSessionService } from '../services/mapping-session.service';
           <div class="vm-field-row">
             <span class="vm-field-dot dot--ok"></span>
             <span class="vm-field-name">{{ mapping.canonicalField }}</span>
-            <button class="vm-remove-btn" (click)="removeAssignment(mapping.canonicalField)" title="Remove">×</button>
+            <button
+              class="vm-remove-btn"
+              (click)="removeAssignment(mapping.canonicalField)"
+              title="Remove"
+            >
+              ×
+            </button>
           </div>
           <div class="vm-selector">
             <code class="vm-selector-text">{{ mapping.selector }}</code>
@@ -51,28 +57,125 @@ import { MappingSessionService } from '../services/mapping-session.service';
       }
     </div>
   `,
-  styles: [`
-    :host { display: flex; flex-direction: column; gap: 1rem; }
-    .vm-sidebar-title { margin: 0; font-size: 1rem; font-weight: 700; color: var(--color-on-surface); }
-    .vm-page-label { margin: 0; font-size: 0.8125rem; color: var(--color-on-surface-variant); }
-    .vm-progress-bar-track { height: 4px; background: var(--color-outline-variant); border-radius: 2px; margin: 0.5rem 0; overflow: hidden; }
-    .vm-progress-bar-fill { height: 100%; background: var(--color-primary); transition: width 0.2s ease; }
-    .vm-progress-text { margin: 0; font-size: 0.75rem; color: var(--color-on-surface-variant); }
-    .vm-fields-list { display: flex; flex-direction: column; gap: 0.5rem; }
-    .vm-field { background: var(--color-surface-container-low); border: 1px solid var(--color-outline-variant); border-radius: var(--radius-md); padding: 0.75rem; }
-    .vm-field--ok { border-color: var(--color-success-border); }
-    .vm-field-row { display: flex; align-items: center; gap: 0.5rem; }
-    .vm-field-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--color-on-surface-variant); }
-    .vm-field-dot.dot--ok { background: var(--color-success); }
-    .vm-field-name { flex: 1; font-size: 0.875rem; color: var(--color-on-surface); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .vm-remove-btn { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border: none; background: transparent; color: var(--color-on-surface-variant); font-size: 1.25rem; line-height: 1; cursor: pointer; border-radius: var(--radius-md); }
-    .vm-remove-btn:hover { background: var(--color-danger-dim); color: var(--color-danger); }
-    .vm-selector { margin-top: 0.5rem; padding: 0.375rem 0.5rem; background: var(--color-surface-container); border-radius: var(--radius-md); }
-    .vm-selector-text { font-size: 0.75rem; color: var(--color-on-surface-variant); word-break: break-all; font-family: var(--font-mono); }
-    .vm-container-block { margin-top: 0.5rem; }
-    .vm-section-label { margin: 0 0 0.375rem; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-on-surface-variant); }
-    .vm-pending { margin: 0; font-size: 0.8125rem; color: var(--color-on-surface-variant); }
-  `],
+  styles: [
+    `
+      :host {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+      .vm-sidebar-title {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--color-on-surface);
+      }
+      .vm-page-label {
+        margin: 0;
+        font-size: 0.8125rem;
+        color: var(--color-on-surface-variant);
+      }
+      .vm-progress-bar-track {
+        height: 4px;
+        background: var(--color-outline-variant);
+        border-radius: 2px;
+        margin: 0.5rem 0;
+        overflow: hidden;
+      }
+      .vm-progress-bar-fill {
+        height: 100%;
+        background: var(--color-primary);
+        transition: width 0.2s ease;
+      }
+      .vm-progress-text {
+        margin: 0;
+        font-size: 0.75rem;
+        color: var(--color-on-surface-variant);
+      }
+      .vm-fields-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+      .vm-field {
+        background: var(--color-surface-container-low);
+        border: 1px solid var(--color-outline-variant);
+        border-radius: var(--radius-md);
+        padding: 0.75rem;
+      }
+      .vm-field--ok {
+        border-color: var(--color-success-border);
+      }
+      .vm-field-row {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .vm-field-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--color-on-surface-variant);
+      }
+      .vm-field-dot.dot--ok {
+        background: var(--color-success);
+      }
+      .vm-field-name {
+        flex: 1;
+        font-size: 0.875rem;
+        color: var(--color-on-surface);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .vm-remove-btn {
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        background: transparent;
+        color: var(--color-on-surface-variant);
+        font-size: 1.25rem;
+        line-height: 1;
+        cursor: pointer;
+        border-radius: var(--radius-md);
+      }
+      .vm-remove-btn:hover {
+        background: var(--color-danger-dim);
+        color: var(--color-danger);
+      }
+      .vm-selector {
+        margin-top: 0.5rem;
+        padding: 0.375rem 0.5rem;
+        background: var(--color-surface-container);
+        border-radius: var(--radius-md);
+      }
+      .vm-selector-text {
+        font-size: 0.75rem;
+        color: var(--color-on-surface-variant);
+        word-break: break-all;
+        font-family: var(--font-mono);
+      }
+      .vm-container-block {
+        margin-top: 0.5rem;
+      }
+      .vm-section-label {
+        margin: 0 0 0.375rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--color-on-surface-variant);
+      }
+      .vm-pending {
+        margin: 0;
+        font-size: 0.8125rem;
+        color: var(--color-on-surface-variant);
+      }
+    `,
+  ],
 })
 export class FieldAssignmentPanelComponent {
   readonly session = input.required<MappingSessionService>();

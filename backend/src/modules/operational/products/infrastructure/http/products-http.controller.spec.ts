@@ -70,7 +70,7 @@ describe('ProductsHttpController', () => {
       const { controller, list } = buildController();
       list.execute.mockResolvedValue([buildProduct()]);
 
-      const result = await controller.findAll({} as never);
+      const result = await controller.findAll({});
 
       expect(list.execute).toHaveBeenCalledWith(true);
       expect(result).toHaveLength(1);
@@ -87,7 +87,7 @@ describe('ProductsHttpController', () => {
 
       const result = await controller.findAll({
         domainRuleId: 'rule_1',
-      } as never);
+      });
 
       expect(list.findAllByDomainRule).toHaveBeenCalledWith('rule_1');
       expect(result).toHaveLength(1);
@@ -97,7 +97,7 @@ describe('ProductsHttpController', () => {
       const { controller, list } = buildController();
       list.execute.mockResolvedValue([]);
 
-      await controller.findAll({ includeHistory: false } as never);
+      await controller.findAll({ includeHistory: false });
 
       expect(list.execute).toHaveBeenCalledWith(false);
     });
@@ -165,7 +165,7 @@ describe('ProductsHttpController', () => {
       const result = await controller.ingestFromExtension({
         domain: 'temu.com',
         products: [{ title: 'X' }],
-      } as never);
+      });
 
       expect(result).toEqual({ ingested: 3, domainRuleId: 'rule_1' });
     });

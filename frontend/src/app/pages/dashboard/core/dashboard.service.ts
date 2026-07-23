@@ -79,32 +79,26 @@ export class DashboardService {
   // ─── Analytical queries ───────────────────────────────────
 
   getPreguntaPrincipal(): Observable<PreguntaPrincipalRow[] | null> {
-    return this.http
-      .get<PreguntaPrincipalRow[]>(`${this.base}/analytics/queries/main`)
-      .pipe(
-        retry<PreguntaPrincipalRow[]>({ count: 1, delay: 500 }),
-        catchError((err: HttpErrorResponse) =>
-          this.handleSoftError<PreguntaPrincipalRow[]>('getPreguntaPrincipal', err),
-        ),
-      );
+    return this.http.get<PreguntaPrincipalRow[]>(`${this.base}/analytics/queries/main`).pipe(
+      retry<PreguntaPrincipalRow[]>({ count: 1, delay: 500 }),
+      catchError((err: HttpErrorResponse) =>
+        this.handleSoftError<PreguntaPrincipalRow[]>('getPreguntaPrincipal', err),
+      ),
+    );
   }
 
   getRankedProducts(): Observable<RankedProductRow[] | null> {
-    return this.http
-      .get<RankedProductRow[]>(`${this.base}/analytics/queries/ranked-products`)
-      .pipe(
-        retry<RankedProductRow[]>({ count: 1, delay: 500 }),
-        catchError((err: HttpErrorResponse) =>
-          this.handleSoftError<RankedProductRow[]>('getRankedProducts', err),
-        ),
-      );
+    return this.http.get<RankedProductRow[]>(`${this.base}/analytics/queries/ranked-products`).pipe(
+      retry<RankedProductRow[]>({ count: 1, delay: 500 }),
+      catchError((err: HttpErrorResponse) =>
+        this.handleSoftError<RankedProductRow[]>('getRankedProducts', err),
+      ),
+    );
   }
 
   getCategoryDistribution(): Observable<CategoryDistributionRow[] | null> {
     return this.http
-      .get<CategoryDistributionRow[]>(
-        `${this.base}/analytics/queries/category-distribution`,
-      )
+      .get<CategoryDistributionRow[]>(`${this.base}/analytics/queries/category-distribution`)
       .pipe(
         retry<CategoryDistributionRow[]>({ count: 1, delay: 500 }),
         catchError((err: HttpErrorResponse) =>
@@ -114,47 +108,39 @@ export class DashboardService {
   }
 
   getPercentiles(): Observable<PercentileRow[] | null> {
-    return this.http
-      .get<PercentileRow[]>(`${this.base}/analytics/queries/percentiles`)
-      .pipe(
-        retry<PercentileRow[]>({ count: 1, delay: 500 }),
-        catchError((err: HttpErrorResponse) =>
-          this.handleSoftError<PercentileRow[]>('getPercentiles', err),
-        ),
-      );
+    return this.http.get<PercentileRow[]>(`${this.base}/analytics/queries/percentiles`).pipe(
+      retry<PercentileRow[]>({ count: 1, delay: 500 }),
+      catchError((err: HttpErrorResponse) =>
+        this.handleSoftError<PercentileRow[]>('getPercentiles', err),
+      ),
+    );
   }
 
   getOutliers(): Observable<OutlierRow[] | null> {
-    return this.http
-      .get<OutlierRow[]>(`${this.base}/analytics/queries/outliers`)
-      .pipe(
-        retry<OutlierRow[]>({ count: 1, delay: 500 }),
-        catchError((err: HttpErrorResponse) =>
-          this.handleSoftError<OutlierRow[]>('getOutliers', err),
-        ),
-      );
+    return this.http.get<OutlierRow[]>(`${this.base}/analytics/queries/outliers`).pipe(
+      retry<OutlierRow[]>({ count: 1, delay: 500 }),
+      catchError((err: HttpErrorResponse) =>
+        this.handleSoftError<OutlierRow[]>('getOutliers', err),
+      ),
+    );
   }
 
   getEncuesta(): Observable<EncuestaRow[] | null> {
-    return this.http
-      .get<EncuestaRow[]>(`${this.base}/analytics/queries/encuesta`)
-      .pipe(
-        retry<EncuestaRow[]>({ count: 1, delay: 500 }),
-        catchError((err: HttpErrorResponse) =>
-          this.handleSoftError<EncuestaRow[]>('getEncuesta', err),
-        ),
-      );
+    return this.http.get<EncuestaRow[]>(`${this.base}/analytics/queries/encuesta`).pipe(
+      retry<EncuestaRow[]>({ count: 1, delay: 500 }),
+      catchError((err: HttpErrorResponse) =>
+        this.handleSoftError<EncuestaRow[]>('getEncuesta', err),
+      ),
+    );
   }
 
   getTimeSeries(): Observable<TimeSeriesResponse | null> {
-    return this.http
-      .get<TimeSeriesResponse>(`${this.base}/analytics/queries/time-series`)
-      .pipe(
-        retry<TimeSeriesResponse>({ count: 1, delay: 500 }),
-        catchError((err: HttpErrorResponse) =>
-          this.handleSoftError<TimeSeriesResponse>('getTimeSeries', err),
-        ),
-      );
+    return this.http.get<TimeSeriesResponse>(`${this.base}/analytics/queries/time-series`).pipe(
+      retry<TimeSeriesResponse>({ count: 1, delay: 500 }),
+      catchError((err: HttpErrorResponse) =>
+        this.handleSoftError<TimeSeriesResponse>('getTimeSeries', err),
+      ),
+    );
   }
 
   // ─── Error helpers ─────────────────────────────────────────

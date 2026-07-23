@@ -90,17 +90,19 @@ export class EtlManagementStore implements OnDestroy {
   triggerRun(options?: { action: 'full' | 'local'; source: string }): void {
     this.loading.set(true);
     this.error.set(null);
-    this.http.post<TriggerEtlResponseDto>('/api/pipeline/etl-runs/trigger', options || {}).subscribe({
-      next: (res) => {
-        this.loading.set(false);
-        this.selectRunId(res.runId);
-        this.loadRuns();
-      },
-      error: (err) => {
-        this.error.set(err?.error?.message || err?.message || 'Failed to trigger run');
-        this.loading.set(false);
-      },
-    });
+    this.http
+      .post<TriggerEtlResponseDto>('/api/pipeline/etl-runs/trigger', options || {})
+      .subscribe({
+        next: (res) => {
+          this.loading.set(false);
+          this.selectRunId(res.runId);
+          this.loadRuns();
+        },
+        error: (err) => {
+          this.error.set(err?.error?.message || err?.message || 'Failed to trigger run');
+          this.loading.set(false);
+        },
+      });
   }
 
   selectRunId(runId: string): void {
@@ -184,11 +186,7 @@ export class EtlManagementStore implements OnDestroy {
           this.selectedRun.set(run);
           this.updateRunInList(run);
 
-          if (
-            payload.event === 'complete' ||
-            run.status === 'SUCCESS' ||
-            run.status === 'FAILED'
-          ) {
+          if (payload.event === 'complete' || run.status === 'SUCCESS' || run.status === 'FAILED') {
             this.stopStreamAndPolling();
             this.loadRuns();
           }

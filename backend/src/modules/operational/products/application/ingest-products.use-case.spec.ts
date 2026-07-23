@@ -1,6 +1,9 @@
 import { Logger } from '@nestjs/common';
 import { IngestProductsUseCase } from './ingest-products.use-case';
-import type { IngestCommand, ProductsRepository } from '../domain/products.repository';
+import type {
+  IngestCommand,
+  ProductsRepository,
+} from '../domain/products.repository';
 
 describe('IngestProductsUseCase', () => {
   let useCase: IngestProductsUseCase;
@@ -38,7 +41,7 @@ describe('IngestProductsUseCase', () => {
     });
 
     expect(repository.ingest).toHaveBeenCalledTimes(1);
-    const command = repository.ingest.mock.calls[0][0] as IngestCommand;
+    const command = repository.ingest.mock.calls[0][0];
     expect(command.domain).toBe('temu.com');
     expect(command.pageUrl).toBe('https://temu.com/list');
     expect(command.items).toHaveLength(1);
@@ -46,7 +49,10 @@ describe('IngestProductsUseCase', () => {
     expect(command.items[0].price).toBe(29.99);
     expect(command.items[0].currency).toBe('USD');
     expect(command.items[0].url).toBe('https://temu.com/list#zapatilla-nike-0');
-    expect(command.items[0].raw).toEqual({ title: 'Zapatilla Nike', price: '29.99' });
+    expect(command.items[0].raw).toEqual({
+      title: 'Zapatilla Nike',
+      price: '29.99',
+    });
     expect(command.fieldMappings).toEqual([
       { canonicalField: 'title', selector: '.t', type: 'text' },
       { canonicalField: 'price', selector: '.p', type: 'text' },
@@ -64,7 +70,7 @@ describe('IngestProductsUseCase', () => {
       products: [{ title: 'X', precio: '29.99' }],
     });
 
-    const command = repository.ingest.mock.calls[0][0] as IngestCommand;
+    const command = repository.ingest.mock.calls[0][0];
     expect(command.items[0].price).toBe(29.99);
   });
 
@@ -78,7 +84,7 @@ describe('IngestProductsUseCase', () => {
       products: [{ price: 15 }],
     });
 
-    const command = repository.ingest.mock.calls[0][0] as IngestCommand;
+    const command = repository.ingest.mock.calls[0][0];
     expect(command.items[0].price).toBe(15);
   });
 
@@ -92,7 +98,7 @@ describe('IngestProductsUseCase', () => {
       products: [{ nombre: 'Camisa Roja' }],
     });
 
-    const command = repository.ingest.mock.calls[0][0] as IngestCommand;
+    const command = repository.ingest.mock.calls[0][0];
     expect(command.items[0].title).toBe('Camisa Roja');
   });
 
@@ -104,7 +110,7 @@ describe('IngestProductsUseCase', () => {
       products: [{ titulo: 'Producto Nuevo', precio: '9.99' }],
     });
 
-    const command = repository.ingest.mock.calls[0][0] as IngestCommand;
+    const command = repository.ingest.mock.calls[0][0];
     expect(command.fieldMappings).toHaveLength(2);
     expect(command.fieldMappings[0]).toEqual({
       canonicalField: 'titulo',
@@ -129,7 +135,7 @@ describe('IngestProductsUseCase', () => {
     expect(warnSpy).toHaveBeenCalledWith(
       expect.stringContaining('no canonical title mapping'),
     );
-    const command = repository.ingest.mock.calls[0][0] as IngestCommand;
+    const command = repository.ingest.mock.calls[0][0];
     expect(command.items[0].title).toBe('Raw product');
     expect(command.items[0].price).toBe(5.0);
   });
@@ -142,7 +148,7 @@ describe('IngestProductsUseCase', () => {
       products: [{ foo: 'bar' }],
     });
 
-    const command = repository.ingest.mock.calls[0][0] as IngestCommand;
+    const command = repository.ingest.mock.calls[0][0];
     expect(command.items[0].title).toBe('Raw product');
     expect(command.items[0].price).toBe(0);
   });
@@ -161,7 +167,7 @@ describe('IngestProductsUseCase', () => {
       ],
     });
 
-    const command = repository.ingest.mock.calls[0][0] as IngestCommand;
+    const command = repository.ingest.mock.calls[0][0];
     expect(command.items[0].url).toBe('https://shop.com/list#same-0');
     expect(command.items[1].url).toBe('https://shop.com/list#same-1');
     expect(command.items[0].url).not.toBe(command.items[1].url);
@@ -194,7 +200,7 @@ describe('IngestProductsUseCase', () => {
       ],
     });
 
-    const command = repository.ingest.mock.calls[0][0] as IngestCommand;
+    const command = repository.ingest.mock.calls[0][0];
     expect(command.items[0].title).toBe('Camisa');
     expect(command.items[0].price).toBe(12.5);
     expect(command.items[0].imageUrl).toBe('https://shop.com/img.jpg');
@@ -213,7 +219,7 @@ describe('IngestProductsUseCase', () => {
       products: [{ title: 'X', price: '5' }],
     });
 
-    const command = repository.ingest.mock.calls[0][0] as IngestCommand;
+    const command = repository.ingest.mock.calls[0][0];
     expect(command.items[0].url).toBe('temu.com#x-0');
   });
 
@@ -229,9 +235,13 @@ describe('IngestProductsUseCase', () => {
       products: [{ title: longTitle, price: '1' }],
     });
 
-    const command = repository.ingest.mock.calls[0][0] as IngestCommand;
+    const command = repository.ingest.mock.calls[0][0];
     // The slug is the `-` replaced version, then truncated to 80 chars.
-    const slugPart = command.items[0].url.split('#')[1].split('-').slice(0, -1).join('-');
+    const slugPart = command.items[0].url
+      .split('#')[1]
+      .split('-')
+      .slice(0, -1)
+      .join('-');
     expect(slugPart.length).toBeLessThanOrEqual(80);
   });
 
@@ -247,7 +257,7 @@ describe('IngestProductsUseCase', () => {
       products: [{ title: 'X', price: '5' }],
     });
 
-    const command = repository.ingest.mock.calls[0][0] as IngestCommand;
+    const command = repository.ingest.mock.calls[0][0];
     expect(command.categoryId).toBe('cat_1');
   });
 
@@ -261,7 +271,7 @@ describe('IngestProductsUseCase', () => {
       products: [{ title: 'X' }],
     });
 
-    const command = repository.ingest.mock.calls[0][0] as IngestCommand;
+    const command = repository.ingest.mock.calls[0][0];
     expect(command.categoryId).toBeNull();
   });
 

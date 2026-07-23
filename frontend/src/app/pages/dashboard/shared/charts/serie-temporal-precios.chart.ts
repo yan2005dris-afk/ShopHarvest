@@ -1,7 +1,15 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { NgApexchartsModule } from 'ng-apexcharts';
 import { ThemeTokenService } from '../../core/theme-token.service';
-import type { ApexAxisChartSeries, ApexChart, ApexXAxis, ApexTitleSubtitle, ApexLegend, ApexGrid, ApexDataLabels } from 'ng-apexcharts';
+import type {
+  ApexAxisChartSeries,
+  ApexChart,
+  ApexXAxis,
+  ApexTitleSubtitle,
+  ApexLegend,
+  ApexGrid,
+  ApexDataLabels,
+} from 'ng-apexcharts';
 import type { TimeSeriesRow } from '../../core/dashboard.types';
 
 /**
@@ -40,9 +48,8 @@ import type { TimeSeriesRow } from '../../core/dashboard.types';
       <div class="snapshot-badge" role="status">
         <span aria-hidden="true">⚠️</span>
         <span>
-          Serie temporal con <strong>UN SOLO DÍA</strong> de datos
-          ({{ snapshotDate() }}). La línea es representativa del snapshot, no de
-          una tendencia temporal real.
+          Serie temporal con <strong>UN SOLO DÍA</strong> de datos ({{ snapshotDate() }}). La línea
+          es representativa del snapshot, no de una tendencia temporal real.
         </span>
       </div>
     }
@@ -112,9 +119,7 @@ export class SerieTemporalPreciosChartComponent {
     return fuentes.map((fuente) => ({
       name: fuente,
       data: keys.map((key) => {
-        const row = rows.find(
-          (r) => r.fuente === fuente && `${r.anio}-Q${r.trimestre}` === key,
-        );
+        const row = rows.find((r) => r.fuente === fuente && `${r.anio}-Q${r.trimestre}` === key);
         return row ? row.precio_promedio : null;
       }),
     }));

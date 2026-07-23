@@ -6,10 +6,7 @@ import { AuthService } from '../services/auth.service';
 
 describe('authGuard', () => {
   /** Helper: run the guard inside TestBed's injection context. */
-  function runGuard(
-    url: string,
-    isAuthenticated: boolean,
-  ): boolean | UrlTree {
+  function runGuard(url: string, isAuthenticated: boolean): any {
     TestBed.configureTestingModule({
       providers: [
         {
@@ -20,7 +17,7 @@ describe('authGuard', () => {
           provide: Router,
           useValue: {
             createUrlTree: (commands: any[], extras?: any) =>
-              ({ commands, extras } as unknown as UrlTree),
+              ({ commands, extras }) as unknown as UrlTree,
           },
         },
       ],

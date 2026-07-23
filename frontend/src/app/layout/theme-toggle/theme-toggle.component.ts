@@ -24,13 +24,9 @@ import { ThemeService } from '../../services/theme.service';
       class="nav-item nav-item--button w-full"
       [class.nav-item--collapsed]="collapsed()"
       (click)="theme.toggleTheme()"
-      [attr.aria-label]="
-        theme.isDark() ? 'Switch to light mode' : 'Switch to dark mode'
-      "
+      [attr.aria-label]="theme.isDark() ? 'Switch to light mode' : 'Switch to dark mode'"
     >
-      <span class="material-symbols-outlined nav-item__icon" aria-hidden="true">{{
-        icon()
-      }}</span>
+      <span class="material-symbols-outlined nav-item__icon" aria-hidden="true">{{ icon() }}</span>
       @if (!collapsed()) {
         <span class="nav-item__label">{{ label() }}</span>
       }
@@ -43,11 +39,7 @@ export class ThemeToggleComponent {
   /** Sidebar collapse state — affects icon-only vs icon+label rendering. */
   readonly collapsed = input<boolean>(false);
 
-  protected readonly icon = computed(() =>
-    this.theme.isDark() ? 'light_mode' : 'dark_mode',
-  );
+  protected readonly icon = computed(() => (this.theme.isDark() ? 'light_mode' : 'dark_mode'));
 
-  protected readonly label = computed(() =>
-    this.theme.isDark() ? 'Modo claro' : 'Modo oscuro',
-  );
+  protected readonly label = computed(() => (this.theme.isDark() ? 'Modo claro' : 'Modo oscuro'));
 }

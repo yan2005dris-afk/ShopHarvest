@@ -127,10 +127,7 @@ import { ChartCardComponent } from '../../shared/chart-card/chart-card.component
       aria-label="Distribuciones principales"
     >
       <div class="col-span-12 md:col-span-6">
-        <app-chart-card
-          title="Distribución por fuente"
-          caption="Productos por fuente scrapeada"
-        >
+        <app-chart-card title="Distribución por fuente" caption="Productos por fuente scrapeada">
           @if (fuentesDist().length > 0) {
             <ul class="m-0 flex list-none flex-col gap-3 p-0">
               @for (f of fuentesDist(); track f.label) {
@@ -142,19 +139,16 @@ import { ChartCardComponent } from '../../shared/chart-card/chart-card.component
                     class="text-on-surface-variant overflow-hidden text-right text-ellipsis whitespace-nowrap font-medium"
                     >{{ f.label }}</span
                   >
-                  <div
-                    class="relative h-2 overflow-hidden rounded-full bg-surface-container-low"
-                  >
+                  <div class="relative h-2 overflow-hidden rounded-full bg-surface-container-low">
                     <span
                       class="absolute inset-y-0 left-0 rounded-full transition-[width] duration-400"
                       [style.width.%]="f.pct"
                       [style.background]="f.color"
                     ></span>
                   </div>
-                  <span
-                    class="text-on-surface text-right font-semibold tabular-nums"
-                    >{{ f.value }}</span
-                  >
+                  <span class="text-on-surface text-right font-semibold tabular-nums">{{
+                    f.value
+                  }}</span>
                 </li>
               }
             </ul>
@@ -169,10 +163,7 @@ import { ChartCardComponent } from '../../shared/chart-card/chart-card.component
       </div>
 
       <div class="col-span-12 md:col-span-6">
-        <app-chart-card
-          title="Top categorías"
-          caption="Categorías con más productos"
-        >
+        <app-chart-card title="Top categorías" caption="Categorías con más productos">
           @if (categoriasDist().length > 0) {
             <ul class="m-0 flex list-none flex-col gap-3 p-0">
               @for (c of categoriasDist(); track c.label) {
@@ -184,19 +175,16 @@ import { ChartCardComponent } from '../../shared/chart-card/chart-card.component
                     class="text-on-surface-variant overflow-hidden text-right text-ellipsis whitespace-nowrap font-medium"
                     >{{ c.label }}</span
                   >
-                  <div
-                    class="relative h-2 overflow-hidden rounded-full bg-surface-container-low"
-                  >
+                  <div class="relative h-2 overflow-hidden rounded-full bg-surface-container-low">
                     <span
                       class="absolute inset-y-0 left-0 rounded-full transition-[width] duration-400"
                       [style.width.%]="c.pct"
                       [style.background]="c.color"
                     ></span>
                   </div>
-                  <span
-                    class="text-on-surface text-right font-semibold tabular-nums"
-                    >{{ c.value }}</span
-                  >
+                  <span class="text-on-surface text-right font-semibold tabular-nums">{{
+                    c.value
+                  }}</span>
                 </li>
               }
             </ul>
@@ -259,10 +247,7 @@ import { ChartCardComponent } from '../../shared/chart-card/chart-card.component
                     class="text-on-surface-variant max-w-45 overflow-hidden text-ellipsis whitespace-nowrap"
                     >{{ o.label }}</span
                   >
-                  <span
-                    class="text-on-surface font-bold tabular-nums"
-                    >{{ '$' + o.value }}</span
-                  >
+                  <span class="text-on-surface font-bold tabular-nums">{{ '$' + o.value }}</span>
                 </li>
               }
             </ul>
@@ -277,10 +262,7 @@ import { ChartCardComponent } from '../../shared/chart-card/chart-card.component
       </div>
 
       <div class="col-span-12 md:col-span-6">
-        <app-chart-card
-          title="Productos por fuente × categoría"
-          caption="Distribución agregada"
-        >
+        <app-chart-card title="Productos por fuente × categoría" caption="Distribución agregada">
           @if (fuenteCategoria().length > 0) {
             <ul class="m-0 flex list-none flex-col gap-3 p-0">
               @for (r of fuenteCategoria(); track r.label) {
@@ -292,19 +274,16 @@ import { ChartCardComponent } from '../../shared/chart-card/chart-card.component
                     class="text-on-surface-variant overflow-hidden text-right text-ellipsis whitespace-nowrap font-medium"
                     >{{ r.label }}</span
                   >
-                  <div
-                    class="relative h-2 overflow-hidden rounded-full bg-surface-container-low"
-                  >
+                  <div class="relative h-2 overflow-hidden rounded-full bg-surface-container-low">
                     <span
                       class="absolute inset-y-0 left-0 rounded-full transition-[width] duration-400"
                       [style.width.%]="r.pct"
                       [style.background]="r.color"
                     ></span>
                   </div>
-                  <span
-                    class="text-on-surface text-right font-semibold tabular-nums"
-                    >{{ r.value }}</span
-                  >
+                  <span class="text-on-surface text-right font-semibold tabular-nums">{{
+                    r.value
+                  }}</span>
                 </li>
               }
             </ul>
@@ -319,10 +298,7 @@ import { ChartCardComponent } from '../../shared/chart-card/chart-card.component
       </div>
 
       <div class="col-span-12 md:col-span-6">
-        <app-chart-card
-          title="Precio promedio por fuente"
-          caption="Promedio USD × fuente"
-        >
+        <app-chart-card title="Precio promedio por fuente" caption="Promedio USD × fuente">
           @if (precioPorFuente().length > 0) {
             <ul class="m-0 flex list-none flex-col gap-3 p-0">
               @for (p of precioPorFuente(); track p.label) {
@@ -334,19 +310,16 @@ import { ChartCardComponent } from '../../shared/chart-card/chart-card.component
                     class="text-on-surface-variant overflow-hidden text-right text-ellipsis whitespace-nowrap font-medium"
                     >{{ p.label }}</span
                   >
-                  <div
-                    class="relative h-2 overflow-hidden rounded-full bg-surface-container-low"
-                  >
+                  <div class="relative h-2 overflow-hidden rounded-full bg-surface-container-low">
                     <span
                       class="absolute inset-y-0 left-0 rounded-full transition-[width] duration-400"
                       [style.width.%]="p.pct"
                       [style.background]="p.color"
                     ></span>
                   </div>
-                  <span
-                    class="text-on-surface text-right font-semibold tabular-nums"
-                    >{{ '$' + p.value }}</span
-                  >
+                  <span class="text-on-surface text-right font-semibold tabular-nums">{{
+                    '$' + p.value
+                  }}</span>
                 </li>
               }
             </ul>
@@ -404,8 +377,7 @@ export class ResumenPage {
   readonly precioPromedio = computed<string>(() => {
     const rows = this.store.preguntaPrincipal();
     if (!rows.length) return '—';
-    const avg =
-      rows.reduce((acc, r) => acc + r.precio_promedio_usd, 0) / rows.length;
+    const avg = rows.reduce((acc, r) => acc + r.precio_promedio_usd, 0) / rows.length;
     return `$${avg.toFixed(2)}`;
   });
 
@@ -433,18 +405,14 @@ export class ResumenPage {
   readonly preferenciaTop = computed<string>(() => {
     const k = this.store.kpis();
     if (!k?.preferencia?.length) return '—';
-    const sorted = [...k.preferencia].sort(
-      (a, b) => b.pct_preferencia - a.pct_preferencia,
-    );
+    const sorted = [...k.preferencia].sort((a, b) => b.pct_preferencia - a.pct_preferencia);
     return sorted[0].plataforma;
   });
 
   readonly preferenciaPct = computed<string>(() => {
     const k = this.store.kpis();
     if (!k?.preferencia?.length) return '';
-    const sorted = [...k.preferencia].sort(
-      (a, b) => b.pct_preferencia - a.pct_preferencia,
-    );
+    const sorted = [...k.preferencia].sort((a, b) => b.pct_preferencia - a.pct_preferencia);
     return `${sorted[0].pct_preferencia.toFixed(1)}% de preferencia`;
   });
 
@@ -458,9 +426,7 @@ export class ResumenPage {
     for (const r of rows) {
       byFuente.set(r.fuente, (byFuente.get(r.fuente) ?? 0) + r.total_productos);
     }
-    const sorted = [...byFuente.entries()]
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 7);
+    const sorted = [...byFuente.entries()].sort((a, b) => b[1] - a[1]).slice(0, 7);
     const max = sorted[0]?.[1] ?? 1;
     return sorted.map(([label, value], i) => ({
       label,
@@ -478,9 +444,7 @@ export class ResumenPage {
     for (const r of rows) {
       byCat.set(r.categoria, (byCat.get(r.categoria) ?? 0) + r.total_productos);
     }
-    const sorted = [...byCat.entries()]
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 7);
+    const sorted = [...byCat.entries()].sort((a, b) => b[1] - a[1]).slice(0, 7);
     const max = sorted[0]?.[1] ?? 1;
     return sorted.map(([label, value], i) => ({
       label,
@@ -494,9 +458,7 @@ export class ResumenPage {
   readonly serieTemporal = computed(() => {
     const ts = this.store.timeSeries();
     if (!ts?.length) return [];
-    const sorted = [...ts]
-      .sort((a, b) => a.anio - b.anio || a.trimestre - b.trimestre)
-      .slice(0, 8);
+    const sorted = [...ts].sort((a, b) => a.anio - b.anio || a.trimestre - b.trimestre).slice(0, 8);
     const max = Math.max(...sorted.map((r) => r.precio_promedio), 1);
     const min = Math.min(...sorted.map((r) => r.precio_promedio), 0);
     const range = max - min || 1;
@@ -511,9 +473,7 @@ export class ResumenPage {
   readonly outlierTop = computed(() => {
     const rows = this.store.outliers();
     if (!rows?.length) return [];
-    const sorted = [...rows]
-      .sort((a, b) => b.precio_usd - a.precio_usd)
-      .slice(0, 6);
+    const sorted = [...rows].sort((a, b) => b.precio_usd - a.precio_usd).slice(0, 6);
     return sorted.map((o) => ({
       fuente: o.fuente,
       label: o.producto?.slice(0, 38) ?? '—',
@@ -525,9 +485,7 @@ export class ResumenPage {
   readonly fuenteCategoria = computed(() => {
     const rows = this.store.preguntaPrincipal();
     if (!rows.length) return [];
-    const sorted = [...rows]
-      .sort((a, b) => b.total_productos - a.total_productos)
-      .slice(0, 6);
+    const sorted = [...rows].sort((a, b) => b.total_productos - a.total_productos).slice(0, 6);
     const max = sorted[0]?.total_productos ?? 1;
     return sorted.map((r, i) => ({
       label: `${r.fuente} → ${r.categoria}`,

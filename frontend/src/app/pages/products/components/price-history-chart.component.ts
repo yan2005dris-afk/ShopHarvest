@@ -1,4 +1,13 @@
-import { ChangeDetectionStrategy, Component, computed, effect, input, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  input,
+  ViewChild,
+  ElementRef,
+  AfterViewInit,
+} from '@angular/core';
 import type { PriceObservation } from '../../../services/api.service';
 
 /**
@@ -10,11 +19,21 @@ import type { PriceObservation } from '../../../services/api.service';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <canvas #canvas [width]="width" [height]="height" style="width: 100%; height: auto; display: block;"></canvas>
+    <canvas
+      #canvas
+      [width]="width"
+      [height]="height"
+      style="width: 100%; height: auto; display: block;"
+    ></canvas>
   `,
-  styles: [`
-    :host { display: block; width: 100%; }
-  `],
+  styles: [
+    `
+      :host {
+        display: block;
+        width: 100%;
+      }
+    `,
+  ],
 })
 export class PriceHistoryChartComponent implements AfterViewInit {
   @ViewChild('canvas', { static: true }) canvasRef!: ElementRef<HTMLCanvasElement>;
@@ -97,13 +116,15 @@ export class PriceHistoryChartComponent implements AfterViewInit {
     const allPrices: number[] = [];
 
     grouped.forEach((obs, offerId) => {
-      const sorted = [...obs].sort((a, b) => new Date(a.observedAt).getTime() - new Date(b.observedAt).getTime());
-      allDates.push(...sorted.map(o => new Date(o.observedAt)));
-      allPrices.push(...sorted.map(o => Number(o.price)));
+      const sorted = [...obs].sort(
+        (a, b) => new Date(a.observedAt).getTime() - new Date(b.observedAt).getTime(),
+      );
+      allDates.push(...sorted.map((o) => new Date(o.observedAt)));
+      allPrices.push(...sorted.map((o) => Number(o.price)));
       series.push({
         offerId,
         color: this.colors[series.length % this.colors.length],
-        data: sorted.map(o => ({
+        data: sorted.map((o) => ({
           x: new Date(o.observedAt).getTime(),
           y: Number(o.price),
         })),
@@ -112,8 +133,8 @@ export class PriceHistoryChartComponent implements AfterViewInit {
 
     if (!allDates.length) return;
 
-    const minDate = new Date(Math.min(...allDates.map(d => d.getTime())));
-    const maxDate = new Date(Math.max(...allDates.map(d => d.getTime())));
+    const minDate = new Date(Math.min(...allDates.map((d) => d.getTime())));
+    const maxDate = new Date(Math.max(...allDates.map((d) => d.getTime())));
     const minPrice = Math.min(...allPrices);
     const maxPrice = Math.max(...allPrices);
     const priceRange = maxPrice - minPrice || 1;
@@ -130,8 +151,7 @@ export class PriceHistoryChartComponent implements AfterViewInit {
       computedStyle.getPropertyValue('--color-outline-variant').trim() || '#c7c4d7';
     const colorText3 =
       computedStyle.getPropertyValue('--color-on-surface-variant').trim() || '#464554';
-    const colorText1 =
-      computedStyle.getPropertyValue('--color-on-surface').trim() || '#111c2d';
+    const colorText1 = computedStyle.getPropertyValue('--color-on-surface').trim() || '#111c2d';
 
     // Grid lines (horizontal)
     this.ctx.strokeStyle = colorBorder;
@@ -168,7 +188,7 @@ export class PriceHistoryChartComponent implements AfterViewInit {
 
       // Draw dots
       this.ctx.fillStyle = s.color;
-      s.data.forEach(point => {
+      s.data.forEach((point) => {
         const x = this.padding.left + ((point.x - minDate.getTime()) / dateRange) * chartW;
         const y = this.padding.top + chartH - ((point.y - minPrice) / priceRange) * chartH;
         this.ctx.beginPath();
@@ -184,7 +204,11 @@ export class PriceHistoryChartComponent implements AfterViewInit {
     for (let i = 0; i <= 4; i++) {
       const x = this.padding.left + (chartW / 4) * i;
       const date = new Date(minDate.getTime() + (dateRange / 4) * i);
-      this.ctx.fillText(date.toLocaleDateString('es-AR', { month: 'short', day: 'numeric' }), x, cssHeight - 5);
+      this.ctx.fillText(
+        date.toLocaleDateString('es-AR', { month: 'short', day: 'numeric' }),
+        x,
+        cssHeight - 5,
+      );
     }
 
     // Y-axis label

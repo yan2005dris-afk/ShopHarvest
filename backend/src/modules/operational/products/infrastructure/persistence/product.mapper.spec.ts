@@ -24,19 +24,21 @@ const baseRow: PrismaProductWithOffers = {
   offers: [],
 };
 
-function makeOfferRow(overrides: Partial<{
-  id: string;
-  productId: string;
-  sourceId: string;
-  domainRuleId: string | null;
-  url: string;
-  externalId: string | null;
-  sku: string | null;
-  currency: string;
-  price: unknown;
-  rawData: unknown;
-  extractedAt: Date;
-}> = {}): PrismaOffer {
+function makeOfferRow(
+  overrides: Partial<{
+    id: string;
+    productId: string;
+    sourceId: string;
+    domainRuleId: string | null;
+    url: string;
+    externalId: string | null;
+    sku: string | null;
+    currency: string;
+    price: unknown;
+    rawData: unknown;
+    extractedAt: Date;
+  }> = {},
+): PrismaOffer {
   // Prisma's strict types make hand-rolled row fixtures noisy. Cast to
   // the generated type so the mapper can be exercised directly.
   return {
@@ -55,14 +57,16 @@ function makeOfferRow(overrides: Partial<{
   } as unknown as PrismaOffer;
 }
 
-function makeObsRow(overrides: Partial<{
-  id: string;
-  offerId: string;
-  price: unknown;
-  currency: string;
-  observedAt: Date;
-  createdAt: Date;
-}> = {}): PrismaPriceObservation {
+function makeObsRow(
+  overrides: Partial<{
+    id: string;
+    offerId: string;
+    price: unknown;
+    currency: string;
+    observedAt: Date;
+    createdAt: Date;
+  }> = {},
+): PrismaPriceObservation {
   return {
     id: 'po_1',
     offerId: 'o_1',
@@ -145,9 +149,7 @@ describe('ProductMapper', () => {
     });
 
     it('coerces a numeric price', () => {
-      const offer = ProductMapper.offerToDomain(
-        makeOfferRow({ price: 29 }),
-      );
+      const offer = ProductMapper.offerToDomain(makeOfferRow({ price: 29 }));
       expect(offer.price).toBe(29);
     });
 

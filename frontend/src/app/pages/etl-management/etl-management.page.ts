@@ -63,9 +63,7 @@ import { FormsModule } from '@angular/forms';
           <span class="material-symbols-outlined" style="font-size: 20px" aria-hidden="true"
             >error</span
           >
-          <div>
-            <strong>Error:</strong> {{ err }}
-          </div>
+          <div><strong>Error:</strong> {{ err }}</div>
           <button
             type="button"
             class="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-danger transition-colors hover:bg-danger-dim"
@@ -95,8 +93,7 @@ import { FormsModule } from '@angular/forms';
                 [class.bg-warning-dim]="pending.total > 0"
                 [class.text-warning]="pending.total > 0"
               >
-                {{ selectedPendingSources().size }} de {{ pending.total }} items
-                seleccionados
+                {{ selectedPendingSources().size }} de {{ pending.total }} items seleccionados
               </span>
             </div>
           </header>

@@ -25,11 +25,7 @@ import { ToastService } from './core/services/toast.service';
  */
 @Component({
   selector: 'app-root',
-  imports: [
-    RouterOutlet,
-    SidebarComponent,
-    ToastHostComponent,
-  ],
+  imports: [RouterOutlet, SidebarComponent, ToastHostComponent],
   templateUrl: './app.html',
   styleUrls: ['./app.css', './layout/layout.css'],
 })
@@ -72,10 +68,8 @@ export class App {
     });
 
     this.isDashboardRoute.set(this.router.url.startsWith('/dashboard'));
-    this.router.events
-      .pipe(filter((e) => e instanceof NavigationEnd))
-      .subscribe((e) => {
-        this.isDashboardRoute.set((e as NavigationEnd).urlAfterRedirects.startsWith('/dashboard'));
-      });
+    this.router.events.pipe(filter((e) => e instanceof NavigationEnd)).subscribe((e) => {
+      this.isDashboardRoute.set((e as NavigationEnd).urlAfterRedirects.startsWith('/dashboard'));
+    });
   }
 }

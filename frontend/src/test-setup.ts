@@ -2,17 +2,6 @@
  * Test setup para Vitest + Angular 22.
  * Inicializa TestBed antes de cualquier spec que lo use.
  */
-import '@angular/localize/init';
-import { getTestBed } from '@angular/core/testing';
-import {
-  BrowserTestingModule,
-  platformBrowserTesting,
-} from '@angular/platform-browser/testing';
-
-getTestBed().initTestEnvironment(
-  BrowserTestingModule,
-  platformBrowserTesting(),
-);
 
 /**
  * jsdom doesn't ship with ResizeObserver / MutationObserver / matchMedia.
@@ -23,12 +12,22 @@ getTestBed().initTestEnvironment(
  * boneyard doesn't throw ReferenceError on render.
  */
 if (typeof globalThis.ResizeObserver === 'undefined') {
-  (globalThis as { ResizeObserver?: unknown }).ResizeObserver = class {
+  const polyfill = class {
     observe(): void {}
     unobserve(): void {}
     disconnect(): void {}
   };
+  (globalThis as any).ResizeObserver = polyfill;
+  if (typeof window !== 'undefined') {
+    (window as any).ResizeObserver = polyfill;
+  }
 }
+
+import '@angular/localize/init';
+import { getTestBed } from '@angular/core/testing';
+import { BrowserTestingModule, platformBrowserTesting } from '@angular/platform-browser/testing';
+
+getTestBed().initTestEnvironment(BrowserTestingModule, platformBrowserTesting());
 if (typeof globalThis.MutationObserver === 'undefined') {
   (globalThis as { MutationObserver?: unknown }).MutationObserver = class {
     constructor(_cb: MutationCallback) {}
@@ -39,10 +38,7 @@ if (typeof globalThis.MutationObserver === 'undefined') {
     }
   };
 }
-if (
-  typeof window !== 'undefined' &&
-  typeof window.matchMedia !== 'function'
-) {
+if (typeof window !== 'undefined' && typeof window.matchMedia !== 'function') {
   // jsdom doesn't implement matchMedia; ThemeService and boneyard
   // both call it during bootstrap. Provide a minimal stub that
   // reports no matches.

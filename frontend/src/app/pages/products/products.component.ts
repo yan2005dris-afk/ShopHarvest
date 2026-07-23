@@ -11,7 +11,15 @@ import { SkeletonComponent } from 'boneyard-js/angular';
 @Component({
   selector: 'app-products',
   standalone: true,
-  imports: [DatePipe, CurrencyPipe, RouterLink, FormsModule, PriceHistoryChartComponent, ProductCardComponent, SkeletonComponent],
+  imports: [
+    DatePipe,
+    CurrencyPipe,
+    RouterLink,
+    FormsModule,
+    PriceHistoryChartComponent,
+    ProductCardComponent,
+    SkeletonComponent,
+  ],
   templateUrl: './products.component.html',
   styleUrl: './products.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

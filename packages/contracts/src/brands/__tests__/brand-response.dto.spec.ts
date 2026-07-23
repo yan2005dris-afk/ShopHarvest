@@ -14,7 +14,7 @@ describe('BrandResponseDto (@Expose whitelist)', () => {
     };
     const dto = plainToInstance(BrandResponseDto, raw, {
       excludeExtraneousValues: true,
-    }) as Record<string, unknown>;
+    }) as unknown as Record<string, unknown>;
 
     expect(dto.id).toBe('brand-1');
     expect(dto.name).toBe('Samsung');

@@ -101,9 +101,7 @@ describe('ToastHostComponent', () => {
     fixture.componentInstance.pushError('toast open');
     fixture.detectChanges();
 
-    const sibling = fixture.nativeElement.querySelector(
-      '.sibling',
-    ) as HTMLButtonElement;
+    const sibling = fixture.nativeElement.querySelector('.sibling') as HTMLButtonElement;
     // The sibling must remain clickable; the toast stack uses
     // pointer-events: none on the container so the page chrome is
     // never covered.
@@ -123,9 +121,7 @@ describe('ToastHostComponent', () => {
 
     // Dispatch a real KeyboardEvent on the document — that's what the
     // @HostListener('document:keydown.escape') binds to.
-    document.dispatchEvent(
-      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
-    );
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelectorAll('.toast').length).toBe(0);
@@ -138,15 +134,9 @@ describe('ToastHostComponent', () => {
     fixture.detectChanges();
 
     const root = fixture.nativeElement as HTMLElement;
-    const toasts: HTMLElement[] = Array.from(
-      root.querySelectorAll('.toast'),
-    );
-    const errorToast = toasts.find((el) =>
-      el.textContent?.includes('urgent'),
-    );
-    const successToast = toasts.find((el) =>
-      el.textContent?.includes('all good'),
-    );
+    const toasts: HTMLElement[] = Array.from(root.querySelectorAll('.toast'));
+    const errorToast = toasts.find((el) => el.textContent?.includes('urgent'));
+    const successToast = toasts.find((el) => el.textContent?.includes('all good'));
 
     expect(errorToast).toBeDefined();
     expect(successToast).toBeDefined();

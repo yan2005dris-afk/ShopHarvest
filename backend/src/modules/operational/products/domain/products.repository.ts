@@ -45,10 +45,7 @@ export interface ProductsRepository {
    * default).
    */
   findAll(options: ProductLoadOptions): Promise<Product[]>;
-  findById(
-    id: string,
-    options: ProductLoadOptions,
-  ): Promise<Product | null>;
+  findById(id: string, options: ProductLoadOptions): Promise<Product | null>;
   /**
    * Returns every Product that has at least one Offer scoped to
    * `domainRuleId`, with only the matching offer(s) nested in the

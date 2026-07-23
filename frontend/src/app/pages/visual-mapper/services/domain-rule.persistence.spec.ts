@@ -24,10 +24,7 @@ describe('DomainRulePersistenceService', () => {
     };
 
     TestBed.configureTestingModule({
-      providers: [
-        DomainRulePersistenceService,
-        { provide: ApiService, useValue: apiMock },
-      ],
+      providers: [DomainRulePersistenceService, { provide: ApiService, useValue: apiMock }],
     });
 
     return {
@@ -103,9 +100,7 @@ describe('DomainRulePersistenceService', () => {
         {
           hostname: 'shein.com',
           pageTitle: 'Shein',
-          fieldMappings: [
-            { canonicalField: 'precio', selector: '.price', type: 'text' },
-          ],
+          fieldMappings: [{ canonicalField: 'precio', selector: '.price', type: 'text' }],
           containerSelector: '.card',
         },
         [],

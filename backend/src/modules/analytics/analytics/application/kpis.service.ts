@@ -101,8 +101,7 @@ export class KpisService {
    * controller (e.g. calls the service directly from another module).
    */
   async getKpi(name: string): Promise<unknown[]> {
-    const sql =
-      KpisService.KPI_SQL[name as keyof typeof KpisService.KPI_SQL];
+    const sql = KpisService.KPI_SQL[name as keyof typeof KpisService.KPI_SQL];
     if (!sql) {
       throw new NotFoundException(
         `Unknown KPI "${name}". Valid names: ${KpisService.KPI_NAMES.join(', ')}`,

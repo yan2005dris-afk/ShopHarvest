@@ -55,9 +55,7 @@ export class LoginComponent {
       error: (err) => {
         this.submitting = false;
         this.error =
-          err?.error?.message ||
-          err?.message ||
-          'Authentication failed. Please try again.';
+          err?.error?.message || err?.message || 'Authentication failed. Please try again.';
       },
     });
   }

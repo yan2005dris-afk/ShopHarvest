@@ -75,7 +75,15 @@ export class DomainRulePersistenceService {
   }
 
   /** Ingest extracted products for a domain. */
-  ingestProducts(params: SaveProductsParams): Observable<{ ingested: number; domainRuleId: string }> {
-    return this.apiService.ingestProducts(params.hostname, params.url, params.products, params.fieldMappings, params.categoryId);
+  ingestProducts(
+    params: SaveProductsParams,
+  ): Observable<{ ingested: number; domainRuleId: string }> {
+    return this.apiService.ingestProducts(
+      params.hostname,
+      params.url,
+      params.products,
+      params.fieldMappings,
+      params.categoryId,
+    );
   }
 }

@@ -78,7 +78,7 @@ export class ApiService {
       // Transform ExtensionFieldMapping to FieldMappingDto for backend
       // - Remove extractedKey (frontend-only)
       // - Replace empty selector with placeholder (backend requires non-empty)
-      const dtoMappings: FieldMappingDto[] = fieldMappings.map(m => ({
+      const dtoMappings: FieldMappingDto[] = fieldMappings.map((m) => ({
         canonicalField: m.canonicalField,
         selector: m.selector || '[extractAll]',
         type: m.type,

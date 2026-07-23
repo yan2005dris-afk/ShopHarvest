@@ -29,10 +29,6 @@ import { JwtStrategy } from './common/jwt.strategy';
     LoginUseCase,
     JwtStrategy,
   ],
-  exports: [
-    USERS_REPOSITORY,
-    RegisterUseCase,
-    LoginUseCase,
-  ],
+  exports: [USERS_REPOSITORY, RegisterUseCase, LoginUseCase],
 })
 export class AuthModule {}

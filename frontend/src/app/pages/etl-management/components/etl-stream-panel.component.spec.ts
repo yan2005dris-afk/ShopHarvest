@@ -51,9 +51,7 @@ describe('EtlStreamPanelComponent', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('[data-testid="placeholder-panel"]')).toBeNull();
     expect(compiled.querySelector('[data-testid="stream-panel"]')).toBeTruthy();
-    expect(compiled.querySelector('h4')?.textContent).toContain(
-      'Detalle de Ejecución: aliexpress',
-    );
+    expect(compiled.querySelector('h4')?.textContent).toContain('Detalle de Ejecución: aliexpress');
     expect(compiled.querySelector('[data-testid="status-badge"]')?.textContent?.trim()).toBe(
       'RUNNING',
     );

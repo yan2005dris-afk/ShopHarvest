@@ -20,6 +20,7 @@ export class CategoryResponseMapper {
       description: category.description ?? undefined,
       defaultFieldMappings: category.defaultFieldMappings ?? undefined,
       parentId: category.parentId ?? undefined,
+      path: category.path,
       createdAt: category.createdAt.toISOString(),
       updatedAt: category.updatedAt.toISOString(),
     };
