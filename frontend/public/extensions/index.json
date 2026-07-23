@@ -1,9 +1,9 @@
 [
   {
     "browser": "chrome",
-    "label": "Chrome / Brave / Opera",
+    "label": "Chrome",
     "file": "chrome.zip",
-    "size": "11 KB",
+    "size": "12 KB",
     "configUrl": "chrome://extensions/",
     "docsUrl": "https://developer.chrome.com/docs/extensions/get-started/tutorial/hello-world#load-unpacked"
   },
@@ -11,8 +11,24 @@
     "browser": "edge",
     "label": "Edge",
     "file": "edge.zip",
-    "size": "11 KB",
+    "size": "12 KB",
     "configUrl": "edge://extensions/",
     "docsUrl": "https://learn.microsoft.com/en-us/microsoft-edge/extensions-chromium/getting-started/extension-sideloading"
+  },
+  {
+    "browser": "opera",
+    "label": "Opera",
+    "file": "opera.zip",
+    "size": "12 KB",
+    "configUrl": "opera://extensions/",
+    "docsUrl": "https://help.opera.com/en/extensions/"
+  },
+  {
+    "browser": "brave",
+    "label": "Brave",
+    "file": "brave.zip",
+    "size": "12 KB",
+    "configUrl": "brave://extensions/",
+    "docsUrl": "https://support.brave.com/hc/en-us/articles/360039229992-How-do-I-load-an-extension-in-Brave"
   }
 ]
