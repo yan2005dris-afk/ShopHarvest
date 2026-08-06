@@ -34,22 +34,75 @@ function toPriceString(value: unknown): string {
   return JSON.stringify(value);
 }
 
-/** Limpia strings sucios ("$50k", "USD 3,200", "€ 45.99") y convierte a USD. */
+const round2 = (n: number): number => Math.round(n * 100) / 100;
+
+/**
+ * Parses a raw price string that may contain thousand separators in EITHER
+ * US (`,` thousands, `.` decimal: "3,200.50") or EU (`.` thousands, `,`
+ * decimal: "1.299,99") conventions, plus an optional magnitude suffix
+ * ("$50k", "3.2k").
+ *
+ * Disambiguation rule (deterministic):
+ * - When BOTH separators appear, the LAST one is the decimal separator and
+ *   the other(s) are thousands separators.
+ * - When only ONE separator appears, a trailing group of exactly 2 digits is
+ *   a decimal fraction ("45.99", "3,20"); any other trailing group is a
+ *   thousands separator ("1.299" -> 1299, "3,200" -> 3200).
+ *
+ * Returns null when nothing parseable remains.
+ */
+export function parsePriceRaw(input: string): number | null {
+  const cleaned = toPriceString(input).replace(/[^\d.,k]/gi, '');
+  if (!cleaned) return null;
+  const lower = cleaned.toLowerCase();
+  const isK = lower.endsWith('k');
+  const body = isK ? lower.slice(0, -1) : lower;
+  if (!body) return null;
+
+  const lastComma = body.lastIndexOf(',');
+  const lastDot = body.lastIndexOf('.');
+  let intPart = body;
+  let decPart = '';
+
+  if (lastComma !== -1 || lastDot !== -1) {
+    const idx = Math.max(lastComma, lastDot);
+    intPart = body.slice(0, idx).replace(/[.,]/g, '');
+    decPart = body.slice(idx + 1);
+    if (decPart.length > 2) {
+      // Trailing group of 3+ digits is a thousands group, not a fraction
+      // (e.g. "1.299", "3,200", "1.299.900").
+      intPart = body.replace(/[.,]/g, '');
+      decPart = '';
+    }
+  }
+
+  let numeric = parseFloat(decPart ? `${intPart || '0'}.${decPart}` : intPart);
+  if (isK) numeric *= 1000;
+  return Number.isFinite(numeric) ? numeric : null;
+}
+
+export interface ConvertedPrice {
+  /** USD price rounded to cents, or null when unparseable/unconvertible. */
+  usd: number | null;
+  /** True when the currency is not USD and no rate exists for it. */
+  rateMissing: boolean;
+}
+
+/**
+ * Converts a raw price to USD. `rateMissing` lets callers distinguish
+ * "no rate available" from "unparseable price" so a run never reports
+ * SUCCESS with silently-nulled prices.
+ */
 export function cleanAndConvertToUsd(
   priceRaw: unknown,
   moneda: string,
   rates: Record<string, number>,
-): number | null {
-  if (priceRaw == null) return null;
-  const cleaned = toPriceString(priceRaw)
-    .replace(/[^\d.,k]/gi, '')
-    .replace(/,(\d{2})$/, '.$1')
-    .replace(/,/g, '')
-    .replace(/k$/i, '000');
-  const numeric = parseFloat(cleaned);
-  if (Number.isNaN(numeric)) return null;
-  if (moneda === 'USD') return Math.round(numeric * 100) / 100;
+): ConvertedPrice {
+  if (priceRaw == null) return { usd: null, rateMissing: false };
+  const numeric = parsePriceRaw(toPriceString(priceRaw));
+  if (numeric === null) return { usd: null, rateMissing: false };
+  if (moneda === 'USD') return { usd: round2(numeric), rateMissing: false };
   const rate = rates[moneda];
-  if (!rate) return null;
-  return Math.round((numeric / rate) * 100) / 100;
+  if (!rate) return { usd: null, rateMissing: true };
+  return { usd: round2(numeric / rate), rateMissing: false };
 }
