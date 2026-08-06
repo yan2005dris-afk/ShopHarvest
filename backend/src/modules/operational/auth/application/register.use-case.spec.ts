@@ -13,6 +13,7 @@ describe('RegisterUseCase', () => {
     repository = {
       findByEmail: jest.fn(),
       findById: jest.fn(),
+      count: jest.fn(),
       create: jest.fn(),
     };
     jwt = { sign: jest.fn().mockReturnValue('signed.jwt.token') } as any;
@@ -21,12 +22,14 @@ describe('RegisterUseCase', () => {
 
   it('hashes the password, creates the user, and returns a token', async () => {
     repository.findByEmail.mockResolvedValue(null);
+    repository.count.mockResolvedValue(0);
     repository.create.mockImplementation(
-      (email: string, passwordHash: string) =>
+      (email: string, passwordHash: string, role: string) =>
         Promise.resolve({
           id: 'u1',
           email,
           passwordHash,
+          role,
           createdAt: new Date(),
           updatedAt: new Date(),
         } as any),
@@ -41,8 +44,58 @@ describe('RegisterUseCase', () => {
     expect(await bcrypt.compare('password123', storedHash)).toBe(true);
     expect(res).toEqual({
       accessToken: 'signed.jwt.token',
-      user: { id: 'u1', email: 'a@b.com' },
+      user: { id: 'u1', email: 'a@b.com', role: 'admin' },
     });
+  });
+
+  it('bootstraps the FIRST user as admin (empty users table)', async () => {
+    repository.findByEmail.mockResolvedValue(null);
+    repository.count.mockResolvedValue(0);
+    repository.create.mockImplementation(
+      (email: string, passwordHash: string, role: string) =>
+        Promise.resolve({
+          id: 'u1',
+          email,
+          passwordHash,
+          role,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        } as any),
+    );
+
+    const res = await useCase.execute('first@b.com', 'password123');
+
+    expect(repository.create).toHaveBeenCalledWith(
+      'first@b.com',
+      expect.any(String),
+      'admin',
+    );
+    expect(res.user.role).toBe('admin');
+  });
+
+  it('grants plain user role to every later registration', async () => {
+    repository.findByEmail.mockResolvedValue(null);
+    repository.count.mockResolvedValue(3);
+    repository.create.mockImplementation(
+      (email: string, passwordHash: string, role: string) =>
+        Promise.resolve({
+          id: 'u4',
+          email,
+          passwordHash,
+          role,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        } as any),
+    );
+
+    const res = await useCase.execute('later@b.com', 'password123');
+
+    expect(repository.create).toHaveBeenCalledWith(
+      'later@b.com',
+      expect.any(String),
+      'user',
+    );
+    expect(res.user.role).toBe('user');
   });
 
   it('rejects a duplicate email', async () => {
@@ -50,6 +103,7 @@ describe('RegisterUseCase', () => {
       id: 'u1',
       email: 'a@b.com',
       passwordHash: 'x',
+      role: 'user',
       createdAt: new Date(),
       updatedAt: new Date(),
     } as any);
@@ -62,6 +116,7 @@ describe('RegisterUseCase', () => {
 
   it('maps a Prisma P2002 (unique violation) to EmailAlreadyRegisteredError (TOCTOU race recovery)', async () => {
     repository.findByEmail.mockResolvedValue(null);
+    repository.count.mockResolvedValue(0);
     const p2002 = new Prisma.PrismaClientKnownRequestError(
       'Unique constraint failed on the field: `email`',
       { code: 'P2002', clientVersion: 'test', meta: { target: ['email'] } },
@@ -75,6 +130,7 @@ describe('RegisterUseCase', () => {
 
   it('rethrows non-P2002 create errors unchanged', async () => {
     repository.findByEmail.mockResolvedValue(null);
+    repository.count.mockResolvedValue(0);
     const other = new Error('disk on fire');
     repository.create.mockRejectedValue(other);
 
@@ -83,12 +139,14 @@ describe('RegisterUseCase', () => {
 
   it('normalizes email (trim + lowercase) before lookup and creation', async () => {
     repository.findByEmail.mockResolvedValue(null);
+    repository.count.mockResolvedValue(5);
     repository.create.mockImplementation(
-      (email: string, passwordHash: string) =>
+      (email: string, passwordHash: string, role: string) =>
         Promise.resolve({
           id: 'u1',
           email,
           passwordHash,
+          role,
           createdAt: new Date(),
           updatedAt: new Date(),
         } as any),
@@ -100,6 +158,7 @@ describe('RegisterUseCase', () => {
     expect(repository.create).toHaveBeenCalledWith(
       'a@b.com',
       expect.any(String),
+      'user',
     );
     expect(res.user.email).toBe('a@b.com');
   });

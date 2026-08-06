@@ -1,4 +1,4 @@
-import type { User } from './user.entity';
+import type { User, UserRole } from './user.entity';
 
 /**
  * Port that the application layer uses to load and persist User aggregates.
@@ -10,7 +10,8 @@ import type { User } from './user.entity';
 export interface UsersRepository {
   findByEmail(email: string): Promise<User | null>;
   findById(id: string): Promise<User | null>;
-  create(email: string, passwordHash: string): Promise<User>;
+  count(): Promise<number>;
+  create(email: string, passwordHash: string, role: UserRole): Promise<User>;
 }
 
 export const USERS_REPOSITORY = Symbol('UsersRepository');

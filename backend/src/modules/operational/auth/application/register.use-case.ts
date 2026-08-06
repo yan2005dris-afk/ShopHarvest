@@ -5,6 +5,7 @@ import * as bcrypt from 'bcryptjs';
 import type { AuthResponseDto } from '@web-scraping/contracts/auth';
 import { EmailAlreadyRegisteredError } from '../domain/auth.errors';
 import { User, normalizeEmail } from '../domain/user.entity';
+import type { UserRole } from '../domain/user.entity';
 import { USERS_REPOSITORY } from '../domain/users.repository';
 import type { UsersRepository } from '../domain/users.repository';
 import type { JwtPayload } from '../common/jwt.strategy';
@@ -25,13 +26,23 @@ export class RegisterUseCase {
     if (existing) {
       throw new EmailAlreadyRegisteredError(normalizedEmail);
     }
+    // Bootstrap rule: the first account on an empty users table becomes the
+    // admin (no separate admin-seeding step needed). Every later registration
+    // is a plain 'user' and cannot reach admin-only endpoints, so the public
+    // register surface no longer grants full API access to strangers.
+    const isFirstUser = (await this.repository.count()) === 0;
+    const role: UserRole = isFirstUser ? 'admin' : 'user';
     const passwordHash = await bcrypt.hash(
       password,
       RegisterUseCase.SALT_ROUNDS,
     );
     try {
-      const user = await this.repository.create(normalizedEmail, passwordHash);
-      return this.issueToken(user.id, user.email);
+      const user = await this.repository.create(
+        normalizedEmail,
+        passwordHash,
+        role,
+      );
+      return this.issueToken(user);
     } catch (err) {
       // The pre-check is a TOCTOU race window. If a concurrent request
       // inserted the same email between our findUnique and our create, the
@@ -47,11 +58,15 @@ export class RegisterUseCase {
     }
   }
 
-  private issueToken(sub: string, email: string): AuthResponseDto {
-    const payload: JwtPayload = { sub, email };
+  private issueToken(user: User): AuthResponseDto {
+    const payload: JwtPayload = {
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+    };
     return {
       accessToken: this.jwt.sign(payload),
-      user: { id: sub, email },
+      user: { id: user.id, email: user.email, role: user.role },
     };
   }
 }

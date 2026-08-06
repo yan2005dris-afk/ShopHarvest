@@ -143,10 +143,15 @@ model PriceObservation {
 
 // User — authentication (review batch 6, C2). JWT-based per-user auth gates the
 // API so arbitrary extensions can no longer POST/DELETE.
+// `role` (PR feat/auth-rbac): 'admin' | 'user'. The first registered user on an
+// empty table bootstraps as admin; every later registration is a plain 'user'.
+// Admin-only endpoints (operational/ETL triggers, DW load) are enforced by the
+// RolesGuard via the JWT `role` claim.
 model User {
   id           String   @id @default(uuid()) @db.Uuid
   email        String   @unique
   passwordHash String
+  role         String   @default("user")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
