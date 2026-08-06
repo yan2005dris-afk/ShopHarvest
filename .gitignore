@@ -51,3 +51,6 @@ coverage/
 .atl/
 /.codegraph
 /.playwright-mcp
+/node_modules
+/node_modules
+/node_modules/.pnpm

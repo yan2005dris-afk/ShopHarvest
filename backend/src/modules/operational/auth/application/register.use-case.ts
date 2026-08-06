@@ -25,13 +25,22 @@ export class RegisterUseCase {
     if (existing) {
       throw new EmailAlreadyRegisteredError(normalizedEmail);
     }
+    // Public registration ALWAYS creates a plain 'user'. Admins are created
+    // exclusively through the deterministic seeding/bootstrap flow
+    // (prisma/seed.ts), never by a raceable count check on this public
+    // surface. A role-based bootstrap here would let an unauthenticated
+    // stranger register first on a fresh deployment and become admin.
     const passwordHash = await bcrypt.hash(
       password,
       RegisterUseCase.SALT_ROUNDS,
     );
     try {
-      const user = await this.repository.create(normalizedEmail, passwordHash);
-      return this.issueToken(user.id, user.email);
+      const user = await this.repository.create(
+        normalizedEmail,
+        passwordHash,
+        'user',
+      );
+      return this.issueToken(user);
     } catch (err) {
       // The pre-check is a TOCTOU race window. If a concurrent request
       // inserted the same email between our findUnique and our create, the
@@ -47,11 +56,15 @@ export class RegisterUseCase {
     }
   }
 
-  private issueToken(sub: string, email: string): AuthResponseDto {
-    const payload: JwtPayload = { sub, email };
+  private issueToken(user: User): AuthResponseDto {
+    const payload: JwtPayload = {
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+    };
     return {
       accessToken: this.jwt.sign(payload),
-      user: { id: sub, email },
+      user: { id: user.id, email: user.email, role: user.role },
     };
   }
 }

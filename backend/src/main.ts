@@ -30,10 +30,20 @@ async function bootstrap() {
   // docs/PLAN_Entregable5_Dashboard_Reporte.md §2.2 y este prefijo la cumple.
   app.setGlobalPrefix('api');
 
-  // Lista blanca CORS: orígenes de dev local + el frontend de producción.
+  // Lista blanca CORS: orígenes de dev local + el frontend de producción +
+  // los orígenes de extensión explícitamente configurados. NO se acepta un
+  // wildcard de extensiones (`chrome-extension://*`): una extensión maliciosa
+  // instalada en el navegador de un usuario no debe tener CORS hacia esta API
+  // salvo que su origen figure en EXTENSION_ORIGINS.
   const frontendOrigins = (
-    process.env.FRONTEND_ORIGIN ?? 'http://localhost:4200'
+    process.env.FRONTEND_ORIGIN ??
+    'http://localhost:4200,http://localhost:8080'
   )
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  const extensionOrigins = (process.env.EXTENSION_ORIGINS ?? '')
     .split(',')
     .map((s) => s.trim())
     .filter(Boolean);
@@ -43,12 +53,11 @@ async function bootstrap() {
       origin: string | undefined,
       callback: (err: Error | null, allow?: boolean) => void,
     ) => {
-      const allowed = [...frontendOrigins];
-      if (
-        !origin ||
-        allowed.includes(origin) ||
-        /^(moz|chrome)-extension:\/\//.test(origin)
-      ) {
+      const allowed = [...frontendOrigins, ...extensionOrigins];
+      // `!origin` (requests sin header Origin: curl, tools, same-origin) se
+      // acepta; el auth sigue siendo Bearer token, no cookies, así que esto no
+      // abre una vía cross-origin en navegadores (que siempre envían Origin).
+      if (!origin || allowed.includes(origin)) {
         callback(null, true);
       } else {
         callback(new Error('Not allowed by CORS'));

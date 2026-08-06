@@ -14,6 +14,7 @@ export class AuthResponseMapper {
       user: {
         id: result.user.id,
         email: result.user.email,
+        role: result.user.role,
       },
     };
   }

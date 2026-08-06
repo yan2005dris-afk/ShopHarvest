@@ -62,6 +62,10 @@ WORKDIR /app
 
 COPY --from=builder /prod/backend/node_modules ./node_modules
 COPY --from=builder /prod/backend/package.json ./package.json
+# Keep the workspace contracts package available at its expected path so the
+# deployed layout's relative symlink (node_modules/@web-scraping/contracts ->
+# /app/packages/contracts) resolves at runtime for CommonJS subpath requires.
+COPY --from=builder /app/packages/contracts ./packages/contracts
 COPY --from=builder /app/backend/dist ./dist
 COPY --from=builder /app/backend/prisma ./prisma
 COPY --from=builder /app/backend/prisma.operational.config.ts ./prisma.operational.config.ts
@@ -77,6 +81,43 @@ RUN cp -r src/generated dist/generated
 
 # Create pipeline directories and assign ownership to node user
 RUN mkdir -p pipeline/raw pipeline/staging && chown -R node:node pipeline
+
+# Install Playwright's Chromium so the ETL scrape adapters (MercadoLibre,
+# AliExpress) can launch a real browser at runtime. The base image is Alpine,
+# which Playwright does not officially support — `install --with-deps` would
+# fall back to Ubuntu's apt deps and fail (exit 127). Instead download the
+# browser binary and install the required shared libraries via apk. The runner
+# uses the `node` user with HOME=/home/node, so point PLAYWRIGHT_BROWSERS_PATH
+# there and pre-create the cache dir with ownership.
+ENV PLAYWRIGHT_BROWSERS_PATH=/home/node/.cache/ms-playwright
+RUN mkdir -p "$PLAYWRIGHT_BROWSERS_PATH" && chown -R node:node /home/node/.cache && \
+    npx playwright install chromium && \
+    apk add --no-cache \
+      glib \
+      nspr \
+      nss \
+      libatk-1.0 \
+      at-spi2-core \
+      dbus-libs \
+      expat \
+      libx11 \
+      libxcomposite \
+      libxdamage \
+      libxext \
+      libxfixes \
+      libxrandr \
+      libxcb \
+      libxkbcommon \
+      libxrender \
+      libxi \
+      libxtst \
+      mesa-gbm \
+      alsa-lib \
+      libudev-zero \
+      gtk+3.0 \
+      fontconfig \
+      ttf-liberation \
+      && chown -R node:node "$PLAYWRIGHT_BROWSERS_PATH"
 
 USER node
 EXPOSE 3000
