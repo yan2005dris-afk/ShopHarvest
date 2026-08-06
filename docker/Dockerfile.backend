@@ -62,6 +62,10 @@ WORKDIR /app
 
 COPY --from=builder /prod/backend/node_modules ./node_modules
 COPY --from=builder /prod/backend/package.json ./package.json
+# Keep the workspace contracts package available at its expected path so the
+# deployed layout's relative symlink (node_modules/@web-scraping/contracts ->
+# /app/packages/contracts) resolves at runtime for CommonJS subpath requires.
+COPY --from=builder /app/packages/contracts ./packages/contracts
 COPY --from=builder /app/backend/dist ./dist
 COPY --from=builder /app/backend/prisma ./prisma
 COPY --from=builder /app/backend/prisma.operational.config.ts ./prisma.operational.config.ts
