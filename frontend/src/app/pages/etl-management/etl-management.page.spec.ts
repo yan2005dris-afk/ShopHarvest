@@ -90,13 +90,37 @@ describe('EtlManagementPage', () => {
     });
   });
 
-  it('should keep the trigger button disabled when no sources are selected', () => {
+  it('should enable the trigger button even when no sources are selected', () => {
     const fixture = TestBed.createComponent(EtlManagementPage);
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
     const triggerBtn = compiled.querySelector('[data-testid="btn-trigger"]') as HTMLButtonElement;
     expect(triggerBtn).toBeTruthy();
-    expect(triggerBtn.disabled).toBe(true);
+    expect(triggerBtn.disabled).toBe(false);
+  });
+
+  it('should pass the selected page cards as preselectedSources when opening the modal', () => {
+    const fixture = TestBed.createComponent(EtlManagementPage);
+    fixture.detectChanges();
+
+    fixture.componentInstance.selectedPendingSources.set(new Set(['mercadolibre']));
+    fixture.detectChanges();
+
+    const triggerBtn = fixture.nativeElement.querySelector(
+      '[data-testid="btn-trigger"]',
+    ) as HTMLButtonElement;
+    triggerBtn.click();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.isConfirmOpen()).toBe(true);
+    expect(fixture.componentInstance.modalPreselectedSources()).toEqual([
+      { code: 'mercadolibre', label: 'MercadoLibre' },
+    ]);
+
+    const modalDebugEl = fixture.debugElement.query(By.directive(ConfirmModalComponent));
+    expect(modalDebugEl.componentInstance.preselectedSources()).toEqual([
+      { code: 'mercadolibre', label: 'MercadoLibre' },
+    ]);
   });
 });
