@@ -156,19 +156,20 @@ describe('PipelineService', () => {
   });
 
   describe('runAll', () => {
-    it('runs every source in parallel, then staging, then DW load', async () => {
-      // All seven adapters return successful scrape results.
-      const scrapeResults: ScrapeResult[] = dataSourceStubs.map(
-        (stub, idx) => ({
-          source: stub.source,
-          totalScraped: 10 + idx,
-          outputPath: `/tmp/${stub.source}.json`,
-          durationMs: 100 + idx,
-          errors: [],
-        }),
-      );
-      for (let i = 0; i < dataSourceStubs.length; i++) {
-        dataSourceStubs[i].run.mockResolvedValueOnce(scrapeResults[i]);
+    it('runs the implemented sources in parallel, then staging, then DW load', async () => {
+      // Only the four implemented adapters run by default — the three
+      // stub sources (API_RATES, CSV_DATASET, ENCUESTA) are excluded so
+      // a scheduled full run isn't polluted by "not implemented yet".
+      const implemented = dataSourceStubs.slice(0, 4);
+      const scrapeResults: ScrapeResult[] = implemented.map((stub, idx) => ({
+        source: stub.source,
+        totalScraped: 10 + idx,
+        outputPath: `/tmp/${stub.source}.json`,
+        durationMs: 100 + idx,
+        errors: [],
+      }));
+      for (let i = 0; i < implemented.length; i++) {
+        implemented[i].run.mockResolvedValueOnce(scrapeResults[i]);
       }
 
       const stagingResult: StagingResult = {
@@ -190,14 +191,18 @@ describe('PipelineService', () => {
         loadOpts: { truncateFirst: true },
       });
 
-      // Every source fired once.
-      for (const stub of dataSourceStubs) {
+      // Implemented sources fired once each.
+      for (const stub of implemented) {
         expect(stub.run).toHaveBeenCalledTimes(1);
+      }
+      // Stub sources never fire on a default run.
+      for (const stub of dataSourceStubs.slice(4)) {
+        expect(stub.run).not.toHaveBeenCalled();
       }
       expect(stagingStub.run).toHaveBeenCalledWith(undefined);
       expect(dwLoaderStub.load).toHaveBeenCalledWith({ truncateFirst: true });
 
-      expect(summary.scrapeResults).toHaveLength(7);
+      expect(summary.scrapeResults).toHaveLength(4);
       expect(summary.stagingResult).toEqual({
         totalProductos: 168,
         totalEncuestas: 24,
@@ -207,10 +212,39 @@ describe('PipelineService', () => {
       expect(summary.totalDurationMs).toBeGreaterThanOrEqual(0);
     });
 
+    it('still runs a stub source when it is explicitly requested', async () => {
+      dataSourceStubs[4].run.mockResolvedValueOnce({
+        source: PipelineSource.API_RATES,
+        totalScraped: 1,
+        outputPath: '/tmp/api_rates.json',
+        durationMs: 1,
+        errors: [],
+      });
+      stagingStub.run.mockResolvedValueOnce({
+        totalProductos: 0,
+        totalEncuestas: 0,
+        durationMs: 0,
+      });
+      dwLoaderStub.load.mockResolvedValueOnce({
+        productosCargados: 0,
+        encuestasCargadas: 0,
+        tiempoMs: 0,
+        estado: 'completado',
+      });
+
+      const summary = await service.runAll({
+        sources: [PipelineSource.API_RATES],
+      });
+
+      expect(dataSourceStubs[4].run).toHaveBeenCalledTimes(1);
+      expect(summary.scrapeResults).toHaveLength(1);
+      expect(summary.scrapeResults[0].source).toBe(PipelineSource.API_RATES);
+    });
+
     it('captures per-scraper errors without aborting the whole pipeline', async () => {
       // Make MercadoLibre fail; everyone else succeeds.
       dataSourceStubs[0].run.mockRejectedValueOnce(new Error('network down'));
-      for (let i = 1; i < dataSourceStubs.length; i++) {
+      for (let i = 1; i < 4; i++) {
         dataSourceStubs[i].run.mockResolvedValueOnce({
           source: dataSourceStubs[i].source,
           totalScraped: 1,

@@ -41,6 +41,21 @@ export class PipelineService {
     @Inject(STAGING_PROCESSOR) private readonly staging: IStagingProcessor,
   ) {}
 
+  /**
+   * Sources with a working adapter today. CSV dataset, encuesta, and
+   * API-rates are still stubs (they throw "not implemented yet"), so a
+   * default full run must NOT fan out to them — otherwise every
+   * scheduled run reports those as failed and the whole batch can't be
+   * a clean SUCCESS. They remain reachable on explicit request via
+   * `opts.sources` so an implementor can still drive them manually.
+   */
+  private readonly DEFAULT_RUN_SOURCES: PipelineSource[] = [
+    PipelineSource.MERCADOLIBRE,
+    PipelineSource.ALIEXPRESS,
+    PipelineSource.TEMU,
+    PipelineSource.SHEIN,
+  ];
+
   /** All PipelineSource enum values, in declaration order. */
   getAvailableSources(): PipelineSource[] {
     return [
@@ -107,10 +122,11 @@ export class PipelineService {
   }
 
   /**
-   * Full pipeline: scrape every registered source in parallel → run
-   * staging → load the DW. Each phase's errors are surfaced via the
-   * returned envelope rather than thrown so the dashboard can render
-   * a partial-success summary.
+   * Full pipeline: scrape every runnable source in parallel → run
+   * staging → load the DW. By default only the implemented (non-stub)
+   * sources run; pass `opts.sources` to explicitly include a stub.
+   * Each phase's errors are surfaced via the returned envelope rather
+   * than thrown so the dashboard can render a partial-success summary.
    */
   async runAll(opts?: {
     sources?: PipelineSource[];
@@ -118,7 +134,7 @@ export class PipelineService {
     loadOpts?: { truncateFirst?: boolean };
   }): Promise<PipelineRunSummary> {
     const start = Date.now();
-    const requested = opts?.sources ?? this.getAvailableSources();
+    const requested = opts?.sources ?? this.DEFAULT_RUN_SOURCES;
     const adapters = requested.map((s) => this.pickSource(s));
 
     this.logger.log(`runAll starting: ${requested.length} sources`);
