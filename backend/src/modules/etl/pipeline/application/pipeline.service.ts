@@ -15,6 +15,7 @@ import type {
   SourceConfig,
   StagingResult,
 } from '../interfaces';
+import { RawScraperIngestForwarder } from './raw-scraper-ingest.forwarder';
 
 /**
  * PipelineService — orchestrator for the seven scrapers, the
@@ -39,6 +40,7 @@ export class PipelineService {
     @Inject(DW_LOADER) private readonly dwLoader: IDwLoader,
     @Inject(DATA_SOURCES) private readonly dataSources: IDataSource[],
     @Inject(STAGING_PROCESSOR) private readonly staging: IStagingProcessor,
+    private readonly ingestForwarder: RawScraperIngestForwarder,
   ) {}
 
   /**
@@ -98,7 +100,17 @@ export class PipelineService {
         `Source mismatch: adapter=${adapter.source}, config=${config.source}`,
       );
     }
-    return adapter.run(config);
+    const result = await adapter.run(config);
+    // Bridge the successful dump into the operational flow. Fire-and-forget:
+    // a forwarding failure must not change the returned ScrapeResult.
+    try {
+      await this.ingestForwarder.forwardIfProducible(result);
+    } catch (err) {
+      this.logger.warn(
+        `Scrape result forwarder skipped for ${source}: ${(err as Error).message}`,
+      );
+    }
+    return result;
   }
 
   /** Run only the staging transform (raw → staging). */
@@ -164,6 +176,19 @@ export class PipelineService {
     this.logger.log(
       `runAll scrapes done in ${scrapeResults.reduce((acc: number, r: ScrapeResult) => acc + r.durationMs, 0)}ms`,
     );
+
+    // Bridge every successful dump into the operational flow. Each result
+    // is forwarded in isolation so one failure cannot abort the rest; the
+    // forwarder itself also swallows its own errors.
+    for (const result of scrapeResults) {
+      try {
+        await this.ingestForwarder.forwardIfProducible(result);
+      } catch (err) {
+        this.logger.warn(
+          `Scrape result forwarder skipped for ${result.source}: ${(err as Error).message}`,
+        );
+      }
+    }
 
     // Staging is sequential by design (single writer to disk).
     let stagingResult: StagingResult | undefined;

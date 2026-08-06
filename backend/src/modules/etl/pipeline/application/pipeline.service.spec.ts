@@ -16,6 +16,7 @@ import type {
   StagingResult,
 } from '../interfaces';
 import { PipelineService } from './pipeline.service';
+import { RawScraperIngestForwarder } from './raw-scraper-ingest.forwarder';
 import {
   MercadoLibreAdapter,
   AliExpressAdapter,
@@ -51,6 +52,7 @@ describe('PipelineService', () => {
   let dataSourceStubs: jest.Mocked<IDataSource>[];
   let stagingStub: jest.Mocked<IStagingProcessor>;
   let logSpy: jest.SpyInstance;
+  let ingestForwarderStub: { forwardIfProducible: jest.Mock };
 
   beforeEach(async () => {
     logSpy = jest
@@ -63,6 +65,10 @@ describe('PipelineService', () => {
 
     stagingStub = {
       run: jest.fn(),
+    };
+
+    ingestForwarderStub = {
+      forwardIfProducible: jest.fn().mockResolvedValue(undefined),
     };
 
     // Stub each source so we can assert which one fired on runAll().
@@ -82,6 +88,10 @@ describe('PipelineService', () => {
         { provide: DW_LOADER, useValue: dwLoaderStub },
         { provide: DATA_SOURCES, useValue: dataSourceStubs },
         { provide: STAGING_PROCESSOR, useValue: stagingStub },
+        {
+          provide: RawScraperIngestForwarder,
+          useValue: ingestForwarderStub,
+        },
       ],
     }).compile();
 
