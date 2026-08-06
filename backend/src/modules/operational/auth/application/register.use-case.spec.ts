@@ -13,6 +13,7 @@ describe('RegisterUseCase', () => {
     repository = {
       findByEmail: jest.fn(),
       findById: jest.fn(),
+      count: jest.fn(),
       create: jest.fn(),
     };
     jwt = { sign: jest.fn().mockReturnValue('signed.jwt.token') } as any;
@@ -22,11 +23,12 @@ describe('RegisterUseCase', () => {
   it('hashes the password, creates the user, and returns a token', async () => {
     repository.findByEmail.mockResolvedValue(null);
     repository.create.mockImplementation(
-      (email: string, passwordHash: string) =>
+      (email: string, passwordHash: string, role: string) =>
         Promise.resolve({
           id: 'u1',
           email,
           passwordHash,
+          role,
           createdAt: new Date(),
           updatedAt: new Date(),
         } as any),
@@ -41,8 +43,58 @@ describe('RegisterUseCase', () => {
     expect(await bcrypt.compare('password123', storedHash)).toBe(true);
     expect(res).toEqual({
       accessToken: 'signed.jwt.token',
-      user: { id: 'u1', email: 'a@b.com' },
+      user: { id: 'u1', email: 'a@b.com', role: 'user' },
     });
+  });
+
+  it('always creates a plain user, never admin, regardless of user count', async () => {
+    repository.findByEmail.mockResolvedValue(null);
+    // Even on a completely empty table the public surface must NOT
+    // bootstrap an admin (that is seed.ts's responsibility).
+    repository.count.mockResolvedValue(0);
+    repository.create.mockImplementation(
+      (email: string, passwordHash: string, role: string) =>
+        Promise.resolve({
+          id: 'u1',
+          email,
+          passwordHash,
+          role,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        } as any),
+    );
+
+    await useCase.execute('first@b.com', 'password123');
+
+    expect(repository.create).toHaveBeenCalledWith(
+      'first@b.com',
+      expect.any(String),
+      'user',
+    );
+  });
+
+  it('grants plain user role to every later registration', async () => {
+    repository.findByEmail.mockResolvedValue(null);
+    repository.create.mockImplementation(
+      (email: string, passwordHash: string, role: string) =>
+        Promise.resolve({
+          id: 'u4',
+          email,
+          passwordHash,
+          role,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        } as any),
+    );
+
+    const res = await useCase.execute('later@b.com', 'password123');
+
+    expect(repository.create).toHaveBeenCalledWith(
+      'later@b.com',
+      expect.any(String),
+      'user',
+    );
+    expect(res.user.role).toBe('user');
   });
 
   it('rejects a duplicate email', async () => {
@@ -50,6 +102,7 @@ describe('RegisterUseCase', () => {
       id: 'u1',
       email: 'a@b.com',
       passwordHash: 'x',
+      role: 'user',
       createdAt: new Date(),
       updatedAt: new Date(),
     } as any);
@@ -84,11 +137,12 @@ describe('RegisterUseCase', () => {
   it('normalizes email (trim + lowercase) before lookup and creation', async () => {
     repository.findByEmail.mockResolvedValue(null);
     repository.create.mockImplementation(
-      (email: string, passwordHash: string) =>
+      (email: string, passwordHash: string, role: string) =>
         Promise.resolve({
           id: 'u1',
           email,
           passwordHash,
+          role,
           createdAt: new Date(),
           updatedAt: new Date(),
         } as any),
@@ -100,6 +154,7 @@ describe('RegisterUseCase', () => {
     expect(repository.create).toHaveBeenCalledWith(
       'a@b.com',
       expect.any(String),
+      'user',
     );
     expect(res.user.email).toBe('a@b.com');
   });

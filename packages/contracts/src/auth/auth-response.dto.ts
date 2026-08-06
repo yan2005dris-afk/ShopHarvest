@@ -1,6 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
 
+export type UserRole = 'admin' | 'user';
+
 /**
  * Authenticated user shape returned alongside the access token.
  *
@@ -17,6 +19,10 @@ export class AuthUserDto {
   @ApiProperty({ format: 'email', example: 'user@example.com' })
   @Expose()
   email!: string;
+
+  @ApiProperty({ enum: ['admin', 'user'], example: 'user' })
+  @Expose()
+  role!: UserRole;
 }
 
 /**
