@@ -35,6 +35,7 @@ import {
   PipelineRunSummary,
 } from '@web-scraping/contracts/pipeline';
 import type { EtlRunDto } from '@web-scraping/contracts/pipeline';
+import { ScrapeOneDto } from '../../dto/scrape-one.dto';
 import { Public } from '../../../../../modules/operational/auth/common/public.decorator';
 import { OperationalPrismaService } from '../../../../../common/prisma/operational-prisma.service';
 import { PipelineService } from '../../application/pipeline.service';
@@ -100,12 +101,7 @@ export class PipelineController {
   @Post('scrape/:source')
   async scrapeOne(
     @Param('source') source: string,
-    @Body()
-    config: {
-      outputDir: string;
-      maxItems?: number;
-      extra?: Record<string, unknown>;
-    },
+    @Body() config: ScrapeOneDto,
   ): Promise<ScrapeResult> {
     const validSource = (Object.values(PipelineSource) as string[]).includes(
       source,
@@ -130,7 +126,7 @@ export class PipelineController {
       source: validSource,
       outputDir: config.outputDir,
       maxItems: config.maxItems,
-      extra: config.extra,
+      extra: config.extra ? { ...config.extra } : undefined,
     };
     return this.pipelineService.runScraper(validSource, sourceConfig);
   }
