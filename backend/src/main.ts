@@ -36,7 +36,8 @@ async function bootstrap() {
   // instalada en el navegador de un usuario no debe tener CORS hacia esta API
   // salvo que su origen figure en EXTENSION_ORIGINS.
   const frontendOrigins = (
-    process.env.FRONTEND_ORIGIN ?? 'http://localhost:4200'
+    process.env.FRONTEND_ORIGIN ??
+    'http://localhost:4200,http://localhost:8080'
   )
     .split(',')
     .map((s) => s.trim())

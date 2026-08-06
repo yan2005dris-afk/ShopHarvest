@@ -22,7 +22,6 @@ describe('RegisterUseCase', () => {
 
   it('hashes the password, creates the user, and returns a token', async () => {
     repository.findByEmail.mockResolvedValue(null);
-    repository.count.mockResolvedValue(0);
     repository.create.mockImplementation(
       (email: string, passwordHash: string, role: string) =>
         Promise.resolve({
@@ -44,12 +43,14 @@ describe('RegisterUseCase', () => {
     expect(await bcrypt.compare('password123', storedHash)).toBe(true);
     expect(res).toEqual({
       accessToken: 'signed.jwt.token',
-      user: { id: 'u1', email: 'a@b.com', role: 'admin' },
+      user: { id: 'u1', email: 'a@b.com', role: 'user' },
     });
   });
 
-  it('bootstraps the FIRST user as admin (empty users table)', async () => {
+  it('always creates a plain user, never admin, regardless of user count', async () => {
     repository.findByEmail.mockResolvedValue(null);
+    // Even on a completely empty table the public surface must NOT
+    // bootstrap an admin (that is seed.ts's responsibility).
     repository.count.mockResolvedValue(0);
     repository.create.mockImplementation(
       (email: string, passwordHash: string, role: string) =>
@@ -63,19 +64,17 @@ describe('RegisterUseCase', () => {
         } as any),
     );
 
-    const res = await useCase.execute('first@b.com', 'password123');
+    await useCase.execute('first@b.com', 'password123');
 
     expect(repository.create).toHaveBeenCalledWith(
       'first@b.com',
       expect.any(String),
-      'admin',
+      'user',
     );
-    expect(res.user.role).toBe('admin');
   });
 
   it('grants plain user role to every later registration', async () => {
     repository.findByEmail.mockResolvedValue(null);
-    repository.count.mockResolvedValue(3);
     repository.create.mockImplementation(
       (email: string, passwordHash: string, role: string) =>
         Promise.resolve({
@@ -116,7 +115,6 @@ describe('RegisterUseCase', () => {
 
   it('maps a Prisma P2002 (unique violation) to EmailAlreadyRegisteredError (TOCTOU race recovery)', async () => {
     repository.findByEmail.mockResolvedValue(null);
-    repository.count.mockResolvedValue(0);
     const p2002 = new Prisma.PrismaClientKnownRequestError(
       'Unique constraint failed on the field: `email`',
       { code: 'P2002', clientVersion: 'test', meta: { target: ['email'] } },
@@ -130,7 +128,6 @@ describe('RegisterUseCase', () => {
 
   it('rethrows non-P2002 create errors unchanged', async () => {
     repository.findByEmail.mockResolvedValue(null);
-    repository.count.mockResolvedValue(0);
     const other = new Error('disk on fire');
     repository.create.mockRejectedValue(other);
 
@@ -139,7 +136,6 @@ describe('RegisterUseCase', () => {
 
   it('normalizes email (trim + lowercase) before lookup and creation', async () => {
     repository.findByEmail.mockResolvedValue(null);
-    repository.count.mockResolvedValue(5);
     repository.create.mockImplementation(
       (email: string, passwordHash: string, role: string) =>
         Promise.resolve({

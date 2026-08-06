@@ -5,7 +5,6 @@ import * as bcrypt from 'bcryptjs';
 import type { AuthResponseDto } from '@web-scraping/contracts/auth';
 import { EmailAlreadyRegisteredError } from '../domain/auth.errors';
 import { User, normalizeEmail } from '../domain/user.entity';
-import type { UserRole } from '../domain/user.entity';
 import { USERS_REPOSITORY } from '../domain/users.repository';
 import type { UsersRepository } from '../domain/users.repository';
 import type { JwtPayload } from '../common/jwt.strategy';
@@ -26,12 +25,11 @@ export class RegisterUseCase {
     if (existing) {
       throw new EmailAlreadyRegisteredError(normalizedEmail);
     }
-    // Bootstrap rule: the first account on an empty users table becomes the
-    // admin (no separate admin-seeding step needed). Every later registration
-    // is a plain 'user' and cannot reach admin-only endpoints, so the public
-    // register surface no longer grants full API access to strangers.
-    const isFirstUser = (await this.repository.count()) === 0;
-    const role: UserRole = isFirstUser ? 'admin' : 'user';
+    // Public registration ALWAYS creates a plain 'user'. Admins are created
+    // exclusively through the deterministic seeding/bootstrap flow
+    // (prisma/seed.ts), never by a raceable count check on this public
+    // surface. A role-based bootstrap here would let an unauthenticated
+    // stranger register first on a fresh deployment and become admin.
     const passwordHash = await bcrypt.hash(
       password,
       RegisterUseCase.SALT_ROUNDS,
@@ -40,7 +38,7 @@ export class RegisterUseCase {
       const user = await this.repository.create(
         normalizedEmail,
         passwordHash,
-        role,
+        'user',
       );
       return this.issueToken(user);
     } catch (err) {
