@@ -5,7 +5,6 @@ import {
   Delete,
   Get,
   HttpException,
-  HttpStatus,
   Inject,
   NotFoundException,
   Param,
@@ -203,9 +202,10 @@ export class BrandsHttpController {
     if (error instanceof DuplicateBrandNameError) {
       return new ConflictException(error.message);
     }
-    return new HttpException(
-      (error as Error)?.message ?? 'Internal error',
-      HttpStatus.INTERNAL_SERVER_ERROR,
-    );
+    // Unexpected errors must NOT be wrapped here with their raw message:
+    // the global HttpExceptionFilter would echo that message verbatim even
+    // in production. Bubbling up lets the filter log the real error
+    // server-side and redact it to 'Unexpected error' on the wire.
+    throw error;
   }
 }
