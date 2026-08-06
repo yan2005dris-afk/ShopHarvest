@@ -9,7 +9,21 @@
 // chrome.storage.local; the backend no longer owns a schedule table.
 
 const ALARM_PREFIX = 'replay:';
-const DEFAULT_BACKEND_URL = 'http://localhost:3000';
+
+/**
+ * Production backend origin for replay traffic. The API is served under
+ * the same origin as the web app with the `api` global prefix (see
+ * `backend/src/main.ts` and `frontend/src/environments`), and the
+ * extension's manifest already grants host permission for
+ * `https://bi.dihm-muertos.site/*`. Replay builds `${base}/products/ingest`,
+ * so the full default URL is `https://bi.dihm-muertos.site/api`.
+ *
+ * Dev setups override it per install via `chrome.storage.local.backendUrl`
+ * (set through the `SET_BACKEND_URL` message or directly); without an
+ * override this prod default keeps replays (and the JWT they carry) on
+ * HTTPS instead of `http://localhost:3000`.
+ */
+const DEFAULT_BACKEND_URL = 'https://bi.dihm-muertos.site/api';
 
 export interface ScheduleEntry {
   intervalMinutes: number;
@@ -43,9 +57,39 @@ async function setSchedules(schedules: Schedules): Promise<void> {
 
 async function getBackendUrl(): Promise<string> {
   const { backendUrl } = await chrome.storage.local.get('backendUrl');
-  return typeof backendUrl === 'string' && backendUrl.length > 0
-    ? backendUrl
-    : DEFAULT_BACKEND_URL;
+  const normalized =
+    typeof backendUrl === 'string' ? normalizeBackendUrl(backendUrl) : null;
+  return normalized ?? DEFAULT_BACKEND_URL;
+}
+
+/**
+ * Validate + canonicalize an URL for the backend. Returns `null` for
+ * anything that is not a well-formed http(s) URL (rejects `file:`,
+ * `ftp:`, `javascript:`, malformed origin), and strips a trailing slash
+ * so `getBackendUrl()` + `${base}/products/ingest` never double-slash.
+ * Pure → unit-testable without `chrome.*` globals.
+ */
+export function normalizeBackendUrl(input: string): string | null {
+  let url: URL;
+  try {
+    url = new URL(input);
+  } catch {
+    return null;
+  }
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') return null;
+  return url.toString().replace(/\/$/, '');
+}
+
+/**
+ * Persist a per-install backend URL override. Callers go through this so
+ * the value is validated and canonicalized before it lands in
+ * chrome.storage.local. Returns false (and stores nothing) on bad input.
+ */
+export async function setBackendUrl(input: string): Promise<boolean> {
+  const normalized = normalizeBackendUrl(input);
+  if (!normalized) return false;
+  await chrome.storage.local.set({ backendUrl: normalized });
+  return true;
 }
 
 /** JWT handed over by the Angular app after login (batch 6). */
@@ -279,6 +323,16 @@ export function initScheduler(): void {
       void chrome.storage.local
         .set({ authToken: token ?? '' })
         .then(() => sendResponse({ ok: true }));
+      return true;
+    }
+
+    if (type === 'SET_BACKEND_URL') {
+      const { url } = (payload ?? {}) as { url?: string };
+      if (typeof url !== 'string' || !normalizeBackendUrl(url)) {
+        sendResponse({ ok: false, error: 'backendUrl must be an http(s) URL' });
+        return true;
+      }
+      void setBackendUrl(url).then((ok) => sendResponse({ ok }));
       return true;
     }
 
