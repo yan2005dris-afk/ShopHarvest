@@ -18,6 +18,7 @@ import type {
 } from '@web-scraping/contracts/categories';
 import type { ScrapeResult } from '@web-scraping/contracts/pipeline';
 import type { ExtensionFieldMapping } from './extension.service';
+import { environment } from '../../environments/environment';
 
 // ─── Aliases — keep the existing call-site names so consumers don't
 // have to change. The wire shape is owned by `@web-scraping/contracts`.
@@ -39,7 +40,9 @@ export type Category = CategoryResponseDto;
   providedIn: 'root',
 })
 export class ApiService {
-  private readonly baseUrl = '/api';
+  // Read from environment.apiBaseUrl ('/api') so the web API origin/path
+  // is a single source of truth instead of a per-service hardcode.
+  private readonly baseUrl = environment.apiBaseUrl;
 
   constructor(private readonly http: HttpClient) {}
 
