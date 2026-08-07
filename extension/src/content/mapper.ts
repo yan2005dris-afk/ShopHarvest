@@ -624,48 +624,6 @@ function detectPriceByPattern(container: Element): number[] {
 }
 
 /**
- * Store-specific price extraction overrides. Maps store name or URL pattern
- * to a function that extracts price from a container. Used when pattern
- * detection alone isn't sufficient.
- */
-interface StoreOverride {
-  test: (url: string | null) => boolean;
-  extract: (container: Element) => number | null;
-}
-
-const STORE_OVERRIDES: StoreOverride[] = [
-  {
-    test: (url) => !!url && url.includes('temu.com'),
-    extract: (container) => {
-      // Temu: price splits across multiple spans with $ | digits | ,decimals
-      const prices = detectPriceByPattern(container);
-      return prices.length > 0 ? prices[0] : null;
-    },
-  },
-  {
-    test: (url) => !!url && url.includes('shein.com'),
-    extract: (container) => {
-      // Shein: similar to Temu, fragments price across spans
-      const prices = detectPriceByPattern(container);
-      return prices.length > 0 ? prices[0] : null;
-    },
-  },
-  {
-    test: (url) => !!url && url.includes('amazon.'),
-    extract: (container) => {
-      // Amazon: usually single consolidated price element, but pattern fallback works
-      const el = container.querySelector('[class*="price" i], [data-a-price]');
-      if (el) {
-        const parsed = parseLocalizedPrice(el.textContent?.trim() ?? '');
-        if (parsed !== null && parsed > 0) return parsed;
-      }
-      const prices = detectPriceByPattern(container);
-      return prices.length > 0 ? prices[0] : null;
-    },
-  },
-];
-
-/**
  * Attributes lazy-load libraries stash the real image URL in while the
  * browser hasn't scrolled the element into view yet. Checked BEFORE the
  * `src` attribute — most lazy-load setups leave `src` pointing at a
