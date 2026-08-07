@@ -144,7 +144,7 @@ describe('readSheinExtensionExport', () => {
 
     await expect(readSheinExtensionExport(config, cs)).rejects.toMatchObject({
       reason: 'schema',
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
       message: expect.stringContaining('products'),
     });
   });
@@ -166,7 +166,7 @@ describe('readSheinExtensionExport', () => {
 
     await expect(readSheinExtensionExport(config, cs)).rejects.toMatchObject({
       reason: 'schema',
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
       message: expect.stringContaining('source'),
     });
   });

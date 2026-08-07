@@ -102,7 +102,10 @@ import { FormsModule } from '@angular/forms';
                 {{
                   selectedPendingSources().size === 0
                     ? 'Pipeline completo'
-                    : selectedPendingSources().size + ' de ' + pending.total + ' fuentes seleccionadas'
+                    : selectedPendingSources().size +
+                      ' de ' +
+                      pending.total +
+                      ' fuentes seleccionadas'
                 }}
               </span>
             </div>
@@ -111,7 +114,7 @@ import { FormsModule } from '@angular/forms';
             class="grid gap-4"
             style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr))"
           >
-@for (item of pending.sources | keyvalue; track item.key) {
+            @for (item of pending.sources | keyvalue; track item.key) {
               <label
                 class="group flex cursor-pointer gap-3 rounded-md border p-4 transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary"
                 [class.border-outline-variant]="!selectedPendingSources().has(toKey(item.key))"
@@ -245,12 +248,10 @@ export class EtlManagementPage implements OnInit {
       | { sources: Record<string, { name: string; pending: number }> }
       | null
       | undefined;
-    const selected: EtlSourceOption[] = Array.from(this.selectedPendingSources()).map(
-      (code) => ({
-        code,
-        label: summary?.sources?.[code]?.name ?? code,
-      }),
-    );
+    const selected: EtlSourceOption[] = Array.from(this.selectedPendingSources()).map((code) => ({
+      code,
+      label: summary?.sources?.[code]?.name ?? code,
+    }));
     this.modalPreselectedSources.set(selected);
     this.isConfirmOpen.set(true);
   }

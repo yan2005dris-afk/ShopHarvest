@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, OnDestroy } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 
 export interface ExtensionFieldMapping {
@@ -32,8 +32,9 @@ interface HandshakeMessage {
 }
 
 @Injectable({ providedIn: 'root' })
-export class ExtensionService {
+export class ExtensionService implements OnDestroy {
   private extensionId: string | null = null;
+  private pingTimers: ReturnType<typeof setTimeout>[] = [];
   readonly available$ = new BehaviorSubject<boolean>(false);
 
   constructor() {
@@ -53,14 +54,26 @@ export class ExtensionService {
     this.pingWithBackoff();
   }
 
+  ngOnDestroy(): void {
+    for (const timer of this.pingTimers) {
+      clearTimeout(timer);
+    }
+    this.pingTimers = [];
+  }
+
   private pingWithBackoff(): void {
     const delaysMs = [0, 250, 500, 1000, 2000];
     for (const delay of delaysMs) {
-      setTimeout(() => {
-        if (this.extensionId === null) {
-          window.postMessage({ type: '__VS_PING__' }, '*');
-        }
-      }, delay);
+      this.pingTimers.push(
+        setTimeout(() => {
+          // `window` may be gone in non-browser contexts (e.g. unit tests
+          // after environment teardown); never throw outside the browser.
+          if (typeof window === 'undefined') return;
+          if (this.extensionId === null) {
+            window.postMessage({ type: '__VS_PING__' }, '*');
+          }
+        }, delay),
+      );
     }
   }
 

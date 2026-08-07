@@ -17,12 +17,22 @@ describe('QualityService', () => {
     precio_raw: '19.99',
   };
 
-  it('ETL-3: runs exactly 7 checks and returns state=passed on a clean batch', () => {
+  it('ETL-3: runs exactly 8 checks and returns state=passed on a clean batch', () => {
     const report = service.run([VALID_ROW]);
 
-    expect(report.checks).toHaveLength(7);
+    expect(report.checks).toHaveLength(8);
     expect(report.state).toBe('passed');
     expect(report.checks.every((c) => c.passed)).toBe(true);
+  });
+
+  it('rate-known fails when a row was converted with a missing FX rate', () => {
+    const badRow = { ...VALID_ROW, _rate_missing: true };
+    const report = service.run([badRow]);
+
+    expect(report.state).toBe('failed');
+    const rateKnown = report.checks.find((c) => c.name === 'rate-known');
+    expect(rateKnown?.passed).toBe(false);
+    expect(rateKnown?.failures.length).toBeGreaterThan(0);
   });
 
   it('ETL-4: fails fast — one failed check flips the whole report to failed', () => {

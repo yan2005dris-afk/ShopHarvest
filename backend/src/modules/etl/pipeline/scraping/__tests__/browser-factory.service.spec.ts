@@ -1,8 +1,6 @@
 import { ConfigService } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
 
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-
 // Mock playwright-extra so chromium is a stub that doesn't launch real browsers.
 jest.mock('playwright-extra', () => ({
   chromium: {

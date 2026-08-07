@@ -144,7 +144,7 @@ export class RawScraperIngestForwarder {
     return items.map((item) => {
       const record: Record<string, string | number | null> = {};
       if (item && typeof item === 'object') {
-        for (const [key, value] of Object.entries(item as object)) {
+        for (const [key, value] of Object.entries(item)) {
           record[key] =
             typeof value === 'string' || typeof value === 'number'
               ? value

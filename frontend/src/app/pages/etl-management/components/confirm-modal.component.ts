@@ -68,16 +68,10 @@ export interface EtlSourceOption {
                     (change)="onActionChange('full')"
                   />
                   <div class="flex flex-col gap-0.5">
-                    <span class="text-body-md font-medium text-on-surface"
-                      >Pipeline Completo</span
-                    >
+                    <span class="text-body-md font-medium text-on-surface">Pipeline Completo</span>
                     <span class="text-body-sm text-on-surface-variant">
                       Scraping por navegador + ETL sobre las fuentes
-                      {{
-                        preselectedSources().length > 0
-                          ? 'seleccionadas'
-                          : 'disponibles'
-                      }}
+                      {{ preselectedSources().length > 0 ? 'seleccionadas' : 'disponibles' }}
                     </span>
                   </div>
                 </label>

@@ -163,7 +163,7 @@ describe('scrapeAliExpress', () => {
     await scrapeAliExpress(config, factory, cs, FAST_OPTS);
 
     expect((factory.launch as jest.Mock).mock.calls.length).toBeGreaterThan(0);
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+
     expect(context.route.mock.calls[0][0]).toBe('**/*');
   });
 

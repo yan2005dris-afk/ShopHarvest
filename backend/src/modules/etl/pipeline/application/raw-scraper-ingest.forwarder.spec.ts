@@ -23,9 +23,7 @@ describe('RawScraperIngestForwarder', () => {
   let warnSpy: jest.SpyInstance;
 
   beforeEach(() => {
-    jest
-      .spyOn(Logger.prototype, 'log')
-      .mockImplementation(() => undefined);
+    jest.spyOn(Logger.prototype, 'log').mockImplementation(() => undefined);
     warnSpy = jest
       .spyOn(Logger.prototype, 'warn')
       .mockImplementation(() => undefined);
@@ -95,9 +93,7 @@ describe('RawScraperIngestForwarder', () => {
         outputPath: path.join(os.tmpdir(), 'does-not-exist-forwarder.json'),
       }),
     );
-    expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining('outputPath'),
-    );
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('outputPath'));
     expect(ingestUseCase.execute).not.toHaveBeenCalled();
   });
 
@@ -116,7 +112,9 @@ describe('RawScraperIngestForwarder', () => {
       expect(ingestUseCase.execute).toHaveBeenCalledTimes(1);
       const dto = ingestUseCase.execute.mock.calls[0][0];
       expect(dto.domain).toBe(PipelineSource.MERCADOLIBRE);
-      expect(dto.pageUrl).toBeUndefined();
+      // The forwarder anchors the dedup URL to a well-formed source page so
+      // the ETL `url-well-formed` quality gate passes (see forwarder docs).
+      expect(dto.pageUrl).toBe('https://mercadolibre.com/');
       expect(dto.fieldMappings).toBeUndefined();
       expect(dto.products).toHaveLength(2);
       expect(dto.products[0]).toEqual({
