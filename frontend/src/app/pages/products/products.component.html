@@ -137,7 +137,12 @@
         <div
           class="flex items-center justify-between border-b border-outline-variant px-6 py-4"
         >
-          <h2 id="product-detail-title" class="text-headline-sm m-0 font-bold text-on-surface">
+          <!-- Quiet chrome label — the accessible dialog name, not the visual
+               anchor. The product title below (headline-md) leads instead. -->
+          <h2
+            id="product-detail-title"
+            class="text-label-caps m-0 font-bold tracking-wider text-on-surface-variant uppercase"
+          >
             Product Details
           </h2>
           <button
@@ -148,27 +153,40 @@
             Close
           </button>
         </div>
-        <div class="flex flex-1 overflow-hidden">
-          <div class="flex flex-1 gap-6 overflow-y-auto p-6">
+        <!--
+          Single vertical flow, one scroll region — four zones in strict
+          priority order (identity → offers → chart → per-offer history),
+          each full-width. Spacing follows two declared tiers: gap-2/gap-3
+          (8-12px) within a label/value pair, and mt-10 (40px, visibly
+          larger than anything else in this panel) between zones, so a
+          zone boundary reads unambiguously instead of blurring into the
+          16-24px spacing used for everything else.
+        -->
+        <div class="flex-1 overflow-y-auto p-6">
+          <!-- Zone 1 — Identity: compact, low-density, checked once per view. -->
+          <div class="flex items-start gap-6">
             @if (selectedProduct.imageUrl) {
               <div
-                class="flex h-30 w-30 shrink-0 items-center justify-center overflow-hidden rounded-md bg-surface-container-low"
+                class="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-md bg-surface-container-low"
               >
                 <img
                   [src]="selectedProduct.imageUrl"
                   [alt]="selectedProduct.title"
-                  class="size-full object-contain p-4"
+                  class="size-full object-contain p-3"
                 />
               </div>
             } @else {
               <div
-                class="flex h-30 w-30 shrink-0 items-center justify-center rounded-md border border-outline-variant bg-surface-container-low text-on-surface-variant"
+                class="flex h-24 w-24 shrink-0 items-center justify-center rounded-md border border-outline-variant bg-surface-container-low text-on-surface-variant"
               >
-                <span class="material-symbols-outlined" style="font-size: 48px">image</span>
+                <span class="material-symbols-outlined" style="font-size: 40px">image</span>
               </div>
             }
             <div class="flex min-w-0 flex-1 flex-col gap-2">
-              <h3 class="text-headline-sm m-0 font-bold leading-tight text-on-surface">
+              <!-- The only headline-weight element on the page — the real
+                   visual anchor, distinct from the quiet "Product Details"
+                   chrome label above. -->
+              <h3 class="text-headline-md m-0 font-bold leading-tight text-on-surface">
                 {{ selectedProduct.title }}
               </h3>
               @if (primaryOffer(selectedProduct); as offer) {
@@ -189,29 +207,31 @@
               }
             </div>
           </div>
-          <div
-            class="w-75 min-w-[300px] overflow-y-auto border-l border-outline-variant bg-surface-container-low p-6"
-          >
+
+          <!-- Zone 2 — Offers: the actual reason this modal exists (price
+               comparison across sources), so it gets full width instead of
+               a cramped fixed-width rail. -->
+          <div class="mt-10">
             <h4
               class="text-label-caps m-0 mb-4 font-bold tracking-wider text-on-surface-variant uppercase"
             >
               Offers
             </h4>
-            <table class="w-full border-collapse text-body-md" style="table-layout: fixed">
+            <table class="w-full border-collapse text-body-md">
               <thead>
                 <tr>
                   <th
-                    class="border-outline-variant text-label-caps text-on-surface-variant w-[45%] overflow-hidden text-ellipsis whitespace-nowrap border-b px-3 py-2 text-left font-bold tracking-wider uppercase"
+                    class="border-outline-variant text-label-caps text-on-surface-variant border-b px-3 py-2 text-left font-bold tracking-wider uppercase"
                   >
                     Source
                   </th>
                   <th
-                    class="border-outline-variant text-label-caps text-on-surface-variant w-[30%] border-b px-3 py-2 text-right font-bold tracking-wider uppercase"
+                    class="border-outline-variant text-label-caps text-on-surface-variant border-b px-3 py-2 text-right font-bold tracking-wider uppercase"
                   >
                     Price
                   </th>
                   <th
-                    class="border-outline-variant text-label-caps text-on-surface-variant w-[25%] border-b px-3 py-2 text-right font-bold tracking-wider uppercase"
+                    class="border-outline-variant text-label-caps text-on-surface-variant w-32 border-b px-3 py-2 text-right font-bold tracking-wider uppercase"
                   >
                     URL
                   </th>
@@ -223,6 +243,7 @@
                     <td
                       class="text-on-surface-variant overflow-hidden px-3 py-2.5 text-ellipsis whitespace-nowrap"
                       [attr.data-source-id]="offer.sourceId"
+                      [title]="sourceName(offer.sourceId)"
                     >
                       {{ sourceName(offer.sourceId) }}
                     </td>
@@ -242,23 +263,50 @@
                 }
               </tbody>
             </table>
+          </div>
 
+          <!-- Zone 3 — Price history chart: secondary, full width (the old
+               max-w-[640px] cap was dead code — it lived inside a 300px
+               column that could never reach it). -->
+          <div class="mt-10">
             <h4
-              class="text-label-caps m-0 mt-6 mb-4 font-bold tracking-wider text-on-surface-variant uppercase"
+              class="text-label-caps m-0 mb-4 font-bold tracking-wider text-on-surface-variant uppercase"
             >
               Price History
             </h4>
             @if (store.priceHistory().length > 0) {
-              <div class="mb-5 max-w-[640px] overflow-hidden rounded-md">
+              <div class="overflow-hidden rounded-md">
                 <app-price-history-chart [observations]="store.priceHistory()" />
               </div>
+            } @else if (isLoadingHistory()) {
+              <div
+                class="flex flex-col items-center justify-center gap-4 p-4 text-center text-body-md text-on-surface-variant"
+              >
+                <span
+                  class="inline-block h-8 w-8 rounded-full border-[3px] border-outline-variant border-t-primary"
+                  style="animation: spin 0.7s linear infinite"
+                ></span>
+                <p class="m-0">Loading price history...</p>
+              </div>
+            } @else {
+              <p class="text-body-md m-0 italic text-on-surface-variant">
+                No price history available yet.
+              </p>
+            }
+          </div>
+
+          <!-- Zone 4 — Per-offer history: tertiary detail, same full width
+               as zones 2-3. Native <details>: only the first offer is
+               expanded by default so N offers don't stack N always-open
+               tables. -->
+          @if (store.priceHistory().length > 0) {
+            <div class="mt-6 flex flex-col gap-4">
               @for (offer of selectedProduct.offers; track offer.id; let i = $index) {
                 @if (store.historyByOffer().get(offer.id)?.length) {
-                  <!-- Native <details>: only the first offer's history is expanded by
-                       default so N offers don't stack N always-open tables. -->
-                  <details class="mb-4" data-testid="history-group" [open]="i === 0">
+                  <details data-testid="history-group" [open]="i === 0">
                     <summary
-                      class="mb-1.5 block max-w-full cursor-pointer overflow-hidden text-ellipsis whitespace-nowrap text-body-md text-on-surface-variant"
+                      class="block max-w-full cursor-pointer overflow-hidden text-ellipsis whitespace-nowrap text-body-md text-on-surface-variant"
+                      [title]="sourceName(offer.sourceId) + ' — ' + offer.url"
                     >
                       {{ sourceName(offer.sourceId) }} — {{ offer.url }}
                     </summary>
@@ -304,22 +352,8 @@
                   </details>
                 }
               }
-            } @else if (isLoadingHistory()) {
-              <div
-                class="flex flex-col items-center justify-center gap-4 p-4 text-center text-body-md text-on-surface-variant"
-              >
-                <span
-                  class="inline-block h-8 w-8 rounded-full border-[3px] border-outline-variant border-t-primary"
-                  style="animation: spin 0.7s linear infinite"
-                ></span>
-                <p class="m-0">Loading price history...</p>
-              </div>
-            } @else {
-              <p class="text-body-md m-0 italic text-on-surface-variant">
-                No price history available yet.
-              </p>
-            }
-          </div>
+            </div>
+          }
         </div>
       </div>
     </div>
