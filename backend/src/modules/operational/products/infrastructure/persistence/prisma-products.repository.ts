@@ -12,50 +12,66 @@ import type { PriceObservation as DomainPriceObservation } from '../../domain/pr
 import type {
   IngestCommand,
   IngestResult,
+  ProductListQuery,
   ProductLoadOptions,
   ProductsRepository,
 } from '../../domain/products.repository';
+import type { Product } from '../../domain/product.entity';
 import { ProductMapper } from './product.mapper';
 import type { PrismaProductWithOffers } from './product.mapper';
 
 /**
  * Prisma-backed implementation of `ProductsRepository`.
- *
- * Owns the canonical ingest transaction: a single `$transaction` walks
- * Source upsert → DomainRule upsert/backfill → per item Product+Offer
- * upsert, PriceObservation create, RawCapture upsert. All five writes
- * share atomic semantics, so a partial ingest never leaves dangling
- * captures or observations.
- *
- * The use case pre-derives `IngestItem`s from the inbound payload +
- * field mappings; this class just persists. Reads reconstruct the
- * `Product` aggregate through the mapper (the legacy
- * `findUnique({ include: { offers: { include: { priceObservations } } } })`
- * shape minus the live `Decimal` instances).
  */
 @Injectable()
 export class PrismaProductsRepository implements ProductsRepository {
   constructor(private readonly prisma: OperationalPrismaService) {}
 
-  async findAll(options: ProductLoadOptions) {
-    const rows: PrismaProductWithOffers[] = await this.prisma.product.findMany({
-      include: {
-        offers: {
-          include: { priceObservations: options.includeHistory },
-        },
-      },
-      orderBy: { updatedAt: 'desc' },
+  async findAll(query: ProductListQuery): Promise<{ items: Product[]; total: number }> {
+    const page = Math.max(1, query.page);
+    const limit = Math.min(100, Math.max(1, query.limit));
+    const skip = (page - 1) * limit;
+    const q = query.q?.trim();
+
+    const like = q ? `%${q.replace(/[\\%_]/g, (c) => `\\${c}`)}%` : '';
+    const filter: Prisma.Sql = q
+      ? Prisma.sql`WHERE public.f_unaccent(lower(p."title")) LIKE public.f_unaccent(lower(${like}))`
+      : Prisma.empty;
+
+    const [idRows, totals] = await Promise.all([
+      this.prisma.$queryRaw<{ id: string }[]>(Prisma.sql`
+        SELECT p."id" FROM "Product" p
+        ${filter}
+        ORDER BY p."updatedAt" DESC, p."id" DESC
+        LIMIT ${limit} OFFSET ${skip}`),
+      this.prisma.$queryRaw<{ total: number }[]>(Prisma.sql`
+        SELECT COUNT(*)::int AS total FROM "Product" p ${filter}`),
+    ]);
+
+    const ids = idRows.map((r) => r.id);
+    const total = Number(totals[0]?.total ?? 0);
+    if (ids.length === 0) return { items: [], total };
+
+    const rows = await this.prisma.product.findMany({
+      where: { id: { in: ids } },
+      include: { offers: true },
     });
-    return rows.map((row) => ProductMapper.toDomain(row));
+
+    const byId = new Map(rows.map((r) => [r.id, r]));
+    const items = ids.flatMap((id) => {
+      const row = byId.get(id);
+      return row ? [ProductMapper.toDomain(row)] : [];
+    });
+    return { items, total };
   }
 
-  async findById(id: string, options: ProductLoadOptions) {
+  async findById(id: string, options?: ProductLoadOptions) {
     const row: PrismaProductWithOffers | null =
       await this.prisma.product.findUnique({
         where: { id },
         include: {
           offers: {
-            include: { priceObservations: options.includeHistory },
+            include: { priceObservations: options?.includeHistory ?? false },
           },
         },
       });
@@ -101,8 +117,6 @@ export class PrismaProductsRepository implements ProductsRepository {
 
   async ingest(command: IngestCommand): Promise<IngestResult> {
     return this.prisma.$transaction(async (tx) => {
-      // 1. Upsert Source keyed by code = domain. The legacy service
-      // derived `baseUrl = https://{domain}` here; preserve that.
       const source =
         (await tx.source.findUnique({ where: { code: command.domain } })) ??
         (await tx.source.create({
@@ -113,9 +127,6 @@ export class PrismaProductsRepository implements ProductsRepository {
           },
         }));
 
-      // 2. Resolve/create DomainRule with backfill semantics. UI-edited
-      // field mappings are NEVER overwritten; we only backfill when
-      // the stored rule has none yet.
       let domainRule = await tx.domainRule.findUnique({
         where: { domain: command.domain },
       });
@@ -173,10 +184,6 @@ export class PrismaProductsRepository implements ProductsRepository {
 
         let offer: PrismaOffer;
         if (existingOffer) {
-          // Re-ingest of the same (sourceId, url) pair: update the
-          // existing Offer + its canonical Product, do NOT create a
-          // duplicate (spec: "Re-ingesting the same pair updates, not
-          // duplicates").
           offer = await tx.offer.update({
             where: { id: existingOffer.id },
             data: {
@@ -196,9 +203,6 @@ export class PrismaProductsRepository implements ProductsRepository {
             },
           });
         } else {
-          // New (sourceId, url) pair: create a new Product and a new
-          // Offer — no cross-source/cross-item dedup (spec: "One Offer
-          // Per Ingested Item").
           const createdProduct: PrismaProduct = await tx.product.create({
             data: {
               id: randomUUID(),
@@ -232,9 +236,6 @@ export class PrismaProductsRepository implements ProductsRepository {
           },
         });
 
-        // RawCapture — real FK to Offer (design.md Decision 2). Written
-        // inline via the same `tx`, not `RawCapturesService` (separate
-        // connection, would break atomicity).
         await tx.rawCapture.upsert({
           where: {
             offerId_sourceId: {

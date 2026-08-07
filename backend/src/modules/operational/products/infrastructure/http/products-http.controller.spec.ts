@@ -66,40 +66,57 @@ const buildController = () => {
 
 describe('ProductsHttpController', () => {
   describe('happy paths', () => {
-    it('returns mapped DTOs from listUseCase.execute() (no domainRuleId)', async () => {
+    it('returns paginated DTO envelope from listUseCase.execute() (no domainRuleId)', async () => {
       const { controller, list } = buildController();
-      list.execute.mockResolvedValue([buildProduct()]);
+      list.execute.mockResolvedValue({ items: [buildProduct()], total: 1 });
 
       const result = await controller.findAll({});
 
-      expect(list.execute).toHaveBeenCalledWith(true);
-      expect(result).toHaveLength(1);
-      expect(result[0].id).toBe('p_1');
-      expect(result[0].title).toBe('Camisa');
-      expect(result[0].offers).toHaveLength(1);
-      expect(result[0].offers[0].price).toBe(19.99);
-      expect(typeof result[0].offers[0].price).toBe('number');
+      expect(list.execute).toHaveBeenCalledWith({
+        page: 1,
+        limit: 24,
+        q: undefined,
+      });
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0].id).toBe('p_1');
+      expect(result.data[0].title).toBe('Camisa');
+      expect(result.data[0].offers).toHaveLength(1);
+      expect(result.data[0].offers[0].price).toBe(19.99);
+      expect(result.meta).toEqual({
+        page: 1,
+        limit: 24,
+        total: 1,
+        totalPages: 1,
+      });
+    });
+
+    it('forwards custom page, limit, and q to listUseCase', async () => {
+      const { controller, list } = buildController();
+      list.execute.mockResolvedValue({ items: [], total: 0 });
+
+      const result = await controller.findAll({ page: 2, limit: 10, q: 'camisa' });
+
+      expect(list.execute).toHaveBeenCalledWith({
+        page: 2,
+        limit: 10,
+        q: 'camisa',
+      });
+      expect(result.meta).toEqual({
+        page: 2,
+        limit: 10,
+        total: 0,
+        totalPages: 0,
+      });
     });
 
     it('uses findAllByDomainRule when domainRuleId is provided', async () => {
       const { controller, list } = buildController();
       list.findAllByDomainRule.mockResolvedValue([buildProduct()]);
 
-      const result = await controller.findAll({
-        domainRuleId: 'rule_1',
-      });
+      const result = await controller.findByDomain('rule_1');
 
       expect(list.findAllByDomainRule).toHaveBeenCalledWith('rule_1');
       expect(result).toHaveLength(1);
-    });
-
-    it('forwards includeHistory=false to the use case', async () => {
-      const { controller, list } = buildController();
-      list.execute.mockResolvedValue([]);
-
-      await controller.findAll({ includeHistory: false });
-
-      expect(list.execute).toHaveBeenCalledWith(false);
     });
 
     it('returns the mapped DTO from findUseCase.execute() in findOne', async () => {

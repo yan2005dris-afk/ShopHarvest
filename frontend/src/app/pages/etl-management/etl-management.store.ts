@@ -1,5 +1,5 @@
 import { Injectable, inject, signal, computed, OnDestroy } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { AuthService } from '../../services/auth.service';
 import type {
   EtlRunDto,
@@ -34,6 +34,24 @@ export class EtlManagementStore implements OnDestroy {
   private pollingIntervalId: ReturnType<typeof setInterval> | null = null;
 
   constructor() {}
+
+  /**
+   * Backend errors are RFC 7807 envelopes (`detail`, not `message`) — see
+   * `HttpExceptionFilter`. 403 gets a fixed friendly override instead of
+   * Nest's generic "Forbidden resource" detail.
+   */
+  private describeError(err: unknown, fallback: string): string {
+    if (err instanceof HttpErrorResponse) {
+      if (err.status === 403) {
+        return "You don't have permission to perform this action.";
+      }
+      const body = err.error as { detail?: string; message?: string | string[] } | null;
+      const detail =
+        body?.detail ?? (Array.isArray(body?.message) ? body.message.join('; ') : body?.message);
+      if (detail) return detail;
+    }
+    return fallback;
+  }
 
   // ─── Actions ────────────────────────────────────────────────
   clearError(): void {
@@ -81,7 +99,7 @@ export class EtlManagementStore implements OnDestroy {
         this.loading.set(false);
       },
       error: (err) => {
-        this.error.set(err?.error?.message || err?.message || 'Failed to load runs');
+        this.error.set(this.describeError(err, 'Failed to load runs'));
         this.loading.set(false);
       },
     });
@@ -99,7 +117,7 @@ export class EtlManagementStore implements OnDestroy {
           this.loadRuns();
         },
         error: (err) => {
-          this.error.set(err?.error?.message || err?.message || 'Failed to trigger run');
+          this.error.set(this.describeError(err, 'Failed to trigger run'));
           this.loading.set(false);
         },
       });
@@ -115,7 +133,7 @@ export class EtlManagementStore implements OnDestroy {
         }
       },
       error: (err) => {
-        this.error.set(err?.error?.message || err?.message || 'Failed to load run detail');
+        this.error.set(this.describeError(err, 'Failed to load run detail'));
       },
     });
   }

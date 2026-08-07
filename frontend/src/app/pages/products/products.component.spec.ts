@@ -5,15 +5,6 @@ import { provideRouter } from '@angular/router';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { ProductsComponent } from './products.component';
 
-/**
- * Spec for `ProductsComponent`, adapted by `product-offer-split` to the
- * offer-level model: price/url/extractedAt now live on `Offer`, nested
- * under `Product.offers[]`, instead of flat on `Product`.
- *
- * Drives the component through the real `provideHttpClientTesting()`
- * stack (matching `dashboard.service.spec.ts`'s convention) so we exercise
- * the actual `ApiService` calls, not a hand-rolled mock.
- */
 if (typeof globalThis.ResizeObserver === 'undefined') {
   (globalThis as any).ResizeObserver = class {
     observe(): void {}
@@ -104,12 +95,15 @@ describe('ProductsComponent (offer-level model)', () => {
     const fixture = TestBed.createComponent(ProductsComponent);
     fixture.detectChanges();
 
+    httpMock.expectOne((r) => r.url === '/api/sources' && r.method === 'GET').flush([]);
+
     const req = httpMock.expectOne((r) => r.url === '/api/products' && r.method === 'GET');
-    req.flush([productFixture()]);
+    req.flush({
+      data: [productFixture()],
+      meta: { page: 1, limit: 24, total: 1, totalPages: 1 },
+    });
     fixture.detectChanges();
 
-    // The full offers[] breakdown renders in the expanded detail —
-    // selecting the product also triggers the price-history request.
     const component = fixture.componentInstance;
     component.selectProduct(component.products[0]);
     fixture.detectChanges();
@@ -123,12 +117,48 @@ describe('ProductsComponent (offer-level model)', () => {
     expect(offerRows[1].textContent).toContain('24.5');
   });
 
+  it("resolves each offer's sourceId to the source's name instead of showing the raw uuid", () => {
+    const fixture = TestBed.createComponent(ProductsComponent);
+    fixture.detectChanges();
+
+    httpMock
+      .expectOne((r) => r.url === '/api/sources' && r.method === 'GET')
+      .flush([
+        { id: 's1', code: 'TEMU', name: 'Temu', baseUrl: 'https://temu.com', status: 'active' },
+      ]);
+
+    httpMock
+      .expectOne((r) => r.url === '/api/products' && r.method === 'GET')
+      .flush({
+        data: [productFixture()],
+        meta: { page: 1, limit: 24, total: 1, totalPages: 1 },
+      });
+    fixture.detectChanges();
+
+    const component = fixture.componentInstance;
+    component.selectProduct(component.products[0]);
+    fixture.detectChanges();
+    httpMock.expectOne((r) => r.url === '/api/products/p1/history').flush([]);
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+    const offerRows = host.querySelectorAll('[data-testid="offer-row"]');
+    expect(offerRows[0].textContent).toContain('Temu');
+    expect(offerRows[0].textContent).not.toContain('s1');
+    expect(offerRows[1].textContent).toContain('s2');
+  });
+
   it('requests price history by productId and attributes each observation to its own Offer', () => {
     const fixture = TestBed.createComponent(ProductsComponent);
     fixture.detectChanges();
 
+    httpMock.expectOne((r) => r.url === '/api/sources' && r.method === 'GET').flush([]);
+
     const listReq = httpMock.expectOne((r) => r.url === '/api/products' && r.method === 'GET');
-    listReq.flush([productFixture()]);
+    listReq.flush({
+      data: [productFixture()],
+      meta: { page: 1, limit: 24, total: 1, totalPages: 1 },
+    });
     fixture.detectChanges();
 
     const component = fixture.componentInstance;
@@ -166,14 +196,22 @@ describe('ProductsComponent (offer-level model)', () => {
     const host = fixture.nativeElement as HTMLElement;
     const historyGroups = host.querySelectorAll('[data-testid="history-group"]');
     expect(historyGroups).toHaveLength(2);
+
+    expect((historyGroups[0] as HTMLDetailsElement).open).toBe(true);
+    expect((historyGroups[1] as HTMLDetailsElement).open).toBe(false);
   });
 
   it('collapses the selection (and clears price history) when the same product is clicked twice', () => {
     const fixture = TestBed.createComponent(ProductsComponent);
     fixture.detectChanges();
 
+    httpMock.expectOne((r) => r.url === '/api/sources' && r.method === 'GET').flush([]);
+
     const listReq = httpMock.expectOne((r) => r.url === '/api/products' && r.method === 'GET');
-    listReq.flush([productFixture()]);
+    listReq.flush({
+      data: [productFixture()],
+      meta: { page: 1, limit: 24, total: 1, totalPages: 1 },
+    });
     fixture.detectChanges();
 
     const component = fixture.componentInstance;
@@ -191,5 +229,48 @@ describe('ProductsComponent (offer-level model)', () => {
 
     expect(component.selectedProduct).toBeNull();
     expect(component.priceHistory).toEqual([]);
+  });
+
+  it('closes the detail overlay on Escape, matching ConfirmModal', () => {
+    const fixture = TestBed.createComponent(ProductsComponent);
+    fixture.detectChanges();
+
+    httpMock.expectOne((r) => r.url === '/api/sources' && r.method === 'GET').flush([]);
+
+    const listReq = httpMock.expectOne((r) => r.url === '/api/products' && r.method === 'GET');
+    listReq.flush({
+      data: [productFixture()],
+      meta: { page: 1, limit: 24, total: 1, totalPages: 1 },
+    });
+    fixture.detectChanges();
+
+    const component = fixture.componentInstance;
+    component.selectProduct(component.products[0]);
+    fixture.detectChanges();
+
+    httpMock.expectOne((r) => r.url === '/api/products/p1/history').flush([]);
+    fixture.detectChanges();
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    fixture.detectChanges();
+
+    expect(component.selectedProduct).toBeNull();
+  });
+
+  it('Escape is a no-op when no product is selected', () => {
+    const fixture = TestBed.createComponent(ProductsComponent);
+    fixture.detectChanges();
+
+    httpMock.expectOne((r) => r.url === '/api/sources' && r.method === 'GET').flush([]);
+    httpMock.expectOne((r) => r.url === '/api/products' && r.method === 'GET').flush({
+      data: [],
+      meta: { page: 1, limit: 24, total: 0, totalPages: 0 },
+    });
+    fixture.detectChanges();
+
+    expect(() =>
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })),
+    ).not.toThrow();
+    expect(fixture.componentInstance.selectedProduct).toBeNull();
   });
 });

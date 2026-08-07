@@ -40,11 +40,16 @@ import { FormsModule } from '@angular/forms';
           <button
             type="button"
             class="flex items-center gap-2 rounded-md bg-primary px-4 py-2.5 text-body-md font-semibold text-on-primary transition-colors hover:bg-primary-container disabled:cursor-not-allowed disabled:opacity-50"
-            [disabled]="store.loading() || selectedPendingSources().size === 0"
+            [disabled]="store.loading()"
             [title]="
               selectedPendingSources().size === 0
-                ? 'Seleccioná fuentes pendientes para ejecutar'
+                ? 'Ejecutar ETL del pipeline completo'
                 : 'Ejecutar ETL'
+            "
+            [attr.aria-label]="
+              selectedPendingSources().size === 0
+                ? 'Ejecutar ETL del pipeline completo'
+                : 'Ejecutar ETL para las fuentes seleccionadas'
             "
             (click)="onOpenTriggerModal()"
             data-testid="btn-trigger"
@@ -87,13 +92,21 @@ import { FormsModule } from '@angular/forms';
             </h3>
             <div class="flex items-center gap-3">
               <span
-                class="rounded-full px-2.5 py-1 text-[11px] font-bold tracking-wider uppercase"
-                [class.bg-success-dim]="pending.total === 0"
-                [class.text-success]="pending.total === 0"
-                [class.bg-warning-dim]="pending.total > 0"
-                [class.text-warning]="pending.total > 0"
+                class="rounded-full px-2.5 py-1 text-[11px] font-semibold tracking-wider uppercase"
+                [class.bg-success-dim]="selectedPendingSources().size === 0"
+                [class.text-success]="selectedPendingSources().size === 0"
+                [class.bg-warning-dim]="selectedPendingSources().size > 0"
+                [class.text-warning]="selectedPendingSources().size > 0"
+                [attr.data-state]="selectedPendingSources().size === 0 ? 'full' : 'scoped'"
               >
-                {{ selectedPendingSources().size }} de {{ pending.total }} items seleccionados
+                {{
+                  selectedPendingSources().size === 0
+                    ? 'Pipeline completo'
+                    : selectedPendingSources().size +
+                      ' de ' +
+                      pending.total +
+                      ' fuentes seleccionadas'
+                }}
               </span>
             </div>
           </header>
@@ -102,23 +115,20 @@ import { FormsModule } from '@angular/forms';
             style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr))"
           >
             @for (item of pending.sources | keyvalue; track item.key) {
-              <div
-                class="flex cursor-pointer gap-3 rounded-md border p-4 transition-all"
+              <label
+                class="group flex cursor-pointer gap-3 rounded-md border p-4 transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary"
                 [class.border-outline-variant]="!selectedPendingSources().has(toKey(item.key))"
                 [class.bg-surface-container-low]="!selectedPendingSources().has(toKey(item.key))"
                 [class.border-primary]="selectedPendingSources().has(toKey(item.key))"
                 [class.bg-primary-fixed]="selectedPendingSources().has(toKey(item.key))"
-                (click)="togglePendingSource(toKey(item.key))"
+                [attr.data-selected]="selectedPendingSources().has(toKey(item.key))"
               >
-                <div class="flex items-start pt-0.5">
-                  <input
-                    type="checkbox"
-                    class="size-4.5 cursor-pointer accent-primary"
-                    [checked]="selectedPendingSources().has(toKey(item.key))"
-                    (click)="$event.stopPropagation()"
-                    (change)="togglePendingSource(toKey(item.key))"
-                  />
-                </div>
+                <input
+                  type="checkbox"
+                  class="mt-0.5 size-4 cursor-pointer accent-primary"
+                  [checked]="selectedPendingSources().has(toKey(item.key))"
+                  (change)="togglePendingSource(toKey(item.key))"
+                />
                 <div class="flex flex-1 flex-col gap-3">
                   <div class="flex items-baseline justify-between">
                     <span class="text-body-md font-semibold text-on-surface">{{
@@ -146,7 +156,7 @@ import { FormsModule } from '@angular/forms';
                     </div>
                   </div>
                 </div>
-              </div>
+              </label>
             }
           </div>
         </section>
@@ -173,6 +183,7 @@ import { FormsModule } from '@angular/forms';
       <app-confirm-modal
         [isOpen]="isConfirmOpen()"
         [pendingSources]="pendingSourceOptions()"
+        [preselectedSources]="modalPreselectedSources()"
         title="Ejecutar Pipeline ETL"
         message="¿Estás seguro de iniciar la ejecución manual del pipeline ETL? Podés elegir procesar solo las capturas pendientes de la base de datos (ETL Local) o ejecutar el Scraping completo mediante navegadores."
         confirmText="Iniciar Ejecución"
@@ -195,6 +206,7 @@ export class EtlManagementPage implements OnInit {
 
   isConfirmOpen = signal<boolean>(false);
   selectedPendingSources = signal<Set<string>>(new Set());
+  modalPreselectedSources = signal<EtlSourceOption[]>([]);
 
   readonly pendingSourceOptions = computed<EtlSourceOption[]>(() => {
     const summary = this.store.pendingSummary() as
@@ -232,6 +244,15 @@ export class EtlManagementPage implements OnInit {
   }
 
   onOpenTriggerModal(): void {
+    const summary = this.store.pendingSummary() as
+      | { sources: Record<string, { name: string; pending: number }> }
+      | null
+      | undefined;
+    const selected: EtlSourceOption[] = Array.from(this.selectedPendingSources()).map((code) => ({
+      code,
+      label: summary?.sources?.[code]?.name ?? code,
+    }));
+    this.modalPreselectedSources.set(selected);
     this.isConfirmOpen.set(true);
   }
 

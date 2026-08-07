@@ -4,6 +4,7 @@ import type { Observable } from 'rxjs';
 import { tap } from 'rxjs';
 import type { AuthResponseDto, AuthUserDto } from '@web-scraping/contracts/auth';
 import { ExtensionService } from './extension.service';
+import { environment } from '../../environments/environment';
 
 const TOKEN_KEY = 'vs_token';
 
@@ -11,7 +12,7 @@ const TOKEN_KEY = 'vs_token';
 export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly extension = inject(ExtensionService);
-  private readonly baseUrl = '/api/auth';
+  private readonly baseUrl = `${environment.apiBaseUrl}/auth`;
 
   readonly user = signal<AuthUserDto | null>(null);
 

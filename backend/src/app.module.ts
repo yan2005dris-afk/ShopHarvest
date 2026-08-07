@@ -5,6 +5,7 @@ import { PrismaModule } from './common/prisma/prisma.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { AuthModule } from './modules/operational/auth/auth.module';
 import { JwtAuthGuard } from './modules/operational/auth/common/jwt-auth.guard';
+import { RolesGuard } from './modules/operational/auth/common/roles.guard';
 import { DomainsModule } from './modules/operational/domains/domains.module';
 import { ProductsModule } from './modules/operational/products/products.module';
 import { SourcesModule } from './modules/operational/sources/sources.module';
@@ -58,6 +59,9 @@ import { ScheduleModule } from '@nestjs/schedule';
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },
+    // RolesGuard runs after JwtAuthGuard (registration order) and reads the
+    // verified `user.role` claim for routes decorated with @Roles(...).
+    { provide: APP_GUARD, useClass: RolesGuard },
     { provide: APP_FILTER, useClass: HttpExceptionFilter },
   ],
 })

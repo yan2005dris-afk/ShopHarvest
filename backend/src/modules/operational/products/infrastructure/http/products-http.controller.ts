@@ -15,6 +15,7 @@ import { ErrorResponseDto } from '@web-scraping/contracts/errors';
 import {
   IngestProductsDto,
   PriceObservationResponseDto,
+  ProductListResponseDto,
   ProductQueryDto,
   ProductResponseDto,
 } from '@web-scraping/contracts/products';
@@ -27,14 +28,6 @@ import { ListProductsUseCase } from '../../application/list-products.use-case';
 import { ProductNotFoundError } from '../../domain/product.errors';
 import { ProductResponseMapper } from './product-response.mapper';
 
-/**
- * Single point that translates domain errors into HTTP exceptions.
- * Anything that is not a known product error is rethrown so the global
- * HttpExceptionFilter sanitizes it (Prisma P2002→409, P2025→404, generic
- * errors → "Unexpected error" in production). Wrapping the raw
- * `error.message` in `HttpException(500)` would bypass that filter and
- * leak internal traces.
- */
 function mapDomainError(error: unknown): HttpException {
   if (error instanceof ProductNotFoundError) {
     return new NotFoundException(error.message);
@@ -58,10 +51,12 @@ export class ProductsHttpController {
     private readonly deleteUseCase: DeleteProductUseCase,
   ) {}
 
-  @ApiOperation({ summary: 'List extracted products' })
+  @ApiOperation({ summary: 'List extracted products with pagination and search' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'q', required: false, type: String })
   @ApiQuery({ name: 'domainRuleId', required: false, type: String })
-  @ApiQuery({ name: 'includeHistory', required: false, type: Boolean })
-  @ApiResponse({ status: 200, type: ProductResponseDto, isArray: true })
+  @ApiResponse({ status: 200, type: ProductListResponseDto })
   @ApiResponse({
     status: 400,
     type: ErrorResponseDto,
@@ -70,12 +65,27 @@ export class ProductsHttpController {
   @Get()
   async findAll(
     @Query() query: ProductQueryDto,
-  ): Promise<ProductResponseDto[]> {
-    const includeHistory = query.includeHistory ?? true;
-    const products = query.domainRuleId
-      ? await this.listUseCase.findAllByDomainRule(query.domainRuleId)
-      : await this.listUseCase.execute(includeHistory);
-    return products.map((product) => ProductResponseMapper.toDto(product));
+  ): Promise<ProductListResponseDto> {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 24;
+
+    const { items, total } = await this.listUseCase.execute({
+      page,
+      limit,
+      q: query.q,
+    });
+
+    const totalPages = limit > 0 ? Math.ceil(total / limit) : 0;
+
+    return {
+      data: items.map((product) => ProductResponseMapper.toDto(product)),
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages,
+      },
+    };
   }
 
   @ApiOperation({
@@ -101,9 +111,6 @@ export class ProductsHttpController {
   async ingestFromExtension(
     @Body() dto: IngestProductsDto,
   ): Promise<IngestResult> {
-    // Ingest intentionally does NOT short-circuit on per-item errors —
-    // the use case logs and continues, mirroring the legacy behaviour.
-    // The 201 response surfaces the aggregate `ingested` count.
     return this.ingestUseCase.execute(dto);
   }
 
