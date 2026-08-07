@@ -126,4 +126,17 @@ describe('normalizeBackendUrl', () => {
       expect(normalizeBackendUrl(input)).toBeNull();
     }
   });
+
+  it('rejects well-formed http(s) URLs on a non-allowlisted host', () => {
+    // Regression test: a valid protocol used to be enough to pass, letting
+    // SET_BACKEND_URL redirect replay traffic (and the JWT it carries) to
+    // any attacker-controlled origin. See config.ts / ALLOWED_BACKEND_ORIGINS.
+    for (const input of [
+      'https://attacker.example/api',
+      'https://bi.dihm-muertos.site.attacker.example/api',
+      'http://localhost:4200/api',
+    ]) {
+      expect(normalizeBackendUrl(input)).toBeNull();
+    }
+  });
 });

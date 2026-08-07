@@ -8,22 +8,9 @@
 // skipped until the next tick. The schedule lives client-side in
 // chrome.storage.local; the backend no longer owns a schedule table.
 
-const ALARM_PREFIX = 'replay:';
+import { ALLOWED_BACKEND_ORIGINS, DEFAULT_BACKEND_URL } from '../config';
 
-/**
- * Production backend origin for replay traffic. The API is served under
- * the same origin as the web app with the `api` global prefix (see
- * `backend/src/main.ts` and `frontend/src/environments`), and the
- * extension's manifest already grants host permission for
- * `https://bi.dihm-muertos.site/*`. Replay builds `${base}/products/ingest`,
- * so the full default URL is `https://bi.dihm-muertos.site/api`.
- *
- * Dev setups override it per install via `chrome.storage.local.backendUrl`
- * (set through the `SET_BACKEND_URL` message or directly); without an
- * override this prod default keeps replays (and the JWT they carry) on
- * HTTPS instead of `http://localhost:3000`.
- */
-const DEFAULT_BACKEND_URL = 'https://bi.dihm-muertos.site/api';
+const ALARM_PREFIX = 'replay:';
 
 export interface ScheduleEntry {
   intervalMinutes: number;
@@ -64,10 +51,11 @@ async function getBackendUrl(): Promise<string> {
 
 /**
  * Validate + canonicalize an URL for the backend. Returns `null` for
- * anything that is not a well-formed http(s) URL (rejects `file:`,
- * `ftp:`, `javascript:`, malformed origin), and strips a trailing slash
- * so `getBackendUrl()` + `${base}/products/ingest` never double-slash.
- * Pure → unit-testable without `chrome.*` globals.
+ * anything that is not a well-formed http(s) URL on an allowlisted origin
+ * (rejects `file:`, `ftp:`, `javascript:`, malformed origin, and any host
+ * outside `ALLOWED_BACKEND_ORIGINS` — see `config.ts` for why), and strips
+ * a trailing slash so `getBackendUrl()` + `${base}/products/ingest` never
+ * double-slash. Pure → unit-testable without `chrome.*` globals.
  */
 export function normalizeBackendUrl(input: string): string | null {
   let url: URL;
@@ -77,6 +65,7 @@ export function normalizeBackendUrl(input: string): string | null {
     return null;
   }
   if (url.protocol !== 'http:' && url.protocol !== 'https:') return null;
+  if (!ALLOWED_BACKEND_ORIGINS.includes(url.origin)) return null;
   return url.toString().replace(/\/$/, '');
 }
 
@@ -328,11 +317,20 @@ export function initScheduler(): void {
 
     if (type === 'SET_BACKEND_URL') {
       const { url } = (payload ?? {}) as { url?: string };
-      if (typeof url !== 'string' || !normalizeBackendUrl(url)) {
-        sendResponse({ ok: false, error: 'backendUrl must be an http(s) URL' });
+      if (typeof url !== 'string') {
+        sendResponse({
+          ok: false,
+          error: 'backendUrl must be an allowed http(s) URL',
+        });
         return true;
       }
-      void setBackendUrl(url).then((ok) => sendResponse({ ok }));
+      void setBackendUrl(url).then((ok) =>
+        sendResponse(
+          ok
+            ? { ok: true }
+            : { ok: false, error: 'backendUrl must be an allowed http(s) URL' },
+        ),
+      );
       return true;
     }
 
