@@ -112,6 +112,11 @@ jobs:
       - name: pnpm install
         run: pnpm install --frozen-lockfile
 
+      - name: Clean dist (resolve stale .d.ts cache)
+        run: |
+          cd packages/contracts
+          rm -rf dist dist-cjs
+
       - name: Lint (tsc --noEmit)
         run: pnpm --filter @web-scraping/contracts lint
 
