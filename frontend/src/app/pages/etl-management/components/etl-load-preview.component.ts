@@ -8,223 +8,121 @@ import type { EtlRunDto } from '@web-scraping/contracts/pipeline';
   imports: [DecimalPipe],
   template: `
     @if (run(); as r) {
-      <div class="preview-panel">
-        <div class="panel-header">
-          <div class="header-left">
+      <div
+        class="overflow-hidden rounded-xl border border-outline-variant bg-surface-container-low text-on-surface"
+      >
+        <div
+          class="flex items-center justify-between border-b border-outline-variant bg-surface-container px-4 py-3"
+        >
+          <div class="flex items-center gap-2">
             @if (r.status === 'RUNNING') {
-              <span class="pulse-dot"></span>
+              <span
+                class="size-2 animate-pulse rounded-full bg-primary"
+                aria-hidden="true"
+              ></span>
             } @else if (r.status === 'SUCCESS') {
-              <span class="check-icon">✓</span>
+              <span class="font-bold text-success" aria-hidden="true">✓</span>
             } @else if (r.status === 'FAILED') {
-              <span class="error-icon">✗</span>
+              <span class="font-bold text-danger" aria-hidden="true">✗</span>
             }
-            <span class="panel-title">Carga de datos · {{ r.source }}</span>
+            <span class="text-body-md font-semibold text-on-surface"
+              >Carga de datos · {{ r.source }}</span
+            >
           </div>
-          <span class="status-badge" [attr.data-status]="r.status">{{ r.status }}</span>
+          <span
+            class="rounded-xs px-2 py-0.5 text-[11px] font-bold tracking-wider uppercase"
+            [class.bg-primary-fixed]="r.status === 'RUNNING'"
+            [class.text-primary-container]="r.status === 'RUNNING'"
+            [class.bg-success-dim]="r.status === 'SUCCESS'"
+            [class.text-success]="r.status === 'SUCCESS'"
+            [class.bg-danger-dim]="r.status === 'FAILED'"
+            [class.text-danger]="r.status === 'FAILED'"
+            [attr.data-status]="r.status"
+          >
+            {{ r.status }}
+          </span>
         </div>
 
-        <div class="panel-body">
+        <div class="p-4">
           @if (r.status === 'RUNNING') {
-            <div class="running-indicator">
-              <div class="spinner-sm"></div>
+            <div class="mb-3 flex items-center gap-2 text-body-md font-medium text-primary">
+              <span
+                class="inline-block size-3.5 rounded-full border-2 border-outline-variant border-t-primary"
+                style="animation: spin 0.8s linear infinite"
+              ></span>
               <span>Procesando...</span>
             </div>
           }
 
-          <div class="metric-row">
-            <div class="metric-card metric-extracted">
-              <span class="metric-num">{{ r.rowsScraped | number }}</span>
-              <span class="metric-label">Extraídas</span>
+          <div class="mb-3 grid grid-cols-3 gap-3">
+            <div
+              class="flex flex-col items-center gap-1 rounded-md border border-outline-variant bg-primary-fixed/20 p-3"
+            >
+              <span class="text-xl font-extrabold text-primary">{{
+                r.rowsScraped | number
+              }}</span>
+              <span
+                class="text-[11px] font-semibold tracking-wider text-on-surface-variant uppercase"
+                >Extraídas</span
+              >
             </div>
-            <div class="metric-card metric-loaded">
-              <span class="metric-num">{{ r.rowsPersisted | number }}</span>
-              <span class="metric-label">Cargadas</span>
+            <div
+              class="flex flex-col items-center gap-1 rounded-md border border-outline-variant bg-success-dim p-3"
+            >
+              <span class="text-xl font-extrabold text-success">{{
+                r.rowsPersisted | number
+              }}</span>
+              <span
+                class="text-[11px] font-semibold tracking-wider text-on-surface-variant uppercase"
+                >Cargadas</span
+              >
             </div>
-            <div class="metric-card metric-failed">
-              <span class="metric-num">{{ failedCount() | number }}</span>
-              <span class="metric-label">Fallidas</span>
+            <div
+              class="flex flex-col items-center gap-1 rounded-md border border-outline-variant bg-danger-dim p-3"
+            >
+              <span class="text-xl font-extrabold text-danger">{{
+                failedCount() | number
+              }}</span>
+              <span
+                class="text-[11px] font-semibold tracking-wider text-on-surface-variant uppercase"
+                >Fallidas</span
+              >
             </div>
           </div>
 
           @if (r.status === 'SUCCESS') {
-            <p class="success-msg">
+            <p class="m-0 text-body-md font-medium text-success">
               ✓ {{ r.rowsPersisted | number }} filas cargadas al data warehouse
             </p>
           }
 
           @if (r.errorSummary && r.status === 'FAILED') {
-            <div class="error-box"><strong>Error:</strong> {{ r.errorSummary }}</div>
+            <div
+              class="rounded-md border border-danger/20 bg-danger-dim p-2.5 text-body-md text-danger"
+            >
+              <strong>Error:</strong> {{ r.errorSummary }}
+            </div>
           }
         </div>
       </div>
     } @else {
-      <div class="preview-placeholder">
+      <div
+        class="rounded-xl border border-dashed border-outline-variant bg-surface-container-low p-5 text-center text-body-md text-on-surface-variant"
+      >
         <span>Seleccioná una ejecución para ver el detalle de carga</span>
       </div>
     }
   `,
   styles: [
     `
-      .preview-panel {
-        background: var(--color-surface-container-low);
-        border: 1px solid var(--color-outline-variant);
-        border-radius: var(--radius-lg);
-        overflow: hidden;
+      :host {
+        display: block;
       }
-      .panel-header {
-        padding: 12px 16px;
-        border-bottom: 1px solid var(--color-outline-variant);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        background: var(--color-surface-container);
-      }
-      .header-left {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-      .panel-title {
-        font-size: 0.9rem;
-        font-weight: 600;
-        color: var(--color-on-surface);
-      }
-      .pulse-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: var(--color-primary);
-        animation: pulse 1.5s infinite;
-      }
-      @keyframes pulse {
-        0%,
-        100% {
-          opacity: 1;
-          transform: scale(1);
-        }
-        50% {
-          opacity: 0.5;
-          transform: scale(0.8);
-        }
-      }
-      .check-icon {
-        color: var(--color-success);
-        font-weight: 700;
-      }
-      .error-icon {
-        color: var(--color-danger);
-        font-weight: 700;
-      }
-      .status-badge {
-        font-size: 0.7rem;
-        padding: 2px 6px;
-        border-radius: 4px;
-        font-weight: 700;
-        text-transform: uppercase;
-      }
-      .status-badge[data-status='RUNNING'] {
-        background: color-mix(in srgb, var(--color-primary) 15%, transparent);
-        color: var(--color-primary);
-      }
-      .status-badge[data-status='SUCCESS'] {
-        background: var(--color-success-dim);
-        color: var(--color-success);
-      }
-      .status-badge[data-status='FAILED'] {
-        background: var(--color-danger-dim);
-        color: var(--color-danger);
-      }
-      .panel-body {
-        padding: 16px;
-      }
-      .running-indicator {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 0.85rem;
-        color: var(--color-primary);
-        margin-bottom: 12px;
-        font-weight: 500;
-      }
-      .spinner-sm {
-        width: 14px;
-        height: 14px;
-        border: 2px solid var(--color-outline-variant);
-        border-top-color: var(--color-primary);
-        border-radius: 50%;
-        animation: spin 0.8s linear infinite;
-      }
+
       @keyframes spin {
         to {
           transform: rotate(360deg);
         }
-      }
-      .metric-row {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 12px;
-        margin-bottom: 12px;
-      }
-      .metric-card {
-        padding: 12px;
-        border-radius: var(--radius-md);
-        border: 1px solid var(--color-outline-variant);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 4px;
-      }
-      .metric-extracted {
-        background: rgba(59, 130, 246, 0.08);
-      }
-      .metric-loaded {
-        background: rgba(16, 185, 129, 0.08);
-      }
-      .metric-failed {
-        background: rgba(239, 68, 68, 0.08);
-      }
-      .metric-num {
-        font-size: 1.4rem;
-        font-weight: 800;
-      }
-      .metric-extracted .metric-num {
-        color: #3b82f6;
-      }
-      .metric-loaded .metric-num {
-        color: #10b981;
-      }
-      .metric-failed .metric-num {
-        color: #ef4444;
-      }
-      .metric-label {
-        font-size: 0.72rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        color: var(--color-on-surface-variant);
-      }
-      .success-msg {
-        font-size: 0.85rem;
-        color: var(--color-success);
-        margin: 0;
-        font-weight: 500;
-      }
-      .error-box {
-        background: var(--color-danger-dim);
-        border: 1px solid rgba(239, 68, 68, 0.2);
-        border-radius: var(--radius-md);
-        padding: 10px 12px;
-        font-size: 0.85rem;
-        color: var(--color-danger);
-      }
-      .preview-placeholder {
-        background: var(--color-surface-container-low);
-        border: 1px dashed var(--color-outline-variant);
-        border-radius: var(--radius-lg);
-        padding: 20px;
-        text-align: center;
-        color: var(--color-on-surface-variant);
-        font-size: 0.875rem;
       }
     `,
   ],
@@ -238,3 +136,4 @@ export class EtlLoadPreviewComponent {
     return Math.max(0, r.rowsScraped - r.rowsPersisted);
   });
 }
+

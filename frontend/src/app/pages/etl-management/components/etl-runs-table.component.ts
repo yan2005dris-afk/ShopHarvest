@@ -19,33 +19,68 @@ import {
   template: `
     @if (run()) {
       @let r = run()!;
-      <div class="modal-backdrop" (click)="onClose()">
-        <div class="modal-content" (click)="$event.stopPropagation()">
-          <div class="modal-header">
-            <h3>Detalle de Ejecución: {{ r.source }}</h3>
-            <button class="close-btn" (click)="onClose()">×</button>
+      <div
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+        (click)="onClose()"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="etl-modal-title"
+      >
+        <div
+          class="flex w-full max-w-lg flex-col overflow-hidden rounded-xl border border-outline-variant bg-surface-container-low max-h-[85vh]"
+          (click)="$event.stopPropagation()"
+        >
+          <div
+            class="flex items-center justify-between border-b border-outline-variant px-5 py-4"
+          >
+            <h3 id="etl-modal-title" class="m-0 text-headline-sm font-bold text-on-surface">
+              Detalle de Ejecución: {{ r.source }}
+            </h3>
+            <button
+              type="button"
+              class="flex cursor-pointer items-center rounded-md border border-outline-variant bg-transparent px-2.5 py-1 text-body-md text-on-surface-variant transition-colors hover:bg-surface-container hover:text-on-surface"
+              (click)="onClose()"
+              aria-label="Cerrar modal"
+            >
+              <span class="material-symbols-outlined" style="font-size: 18px">close</span>
+            </button>
           </div>
-          <div class="modal-body">
-            <dl class="detail-grid">
-              <dt>ID</dt>
-              <dd>{{ r.id }}</dd>
-              <dt>Estado</dt>
-              <dd>
-                <span class="status-badge" [attr.data-status]="r.status">{{ r.status }}</span>
+          <div class="overflow-y-auto p-5">
+            <dl class="m-0 grid grid-cols-[130px_1fr] gap-x-4 gap-y-3 text-body-md">
+              <dt class="font-semibold text-on-surface-variant">ID</dt>
+              <dd class="m-0 font-mono text-on-surface break-all">{{ r.id }}</dd>
+              <dt class="font-semibold text-on-surface-variant">Estado</dt>
+              <dd class="m-0">
+                <span
+                  class="rounded-xs px-2 py-0.5 text-[11px] font-bold tracking-wider uppercase"
+                  [class.bg-primary-fixed]="r.status === 'RUNNING'"
+                  [class.text-primary-container]="r.status === 'RUNNING'"
+                  [class.bg-success-dim]="r.status === 'SUCCESS'"
+                  [class.text-success]="r.status === 'SUCCESS'"
+                  [class.bg-danger-dim]="r.status === 'FAILED'"
+                  [class.text-danger]="r.status === 'FAILED'"
+                  [attr.data-status]="r.status"
+                >
+                  {{ r.status }}
+                </span>
               </dd>
-              <dt>Inicio</dt>
-              <dd>{{ r.startedAt | date: 'medium' }}</dd>
-              <dt>Fin</dt>
-              <dd>{{ r.finishedAt ? (r.finishedAt | date: 'medium') : '—' }}</dd>
-              <dt>Duración</dt>
-              <dd>{{ r.durationMs ? (r.durationMs / 1000 | number: '1.1-2') + 's' : '—' }}</dd>
-              <dt>Filas Extraídas</dt>
-              <dd>{{ r.rowsScraped | number }}</dd>
-              <dt>Filas Persistidas</dt>
-              <dd>{{ r.rowsPersisted | number }}</dd>
+              <dt class="font-semibold text-on-surface-variant">Inicio</dt>
+              <dd class="m-0 text-on-surface">{{ r.startedAt | date: 'medium' }}</dd>
+              <dt class="font-semibold text-on-surface-variant">Fin</dt>
+              <dd class="m-0 text-on-surface">
+                {{ r.finishedAt ? (r.finishedAt | date: 'medium') : '—' }}
+              </dd>
+              <dt class="font-semibold text-on-surface-variant">Duración</dt>
+              <dd class="m-0 text-on-surface">
+                {{ r.durationMs ? (r.durationMs / 1000 | number: '1.1-2') + 's' : '—' }}
+              </dd>
+              <dt class="font-semibold text-on-surface-variant">Filas Extraídas</dt>
+              <dd class="m-0 font-semibold text-on-surface">{{ r.rowsScraped | number }}</dd>
+              <dt class="font-semibold text-on-surface-variant">Filas Persistidas</dt>
+              <dd class="m-0 font-semibold text-on-surface">{{ r.rowsPersisted | number }}</dd>
               @if (r.errorSummary) {
-                <dt>Error</dt>
-                <dd class="error-text">{{ r.errorSummary }}</dd>
+                <dt class="font-semibold text-danger">Error</dt>
+                <dd class="m-0 font-mono text-danger break-words">{{ r.errorSummary }}</dd>
               }
             </dl>
           </div>
@@ -55,90 +90,8 @@ import {
   `,
   styles: [
     `
-      .modal-backdrop {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.6);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 1000;
-      }
-      .modal-content {
-        background: var(--color-surface-container-low);
-        border: 1px solid var(--color-outline-variant);
-        border-radius: var(--radius-lg);
-        width: 90%;
-        max-width: 500px;
-        max-height: 80vh;
-        overflow-y: auto;
-      }
-      .modal-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 16px 20px;
-        border-bottom: 1px solid var(--color-outline-variant);
-      }
-      .modal-header h3 {
-        margin: 0;
-        font-size: 1.1rem;
-        color: var(--color-on-surface);
-      }
-      .close-btn {
-        background: none;
-        border: none;
-        font-size: 1.5rem;
-        color: var(--color-on-surface-variant);
-        cursor: pointer;
-        padding: 0;
-        line-height: 1;
-      }
-      .close-btn:hover {
-        color: var(--color-on-surface);
-      }
-      .modal-body {
-        padding: 20px;
-      }
-      .detail-grid {
-        display: grid;
-        grid-template-columns: 140px 1fr;
-        gap: 12px 16px;
-        margin: 0;
-      }
-      .detail-grid dt {
-        font-weight: 600;
-        color: var(--color-on-surface-variant);
-        font-size: 0.85rem;
-      }
-      .detail-grid dd {
-        margin: 0;
-        color: var(--color-on-surface);
-        font-size: 0.9rem;
-      }
-      .status-badge {
-        font-size: 0.75rem;
-        padding: 2px 6px;
-        border-radius: 4px;
-        font-weight: 600;
-      }
-      .status-badge[data-status='RUNNING'] {
-        background: color-mix(in srgb, var(--color-primary) 15%, transparent);
-        color: var(--color-primary);
-      }
-      .status-badge[data-status='SUCCESS'] {
-        background: var(--color-success-dim);
-        color: var(--color-success);
-      }
-      .status-badge[data-status='FAILED'] {
-        background: var(--color-danger-dim);
-        color: var(--color-danger);
-      }
-      .error-text {
-        color: var(--color-danger);
+      :host {
+        display: block;
       }
     `,
   ],
@@ -168,10 +121,18 @@ export class EtlRunDetailModalComponent {
     DateRangePickerComponent,
   ],
   template: `
-    <div class="filter-bar">
-      <div class="filter-field">
-        <label for="status">Estado</label>
-        <select id="status" [(ngModel)]="statusVal">
+    <div
+      class="mb-5 flex flex-wrap items-end gap-4 rounded-xl border border-outline-variant bg-surface-container-low p-4"
+    >
+      <div class="flex min-w-[140px] flex-1 flex-col gap-1.5">
+        <label for="status" class="text-label-caps font-semibold text-on-surface-variant uppercase"
+          >Estado</label
+        >
+        <select
+          id="status"
+          [(ngModel)]="statusVal"
+          class="w-full rounded-md border border-outline-variant bg-surface-container px-3 py-2 text-body-md text-on-surface outline-none transition-[border-color,box-shadow] duration-150 focus:border-primary focus:ring-2 focus:ring-primary"
+        >
           <option value="">Todos</option>
           <option value="RUNNING">RUNNING</option>
           <option value="SUCCESS">SUCCESS</option>
@@ -179,9 +140,15 @@ export class EtlRunDetailModalComponent {
         </select>
       </div>
 
-      <div class="filter-field">
-        <label for="source">Fuente</label>
-        <select id="source" [(ngModel)]="sourceVal">
+      <div class="flex min-w-[140px] flex-1 flex-col gap-1.5">
+        <label for="source" class="text-label-caps font-semibold text-on-surface-variant uppercase"
+          >Fuente</label
+        >
+        <select
+          id="source"
+          [(ngModel)]="sourceVal"
+          class="w-full rounded-md border border-outline-variant bg-surface-container px-3 py-2 text-body-md text-on-surface outline-none transition-[border-color,box-shadow] duration-150 focus:border-primary focus:ring-2 focus:ring-primary"
+        >
           <option value="">Todas</option>
           <option value="mercadolibre">MercadoLibre</option>
           <option value="aliexpress">AliExpress</option>
@@ -191,8 +158,10 @@ export class EtlRunDetailModalComponent {
         </select>
       </div>
 
-      <div class="filter-field">
-        <label for="from">Desde</label>
+      <div class="flex min-w-[140px] flex-1 flex-col gap-1.5">
+        <label for="from" class="text-label-caps font-semibold text-on-surface-variant uppercase"
+          >Desde</label
+        >
         <app-date-range-picker
           id="from"
           [value]="fromDate"
@@ -201,8 +170,10 @@ export class EtlRunDetailModalComponent {
         />
       </div>
 
-      <div class="filter-field">
-        <label for="to">Hasta</label>
+      <div class="flex min-w-[140px] flex-1 flex-col gap-1.5">
+        <label for="to" class="text-label-caps font-semibold text-on-surface-variant uppercase"
+          >Hasta</label
+        >
         <app-date-range-picker
           id="to"
           [value]="toDate"
@@ -211,50 +182,113 @@ export class EtlRunDetailModalComponent {
         />
       </div>
 
-      <div class="filter-actions">
-        <button class="btn btn-secondary" (click)="onClear()">Limpiar</button>
-        <button class="btn btn-primary" (click)="onApply()">Filtrar</button>
+      <div class="flex items-center gap-2.5">
+        <button
+          type="button"
+          class="cursor-pointer rounded-md border border-outline-variant bg-surface-container px-4 py-2 text-body-md font-medium text-on-surface-variant transition-colors hover:bg-surface-container-high hover:text-on-surface"
+          (click)="onClear()"
+        >
+          Limpiar
+        </button>
+        <button
+          type="button"
+          class="cursor-pointer rounded-md bg-primary px-4 py-2 text-body-md font-semibold text-on-primary transition-colors hover:bg-primary-container"
+          (click)="onApply()"
+        >
+          Filtrar
+        </button>
       </div>
     </div>
 
-    <div class="table-container">
+    <div
+      class="relative overflow-hidden rounded-xl border border-outline-variant bg-surface-container-low"
+    >
       @if (loading()) {
-        <div class="loading-overlay">
-          <div class="spinner"></div>
+        <div
+          class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-surface-container/85 text-body-md text-on-surface"
+        >
+          <div
+            class="size-7 rounded-full border-3 border-outline-variant border-t-primary"
+            style="animation: spin 0.8s linear infinite"
+          ></div>
           <span>Cargando ejecuciones...</span>
         </div>
       }
 
-      <table class="runs-table">
+      <table class="w-full border-collapse text-body-md">
         <thead>
-          <tr>
-            <th>Fuente</th>
-            <th>Estado</th>
-            <th>Inicio</th>
-            <th>Duración</th>
-            <th>Extraídas</th>
-            <th>Persistidas</th>
+          <tr class="bg-surface-container">
+            <th
+              class="border-b border-outline-variant px-4 py-3 text-left text-label-caps font-semibold tracking-wider text-on-surface-variant uppercase"
+            >
+              Fuente
+            </th>
+            <th
+              class="border-b border-outline-variant px-4 py-3 text-left text-label-caps font-semibold tracking-wider text-on-surface-variant uppercase"
+            >
+              Estado
+            </th>
+            <th
+              class="border-b border-outline-variant px-4 py-3 text-left text-label-caps font-semibold tracking-wider text-on-surface-variant uppercase"
+            >
+              Inicio
+            </th>
+            <th
+              class="border-b border-outline-variant px-4 py-3 text-left text-label-caps font-semibold tracking-wider text-on-surface-variant uppercase"
+            >
+              Duración
+            </th>
+            <th
+              class="border-b border-outline-variant px-4 py-3 text-right text-label-caps font-semibold tracking-wider text-on-surface-variant uppercase"
+            >
+              Extraídas
+            </th>
+            <th
+              class="border-b border-outline-variant px-4 py-3 text-right text-label-caps font-semibold tracking-wider text-on-surface-variant uppercase"
+            >
+              Persistidas
+            </th>
           </tr>
         </thead>
         <tbody>
           @for (run of runs(); track run.id) {
             <tr
-              [class.selected]="selectedRunId() === run.id"
+              class="cursor-pointer border-b border-outline-variant transition-colors hover:bg-surface-container last:border-b-0"
+              [class.bg-primary-fixed/20]="selectedRunId() === run.id"
               (click)="onRowClick(run)"
               (dblclick)="onRowDoubleClick(run)"
             >
-              <td class="source-cell">{{ run.source }}</td>
-              <td>
-                <span class="status-badge" [attr.data-status]="run.status">{{ run.status }}</span>
+              <td class="px-4 py-3 font-medium text-on-surface">{{ run.source }}</td>
+              <td class="px-4 py-3">
+                <span
+                  class="rounded-xs px-2 py-0.5 text-[11px] font-bold tracking-wider uppercase"
+                  [class.bg-primary-fixed]="run.status === 'RUNNING'"
+                  [class.text-primary-container]="run.status === 'RUNNING'"
+                  [class.bg-success-dim]="run.status === 'SUCCESS'"
+                  [class.text-success]="run.status === 'SUCCESS'"
+                  [class.bg-danger-dim]="run.status === 'FAILED'"
+                  [class.text-danger]="run.status === 'FAILED'"
+                  [attr.data-status]="run.status"
+                >
+                  {{ run.status }}
+                </span>
               </td>
-              <td>{{ run.startedAt | date: 'medium' }}</td>
-              <td>{{ run.durationMs ? (run.durationMs / 1000 | number: '1.1-2') + 's' : '—' }}</td>
-              <td>{{ run.rowsScraped | number }}</td>
-              <td>{{ run.rowsPersisted | number }}</td>
+              <td class="px-4 py-3 text-on-surface-variant">{{ run.startedAt | date: 'medium' }}</td>
+              <td class="px-4 py-3 text-on-surface-variant">
+                {{ run.durationMs ? (run.durationMs / 1000 | number: '1.1-2') + 's' : '—' }}
+              </td>
+              <td class="px-4 py-3 text-right font-medium text-on-surface">
+                {{ run.rowsScraped | number }}
+              </td>
+              <td class="px-4 py-3 text-right font-medium text-on-surface">
+                {{ run.rowsPersisted | number }}
+              </td>
             </tr>
           } @empty {
             <tr>
-              <td colspan="6" class="empty-state">No se encontraron ejecuciones ETL.</td>
+              <td colspan="6" class="p-8 text-center text-body-md text-on-surface-variant">
+                No se encontraron ejecuciones ETL.
+              </td>
             </tr>
           }
         </tbody>
@@ -262,23 +296,23 @@ export class EtlRunDetailModalComponent {
     </div>
 
     @if (meta(); as pagination) {
-      <div class="pagination-bar">
-        <div class="pagination-info">
-          Mostrando {{ runs().length }} de {{ pagination.total }} ejecuciones
-        </div>
-        <div class="pagination-controls">
+      <div class="mt-4 flex items-center justify-between px-2 text-body-md text-on-surface-variant">
+        <div>Mostrando {{ runs().length }} de {{ pagination.total }} ejecuciones</div>
+        <div class="flex items-center gap-3">
           <button
-            class="btn btn-nav"
+            type="button"
+            class="cursor-pointer rounded-md border border-outline-variant bg-surface-container-low px-3 py-1.5 text-body-md font-medium text-on-surface-variant transition-colors hover:bg-surface-container hover:text-on-surface disabled:cursor-not-allowed disabled:opacity-50"
             [disabled]="pagination.page <= 1"
             (click)="onPageChange(pagination.page - 1)"
           >
             Anterior
           </button>
-          <span class="page-indicator"
+          <span class="text-body-md font-medium text-on-surface"
             >Página {{ pagination.page }} de {{ pagination.totalPages || 1 }}</span
           >
           <button
-            class="btn btn-nav"
+            type="button"
+            class="cursor-pointer rounded-md border border-outline-variant bg-surface-container-low px-3 py-1.5 text-body-md font-medium text-on-surface-variant transition-colors hover:bg-surface-container hover:text-on-surface disabled:cursor-not-allowed disabled:opacity-50"
             [disabled]="pagination.page >= pagination.totalPages"
             (click)="onPageChange(pagination.page + 1)"
           >
@@ -292,195 +326,14 @@ export class EtlRunDetailModalComponent {
   `,
   styles: [
     `
-      .filter-bar {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 16px;
-        padding: 16px;
-        background: var(--color-surface-container-low);
-        border: 1px solid var(--color-outline-variant);
-        border-radius: var(--radius-lg);
-        margin-bottom: 20px;
-        align-items: flex-end;
-      }
-      .filter-field {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-        flex: 1;
-        min-width: 150px;
-      }
-      .filter-field label {
-        font-size: 0.75rem;
-        font-weight: 600;
-        color: var(--color-on-surface-variant);
-      }
-      .filter-field select {
-        background: var(--color-surface-container);
-        border: 1px solid var(--color-outline-variant);
-        border-radius: var(--radius-md);
-        padding: 8px 10px;
-        color: var(--color-on-surface);
-        font-size: 0.85rem;
-        width: 100%;
-      }
-      .filter-field app-date-range-picker {
-        width: 100%;
+      :host {
         display: block;
       }
-      .filter-actions {
-        display: flex;
-        gap: 10px;
-      }
-      .btn {
-        padding: 8px 16px;
-        border-radius: var(--radius-md);
-        font-weight: 500;
-        cursor: pointer;
-        font-size: 0.85rem;
-        border: none;
-        transition: background-color 0.15s ease;
-        white-space: nowrap;
-      }
-      .btn-primary {
-        background: var(--color-primary);
-        color: var(--color-on-primary);
-      }
-      .btn-primary:hover {
-        background: var(--color-primary-container);
-      }
-      .btn-secondary {
-        background: var(--color-surface-container);
-        color: var(--color-on-surface-variant);
-        border: 1px solid var(--color-outline-variant);
-      }
-      .btn-secondary:hover {
-        background: var(--color-surface-container-high);
-        color: var(--color-on-surface);
-      }
-      .btn-nav {
-        background: var(--color-surface-container-low);
-        color: var(--color-on-surface-variant);
-        border: 1px solid var(--color-outline-variant);
-        padding: 6px 12px;
-      }
-      .btn-nav:hover:not(:disabled) {
-        background: var(--color-surface-container);
-        color: var(--color-on-surface);
-      }
-      .btn-nav:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-      }
-      .table-container {
-        position: relative;
-        background: var(--color-surface-container-low);
-        border: 1px solid var(--color-outline-variant);
-        border-radius: var(--radius-lg);
-        overflow: hidden;
-      }
-      .loading-overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: var(--color-surface-container);
-        opacity: 0.85;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        gap: 12px;
-        z-index: 10;
-        color: var(--color-on-surface);
-      }
-      .spinner {
-        width: 28px;
-        height: 28px;
-        border: 3px solid var(--color-outline-variant);
-        border-top-color: var(--color-primary);
-        border-radius: 50%;
-        animation: spin 0.8s linear infinite;
-      }
+
       @keyframes spin {
         to {
           transform: rotate(360deg);
         }
-      }
-      .runs-table {
-        width: 100%;
-        border-collapse: collapse;
-      }
-      .runs-table th {
-        text-align: left;
-        padding: 12px 16px;
-        background: var(--color-surface-container);
-        font-size: 0.75rem;
-        font-weight: 600;
-        color: var(--color-on-surface-variant);
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        border-bottom: 1px solid var(--color-outline-variant);
-      }
-      .runs-table td {
-        padding: 12px 16px;
-        border-bottom: 1px solid var(--color-outline-variant);
-        color: var(--color-on-surface);
-        font-size: 0.9rem;
-      }
-      .runs-table tbody tr {
-        cursor: pointer;
-        transition: background-color 0.15s ease;
-      }
-      .runs-table tbody tr:hover {
-        background: var(--color-surface-container);
-      }
-      .runs-table tbody tr.selected {
-        background: color-mix(in srgb, var(--color-primary) 15%, transparent);
-      }
-      .runs-table tbody tr:last-child td {
-        border-bottom: none;
-      }
-      .source-cell {
-        font-weight: 500;
-      }
-      .status-badge {
-        font-size: 0.75rem;
-        padding: 2px 6px;
-        border-radius: 4px;
-        font-weight: 600;
-      }
-      .status-badge[data-status='RUNNING'] {
-        background: color-mix(in srgb, var(--color-primary) 15%, transparent);
-        color: var(--color-primary);
-      }
-      .status-badge[data-status='SUCCESS'] {
-        background: var(--color-success-dim);
-        color: var(--color-success);
-      }
-      .status-badge[data-status='FAILED'] {
-        background: var(--color-danger-dim);
-        color: var(--color-danger);
-      }
-      .empty-state {
-        text-align: center;
-        color: var(--color-on-surface-variant);
-        padding: 32px;
-      }
-      .pagination-bar {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 12px 16px;
-        margin-top: 16px;
-        font-size: 0.85rem;
-        color: var(--color-on-surface-variant);
-      }
-      .pagination-controls {
-        display: flex;
-        align-items: center;
-        gap: 12px;
       }
     `,
   ],
