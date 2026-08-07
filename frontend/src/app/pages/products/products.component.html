@@ -111,6 +111,7 @@
         <app-product-card
           [product]="product"
           [isSelected]="store.selectedProduct()?.id === product.id"
+          [sourceNames]="store.sourceNameById()"
           (click)="selectProduct(product)"
         />
       }
@@ -129,11 +130,21 @@
         class="flex w-full max-w-5xl flex-col overflow-hidden rounded-xl border border-outline-variant bg-surface max-h-[90vh]"
         style="animation: slide-up 0.2s ease-out"
         (click)="$event.stopPropagation()"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="product-detail-title"
       >
         <div
           class="flex items-center justify-between border-b border-outline-variant px-6 py-4"
         >
-          <h2 class="text-headline-sm m-0 font-bold text-on-surface">Product Details</h2>
+          <!-- Quiet chrome label — the accessible dialog name, not the visual
+               anchor. The product title below (headline-md) leads instead. -->
+          <h2
+            id="product-detail-title"
+            class="text-label-caps m-0 font-bold tracking-wider text-on-surface-variant uppercase"
+          >
+            Product Details
+          </h2>
           <button
             type="button"
             class="flex cursor-pointer items-center gap-1.5 rounded-md border border-outline-variant bg-transparent px-3 py-1.5 text-body-md font-medium text-on-surface-variant transition-colors hover:bg-surface-container hover:text-on-surface"
@@ -142,32 +153,47 @@
             Close
           </button>
         </div>
-        <div class="flex flex-1 overflow-hidden">
-          <div class="flex flex-1 gap-6 overflow-y-auto p-6">
+        <!--
+          Single vertical flow, one scroll region — four zones in strict
+          priority order (identity → offers → chart → per-offer history),
+          each full-width. Spacing follows two declared tiers: gap-2/gap-3
+          (8-12px) within a label/value pair, and mt-10 (40px, visibly
+          larger than anything else in this panel) between zones, so a
+          zone boundary reads unambiguously instead of blurring into the
+          16-24px spacing used for everything else.
+        -->
+        <div class="flex-1 overflow-y-auto p-6">
+          <!-- Zone 1 — Identity: compact, low-density, checked once per view. -->
+          <div class="flex items-start gap-6">
             @if (selectedProduct.imageUrl) {
               <div
-                class="flex h-30 w-30 shrink-0 items-center justify-center overflow-hidden rounded-md bg-surface-container-low"
+                class="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-md bg-surface-container-low"
               >
                 <img
                   [src]="selectedProduct.imageUrl"
-                  alt=""
-                  class="size-full object-contain p-4"
+                  [alt]="selectedProduct.title"
+                  class="size-full object-contain p-3"
                 />
               </div>
             } @else {
               <div
-                class="flex h-30 w-30 shrink-0 items-center justify-center rounded-md border border-outline-variant bg-surface-container-low text-on-surface-variant"
+                class="flex h-24 w-24 shrink-0 items-center justify-center rounded-md border border-outline-variant bg-surface-container-low text-on-surface-variant"
               >
-                <span class="material-symbols-outlined" style="font-size: 48px">image</span>
+                <span class="material-symbols-outlined" style="font-size: 40px">image</span>
               </div>
             }
             <div class="flex min-w-0 flex-1 flex-col gap-2">
-              <h3 class="text-headline-sm m-0 font-bold leading-tight text-on-surface">
+              <!-- The only headline-weight element on the page — the real
+                   visual anchor, distinct from the quiet "Product Details"
+                   chrome label above. -->
+              <h3 class="text-headline-md m-0 font-bold leading-tight text-on-surface">
                 {{ selectedProduct.title }}
               </h3>
               @if (primaryOffer(selectedProduct); as offer) {
                 <div class="flex flex-wrap items-center gap-3">
-                  <span class="text-headline-sm font-bold text-success">{{ offer.currency }} {{ offer.price }}</span>
+                  <span class="text-headline-sm font-bold text-success">{{
+                    offer.price | currency: offer.currency : 'symbol' : '1.2-2'
+                  }}</span>
                   @if (selectedProduct.offers.length > 1) {
                     <span
                       class="rounded-full border border-outline-variant bg-surface-container px-2.5 py-1 text-label-caps text-on-surface-variant"
@@ -181,29 +207,32 @@
               }
             </div>
           </div>
-          <div
-            class="w-75 min-w-[300px] overflow-y-auto border-l border-outline-variant bg-surface-container-low p-6"
-          >
+
+          <!-- Zone 2 — Offers: the actual reason this modal exists (price
+               comparison across sources), so it gets full width instead of
+               a cramped fixed-width rail. -->
+          <div class="mt-10">
             <h4
-              class="text-label-caps m-0 mb-4 font-bold tracking-wider text-on-surface-variant uppercase"
+              class="m-0 mb-4 flex items-center gap-1.5 border-b border-outline-variant pb-2 text-label-caps font-bold tracking-wider text-on-surface-variant uppercase"
             >
+              <span class="material-symbols-outlined" style="font-size: 16px">sell</span>
               Offers
             </h4>
-            <table class="w-full border-collapse text-body-md" style="table-layout: fixed">
+            <table class="w-full border-collapse text-body-md">
               <thead>
                 <tr>
                   <th
-                    class="border-outline-variant text-label-caps text-on-surface-variant w-[45%] overflow-hidden text-ellipsis whitespace-nowrap border-b px-3 py-2 text-left font-bold tracking-wider uppercase"
+                    class="border-outline-variant text-label-caps text-on-surface-variant border-b px-3 py-2 text-left font-bold tracking-wider uppercase"
                   >
                     Source
                   </th>
                   <th
-                    class="border-outline-variant text-label-caps text-on-surface-variant w-[30%] border-b px-3 py-2 text-right font-bold tracking-wider uppercase"
+                    class="border-outline-variant text-label-caps text-on-surface-variant border-b px-3 py-2 text-right font-bold tracking-wider uppercase"
                   >
                     Price
                   </th>
                   <th
-                    class="border-outline-variant text-label-caps text-on-surface-variant w-[25%] border-b px-3 py-2 text-right font-bold tracking-wider uppercase"
+                    class="border-outline-variant text-label-caps text-on-surface-variant w-32 border-b px-3 py-2 text-right font-bold tracking-wider uppercase"
                   >
                     URL
                   </th>
@@ -212,8 +241,12 @@
               <tbody>
                 @for (offer of selectedProduct.offers; track offer.id) {
                   <tr class="border-outline-variant border-b" data-testid="offer-row">
-                    <td class="text-on-surface-variant overflow-hidden px-3 py-2.5 text-ellipsis whitespace-nowrap">
-                      {{ offer.sourceId }}
+                    <td
+                      class="text-on-surface-variant overflow-hidden px-3 py-2.5 text-ellipsis whitespace-nowrap"
+                      [attr.data-source-id]="offer.sourceId"
+                      [title]="sourceName(offer.sourceId)"
+                    >
+                      {{ sourceName(offer.sourceId) }}
                     </td>
                     <td class="text-success px-3 py-2.5 text-right font-semibold">
                       {{ offer.price | currency: offer.currency : 'symbol' : '1.2-2' }}
@@ -231,63 +264,82 @@
                 }
               </tbody>
             </table>
+          </div>
 
+          <!-- Zone 3 — Price history: chart plus its per-offer breakdown,
+               one header for both since the breakdown is the same data as
+               the chart above it, not a separate topic. The old max-w-[640px]
+               chart cap was dead code — it lived inside a 300px column that
+               could never reach it. -->
+          <div class="mt-10">
             <h4
-              class="text-label-caps m-0 mt-6 mb-4 font-bold tracking-wider text-on-surface-variant uppercase"
+              class="m-0 mb-4 flex items-center gap-1.5 border-b border-outline-variant pb-2 text-label-caps font-bold tracking-wider text-on-surface-variant uppercase"
             >
+              <span class="material-symbols-outlined" style="font-size: 16px">show_chart</span>
               Price History
             </h4>
             @if (store.priceHistory().length > 0) {
-              <div class="mb-5 max-w-[640px] overflow-hidden rounded-md">
+              <div class="overflow-hidden rounded-md">
                 <app-price-history-chart [observations]="store.priceHistory()" />
               </div>
-              @for (offer of selectedProduct.offers; track offer.id) {
-                @if (store.historyByOffer().get(offer.id)?.length) {
-                  <div class="mb-4" data-testid="history-group">
-                    <p
-                      class="m-0 mb-1.5 block max-w-full overflow-hidden text-ellipsis whitespace-nowrap text-body-md text-on-surface-variant"
-                    >
-                      {{ offer.url }}
-                    </p>
-                    <table class="w-full border-collapse text-body-md" style="table-layout: fixed">
-                      <thead>
-                        <tr>
-                          <th
-                            class="border-outline-variant text-label-caps text-on-surface-variant w-[45%] border-b px-3 py-2 text-left font-bold tracking-wider uppercase"
-                          >
-                            Date
-                          </th>
-                          <th
-                            class="border-outline-variant text-label-caps text-on-surface-variant w-[30%] border-b px-3 py-2 text-right font-bold tracking-wider uppercase"
-                          >
-                            Price
-                          </th>
-                          <th
-                            class="border-outline-variant text-label-caps text-on-surface-variant w-[25%] border-b px-3 py-2 text-right font-bold tracking-wider uppercase"
-                          >
-                            Currency
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        @for (entry of store.historyByOffer().get(offer.id)!; track entry.id) {
-                          <tr class="border-outline-variant border-b">
-                            <td class="text-on-surface-variant px-3 py-2.5">
-                              {{ entry.observedAt | date: 'medium' }}
-                            </td>
-                            <td class="text-success px-3 py-2.5 text-right font-semibold">
-                              {{ entry.price | currency: entry.currency : 'symbol' : '1.2-2' }}
-                            </td>
-                            <td class="text-on-surface-variant px-3 py-2.5 text-right">
-                              {{ entry.currency }}
-                            </td>
+
+              <!-- Native <details>: only the first offer is expanded by
+                   default so N offers don't stack N always-open tables. A
+                   neutral left rule (not a colored accent) ties this list
+                   back to the chart above as its breakdown, not a new zone. -->
+              <div class="mt-6 flex flex-col gap-3 border-l border-outline-variant pl-4">
+                @for (offer of selectedProduct.offers; track offer.id; let i = $index) {
+                  @if (store.historyByOffer().get(offer.id)?.length) {
+                    <details data-testid="history-group" [open]="i === 0">
+                      <summary
+                        class="block max-w-full cursor-pointer overflow-hidden text-ellipsis whitespace-nowrap text-body-md text-on-surface-variant"
+                        [title]="sourceName(offer.sourceId) + ' — ' + offer.url"
+                      >
+                        {{ sourceName(offer.sourceId) }} — {{ offer.url }}
+                      </summary>
+                      <table
+                        class="mt-2 w-full border-collapse text-body-md"
+                        style="table-layout: fixed"
+                      >
+                        <thead>
+                          <tr>
+                            <th
+                              class="border-outline-variant text-on-surface-variant w-[45%] border-b px-3 py-1.5 text-left font-normal"
+                            >
+                              Date
+                            </th>
+                            <th
+                              class="border-outline-variant text-on-surface-variant w-[30%] border-b px-3 py-1.5 text-right font-normal"
+                            >
+                              Price
+                            </th>
+                            <th
+                              class="border-outline-variant text-on-surface-variant w-[25%] border-b px-3 py-1.5 text-right font-normal"
+                            >
+                              Currency
+                            </th>
                           </tr>
-                        }
-                      </tbody>
-                    </table>
-                  </div>
+                        </thead>
+                        <tbody>
+                          @for (entry of store.historyByOffer().get(offer.id)!; track entry.id) {
+                            <tr class="border-outline-variant border-b">
+                              <td class="text-on-surface-variant px-3 py-2">
+                                {{ entry.observedAt | date: 'medium' }}
+                              </td>
+                              <td class="text-success px-3 py-2 text-right font-semibold">
+                                {{ entry.price | currency: entry.currency : 'symbol' : '1.2-2' }}
+                              </td>
+                              <td class="text-on-surface-variant px-3 py-2 text-right">
+                                {{ entry.currency }}
+                              </td>
+                            </tr>
+                          }
+                        </tbody>
+                      </table>
+                    </details>
+                  }
                 }
-              }
+              </div>
             } @else if (isLoadingHistory()) {
               <div
                 class="flex flex-col items-center justify-center gap-4 p-4 text-center text-body-md text-on-surface-variant"

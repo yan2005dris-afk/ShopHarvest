@@ -62,7 +62,7 @@ import { Product, Offer } from '../../../services/api.service';
               class="rounded-xs bg-surface-container px-1.5 py-0.5 font-mono text-[11px] font-bold tracking-wider text-on-surface-variant uppercase"
               [attr.data-source]="sourceId()"
             >
-              {{ sourceId() }}
+              {{ sourceLabel() }}
             </span>
           }
         </div>
@@ -90,6 +90,8 @@ import { Product, Offer } from '../../../services/api.service';
 export class ProductCardComponent {
   readonly product = input.required<Product>();
   readonly isSelected = input<boolean>(false);
+  /** Offer.sourceId → Source.name, passed down from the page store. */
+  readonly sourceNames = input<Map<string, string>>(new Map());
 
   // Computed from product.offers[0] (primary offer)
   readonly primaryOffer = computed(() => this.product().offers[0]);
@@ -99,6 +101,11 @@ export class ProductCardComponent {
   readonly price = computed(() => Number(this.primaryOffer()?.price ?? 0));
   readonly currency = computed(() => this.primaryOffer()?.currency ?? 'USD');
   readonly sourceId = computed(() => this.primaryOffer()?.sourceId ?? null);
+  /** Human-readable source name; falls back to the raw id if unresolved. */
+  readonly sourceLabel = computed(() => {
+    const id = this.sourceId();
+    return id ? (this.sourceNames().get(id) ?? id) : null;
+  });
   readonly offerCount = computed(() => this.product().offers.length);
   readonly hasHistory = computed(() => false); // Price observations come from separate API
 }

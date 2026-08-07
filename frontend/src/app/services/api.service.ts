@@ -16,6 +16,7 @@ import type {
   CreateCategoryDto,
   UpdateCategoryDto,
 } from '@web-scraping/contracts/categories';
+import type { SourceResponseDto } from '@web-scraping/contracts/sources';
 import type { ScrapeResult } from '@web-scraping/contracts/pipeline';
 import type { ExtensionFieldMapping } from './extension.service';
 import { environment } from '../../environments/environment';
@@ -33,6 +34,7 @@ export type Product = ProductResponseDto;
 export type Offer = OfferResponseDto;
 export type PriceObservation = PriceObservationResponseDto;
 export type Category = CategoryResponseDto;
+export type Source = SourceResponseDto;
 
 // ─── ApiService ─────────────────────────────────────────────
 
@@ -62,6 +64,13 @@ export class ApiService {
   // Pipeline
   getSources(): Observable<string[]> {
     return this.http.get<string[]>(`${this.baseUrl}/pipeline/sources`);
+  }
+
+  // Sources (CRUD entity — id/name/baseUrl — distinct from the pipeline
+  // connector codes above; used to resolve an Offer.sourceId to a
+  // human-readable name).
+  listSources(): Observable<Source[]> {
+    return this.http.get<Source[]>(`${this.baseUrl}/sources`);
   }
 
   scrapeSource(source: string, outputDir: string): Observable<ScrapeResult> {
