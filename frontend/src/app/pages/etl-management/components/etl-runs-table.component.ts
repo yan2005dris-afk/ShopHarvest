@@ -6,6 +6,11 @@ import type {
   EtlRunFiltersDto,
   EtlRunListResponseDto,
 } from '@web-scraping/contracts/pipeline';
+import {
+  DateRangePickerComponent,
+  fromIsoDate,
+  toIsoDate,
+} from '../../../shared/date-range-picker/date-range-picker.component';
 
 @Component({
   selector: 'app-etl-run-detail-modal',
@@ -155,7 +160,13 @@ export class EtlRunDetailModalComponent {
 @Component({
   selector: 'app-etl-runs-table',
   standalone: true,
-  imports: [FormsModule, DatePipe, DecimalPipe, EtlRunDetailModalComponent],
+  imports: [
+    FormsModule,
+    DatePipe,
+    DecimalPipe,
+    EtlRunDetailModalComponent,
+    DateRangePickerComponent,
+  ],
   template: `
     <div class="filter-bar">
       <div class="filter-field">
@@ -182,12 +193,22 @@ export class EtlRunDetailModalComponent {
 
       <div class="filter-field">
         <label for="from">Desde</label>
-        <input type="date" id="from" [(ngModel)]="fromVal" />
+        <app-date-range-picker
+          id="from"
+          [value]="fromDate"
+          (dateChange)="onFromDateChange($event)"
+          ariaLabel="Fecha desde"
+        />
       </div>
 
       <div class="filter-field">
         <label for="to">Hasta</label>
-        <input type="date" id="to" [(ngModel)]="toVal" />
+        <app-date-range-picker
+          id="to"
+          [value]="toDate"
+          (dateChange)="onToDateChange($event)"
+          ariaLabel="Fecha hasta"
+        />
       </div>
 
       <div class="filter-actions">
@@ -294,8 +315,7 @@ export class EtlRunDetailModalComponent {
         font-weight: 600;
         color: var(--color-on-surface-variant);
       }
-      .filter-field select,
-      .filter-field input {
+      .filter-field select {
         background: var(--color-surface-container);
         border: 1px solid var(--color-outline-variant);
         border-radius: var(--radius-md);
@@ -303,6 +323,10 @@ export class EtlRunDetailModalComponent {
         color: var(--color-on-surface);
         font-size: 0.85rem;
         width: 100%;
+      }
+      .filter-field app-date-range-picker {
+        width: 100%;
+        display: block;
       }
       .filter-actions {
         display: flex;
@@ -478,6 +502,38 @@ export class EtlRunsTableComponent {
   sourceVal = '';
   fromVal = '';
   toVal = '';
+
+  private _fromDate: Date | null = null;
+  private _fromKey = '';
+  private _toDate: Date | null = null;
+  private _toKey = '';
+
+  /** Cached Date parsed from `fromVal` — stable reference across CD so the
+   *  datepicker input isn't reformatted mid-typing. Only re-parses when the
+   *  underlying ISO string changes. */
+  get fromDate(): Date | null {
+    if (this._fromKey !== this.fromVal) {
+      this._fromKey = this.fromVal;
+      this._fromDate = fromIsoDate(this.fromVal);
+    }
+    return this._fromDate;
+  }
+
+  get toDate(): Date | null {
+    if (this._toKey !== this.toVal) {
+      this._toKey = this.toVal;
+      this._toDate = fromIsoDate(this.toVal);
+    }
+    return this._toDate;
+  }
+
+  onFromDateChange(date: Date | null): void {
+    this.fromVal = toIsoDate(date);
+  }
+
+  onToDateChange(date: Date | null): void {
+    this.toVal = toIsoDate(date);
+  }
 
   onApply(): void {
     const filters: EtlRunFiltersDto = {};
