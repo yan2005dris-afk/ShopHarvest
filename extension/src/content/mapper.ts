@@ -527,9 +527,42 @@ function isRatingElement(el: Element): boolean {
   const ariaLabel = el.getAttribute('aria-label');
   if (ariaLabel && RATING_HINT_RE.test(ariaLabel)) return true;
   if (el.getAttribute('itemprop') === 'ratingValue') return true;
-  return !!el.closest(
+
+  // Check for star rating ancestor or sibling SVG/icon patterns
+  const ratingAncestor = el.closest(
     '[class*="rating" i], [class*="stars" i], [class*="review" i], [itemprop="ratingValue"]',
   );
+  if (ratingAncestor) return true;
+
+  // Additional heuristic: if element text is 0-10 range and nearby siblings
+  // have SVG or star icons, it's likely a rating not a price
+  const text = el.textContent?.trim() ?? '';
+  const num = parseFloat(text);
+  if (!isNaN(num) && num >= 0 && num <= 10 && !CURRENCY_RE.test(text)) {
+    // Check if parent contains star icons or rating-class siblings
+    const parent = el.parentElement;
+    if (parent) {
+      const parentClass = parent.className.toLowerCase();
+      if (
+        parentClass.includes('star') ||
+        parentClass.includes('rating') ||
+        parentClass.includes('review')
+      ) {
+        return true;
+      }
+      // Check for SVG or icon siblings (common in modern star ratings)
+      const hasSiblingIcon = Array.from(parent.children).some(
+        (sibling) =>
+          sibling !== el &&
+          (sibling.tagName === 'SVG' ||
+            sibling.className.toLowerCase().includes('icon') ||
+            sibling.className.toLowerCase().includes('star')),
+      );
+      if (hasSiblingIcon) return true;
+    }
+  }
+
+  return false;
 }
 
 /** True when `el` (or a close ancestor) looks like shipping/fee/installment, not the price. */
@@ -541,6 +574,79 @@ function isNonPriceAmountElement(el: Element): boolean {
     '[class*="shipping" i], [class*="envio" i], [class*="delivery" i], [class*="installment" i], [class*="cuota" i], [class*="discount" i], [class*="descuento" i]',
   );
 }
+
+/**
+ * Pattern-based price detection: finds currency symbol + digits across
+ * multi-span scenarios. Returns all matched prices in ascending order.
+ * Handles fragmented prices like Temu's: $ | 267 | ,88 in separate spans.
+ */
+function detectPriceByPattern(container: Element): number[] {
+  // Collect all text nodes (skipping rating/non-price elements)
+  const allText = Array.from(container.querySelectorAll('span, div, p'))
+    .filter((el) => !isRatingElement(el) && !isNonPriceAmountElement(el))
+    .map((el) => el.textContent?.trim() ?? '')
+    .join(' ');
+
+  // Match currency symbol followed by numbers (with optional decimals/commas)
+  // Handles: $100, 100.50, 100,50, €99, £50, ¥1000, ₹500
+  const pricePattern = /[$€£¥₹][\s]*(\d+(?:[.,]\d{1,3})*)/g;
+  const matches = allText.matchAll(pricePattern);
+  const prices: number[] = [];
+
+  for (const match of matches) {
+    const priceStr = match[0].replace(/[$€£¥₹\s]/g, '');
+    const parsed = parseLocalizedPrice(priceStr);
+    if (parsed !== null && parsed > 0 && parsed < 1000000) {
+      // Sanity check: price under 1M (filters obvious false positives)
+      prices.push(parsed);
+    }
+  }
+
+  // Deduplicate and return sorted
+  return [...new Set(prices)].sort((a, b) => a - b);
+}
+
+/**
+ * Store-specific price extraction overrides. Maps store name or URL pattern
+ * to a function that extracts price from a container. Used when pattern
+ * detection alone isn't sufficient.
+ */
+interface StoreOverride {
+  test: (url: string | null) => boolean;
+  extract: (container: Element) => number | null;
+}
+
+const STORE_OVERRIDES: StoreOverride[] = [
+  {
+    test: (url) => !!url && url.includes('temu.com'),
+    extract: (container) => {
+      // Temu: price splits across multiple spans with $ | digits | ,decimals
+      const prices = detectPriceByPattern(container);
+      return prices.length > 0 ? prices[0] : null;
+    },
+  },
+  {
+    test: (url) => !!url && url.includes('shein.com'),
+    extract: (container) => {
+      // Shein: similar to Temu, fragments price across spans
+      const prices = detectPriceByPattern(container);
+      return prices.length > 0 ? prices[0] : null;
+    },
+  },
+  {
+    test: (url) => !!url && url.includes('amazon.'),
+    extract: (container) => {
+      // Amazon: usually single consolidated price element, but pattern fallback works
+      const el = container.querySelector('[class*="price" i], [data-a-price]');
+      if (el) {
+        const parsed = parseLocalizedPrice(el.textContent?.trim() ?? '');
+        if (parsed !== null && parsed > 0) return parsed;
+      }
+      const prices = detectPriceByPattern(container);
+      return prices.length > 0 ? prices[0] : null;
+    },
+  },
+];
 
 /**
  * Attributes lazy-load libraries stash the real image URL in while the
@@ -628,25 +734,30 @@ function extractFieldsFromElement(
   mappings: FieldMapping[],
 ): ExtractedProduct | null {
   const product: ExtractedProduct = {};
+
   for (const mapping of mappings) {
     const isPriceField = /precio|price|amount|cost|costo/i.test(mapping.canonicalField);
 
     if (isPriceField) {
-      // For price fields: query all matches, parse all prices, pick the
-      // lowest. Skip star-rating widgets and shipping/fee/installment
-      // amounts — a broad selector can catch one of those alongside the
-      // real price, and being the smaller number it would otherwise win
-      // the Math.min() below.
-      const allEls = root.querySelectorAll(mapping.selector);
-      const prices: number[] = [];
-      for (const el of Array.from(allEls)) {
-        if (isRatingElement(el) || isNonPriceAmountElement(el)) continue;
-        const raw = el.textContent?.trim() ?? '';
-        const parsed = parseLocalizedPrice(raw);
-        if (parsed !== null && parsed > 0) {
-          prices.push(parsed);
+      let prices: number[] = [];
+
+      // Hybrid approach: try pattern-based detection first (handles fragmented prices)
+      const patternPrices = detectPriceByPattern(root);
+      if (patternPrices.length > 0) {
+        prices = patternPrices;
+      } else {
+        // Fallback to selector-based approach if pattern detection found nothing
+        const allEls = root.querySelectorAll(mapping.selector);
+        for (const el of Array.from(allEls)) {
+          if (isRatingElement(el) || isNonPriceAmountElement(el)) continue;
+          const raw = el.textContent?.trim() ?? '';
+          const parsed = parseLocalizedPrice(raw);
+          if (parsed !== null && parsed > 0) {
+            prices.push(parsed);
+          }
         }
       }
+
       // Select the lowest positive price (filters out "from $X" range refs)
       if (prices.length > 0) {
         product[mapping.canonicalField] = Math.min(...prices);
@@ -806,21 +917,14 @@ export function extractAllFromContainer(container: Element): ExtractedProduct {
     }
   };
 
-  // Prices: every pass skips star-rating widgets (a "4.5" rating parses
-  // as a valid number too, and being smaller than the real price it
-  // would otherwise win the Math.min() below) AND shipping/fee/
-  // installment amounts (a card can legitimately show "$20.00" next to
-  // "$1.00" shipping — both have a currency symbol, so requiring one
-  // alone doesn't rule this out).
+  // Prices: hybrid approach with pattern-based detection for fragmented prices
+  // (e.g., Temu's $ | 267 | ,88 across multiple spans) plus fallback selector scan.
   //
-  //   Pass A  — specific price classes/attrs, currency symbol REQUIRED.
-  //             The strongest signal: an element classed as "price"
-  //             whose text has a $/€/etc is almost always the price.
-  //   Pass A′ — only if Pass A found nothing: same specific classes,
-  //             no currency required (some themes show bare numbers).
-  //   Pass B  — only if both above are empty: generic span/div scan,
-  //             currency symbol REQUIRED (a bare number anywhere on
-  //             the card is too weak a signal without one).
+  //   Pass Pattern — Pattern-based detection: finds currency + numbers across
+  //                  multi-span elements. Handles fragmented prices automatically.
+  //   Pass A       — Specific price classes/attrs with currency REQUIRED.
+  //   Pass A′      — Same classes, no currency required (bare numbers).
+  //   Pass B       — Generic span/div scan with currency REQUIRED.
   const collectPrices = (selectors: string[], requireCurrency: boolean): number[] => {
     const found: number[] = [];
     for (const sel of selectors) {
@@ -834,18 +938,24 @@ export function extractAllFromContainer(container: Element): ExtractedProduct {
     return found;
   };
 
-  const specificPriceSelectors = [
-    '[class*="price" i]',
-    '[class*="precio" i]',
-    '[data-price]',
-    '[class*="amount" i]',
-  ];
-  let allPrices = collectPrices(specificPriceSelectors, true);
+  // Try pattern-based detection first (most robust for fragmented prices)
+  let allPrices = detectPriceByPattern(container);
+
+  // Fallback to selector-based passes if pattern detection found nothing
   if (allPrices.length === 0) {
-    allPrices = collectPrices(specificPriceSelectors, false);
-  }
-  if (allPrices.length === 0) {
-    allPrices = collectPrices(['span', 'div'], true);
+    const specificPriceSelectors = [
+      '[class*="price" i]',
+      '[class*="precio" i]',
+      '[data-price]',
+      '[class*="amount" i]',
+    ];
+    allPrices = collectPrices(specificPriceSelectors, true);
+    if (allPrices.length === 0) {
+      allPrices = collectPrices(specificPriceSelectors, false);
+    }
+    if (allPrices.length === 0) {
+      allPrices = collectPrices(['span', 'div'], true);
+    }
   }
 
   // Deduplicate and sort
