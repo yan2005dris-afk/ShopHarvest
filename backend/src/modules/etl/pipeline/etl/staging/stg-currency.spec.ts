@@ -14,8 +14,17 @@ describe('parsePriceRaw', () => {
     ['k suffix', '$50k', 50000],
     ['k decimal suffix', '3.2k', 3200],
     ['plain', '"200"', 200],
+    ['mixed separators, 3-digit fraction', '1,234.567', 1234.567],
   ])('%s -> %s', (_name, input, expected) => {
     expect(parsePriceRaw(input as string)).toBe(expected);
+  });
+
+  it('does not mistake a currency-code "k" for the magnitude suffix', () => {
+    expect(parsePriceRaw('DKK 100')).toBe(100);
+  });
+
+  it('does not mistake a currency-suffix "kr" for the magnitude suffix', () => {
+    expect(parsePriceRaw('100 kr')).toBe(100);
   });
 
   it('returns null for empty / non-price input', () => {

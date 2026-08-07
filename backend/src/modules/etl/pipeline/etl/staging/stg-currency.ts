@@ -52,12 +52,17 @@ const round2 = (n: number): number => Math.round(n * 100) / 100;
  * Returns null when nothing parseable remains.
  */
 export function parsePriceRaw(input: string): number | null {
-  const cleaned = toPriceString(input).replace(/[^\d.,k]/gi, '');
+  const raw = toPriceString(input).trim();
+  // Only a `k` directly after a digit/separator is the magnitude suffix
+  // (e.g. "$50k", "3.2k") — a stray `k` from currency text ("DKK", "kr")
+  // must not be mistaken for it.
+  const isK = /[\d.,]\s*k\s*$/i.test(raw);
+  const cleaned = (isK ? raw.replace(/k\s*$/i, '') : raw).replace(
+    /[^\d.,]/g,
+    '',
+  );
   if (!cleaned) return null;
-  const lower = cleaned.toLowerCase();
-  const isK = lower.endsWith('k');
-  const body = isK ? lower.slice(0, -1) : lower;
-  if (!body) return null;
+  const body = cleaned;
 
   const lastComma = body.lastIndexOf(',');
   const lastDot = body.lastIndexOf('.');
@@ -68,9 +73,11 @@ export function parsePriceRaw(input: string): number | null {
     const idx = Math.max(lastComma, lastDot);
     intPart = body.slice(0, idx).replace(/[.,]/g, '');
     decPart = body.slice(idx + 1);
-    if (decPart.length > 2) {
-      // Trailing group of 3+ digits is a thousands group, not a fraction
-      // (e.g. "1.299", "3,200", "1.299.900").
+    if ((lastComma === -1 || lastDot === -1) && decPart.length > 2) {
+      // Trailing group of 3+ digits is a thousands group, not a fraction,
+      // but only when a single separator type is present — with BOTH
+      // separators the last one is always the decimal one regardless of
+      // its digit count (e.g. "1,234.567" -> 1234.567).
       intPart = body.replace(/[.,]/g, '');
       decPart = '';
     }
@@ -101,8 +108,11 @@ export function cleanAndConvertToUsd(
   if (priceRaw == null) return { usd: null, rateMissing: false };
   const numeric = parsePriceRaw(toPriceString(priceRaw));
   if (numeric === null) return { usd: null, rateMissing: false };
-  if (moneda === 'USD') return { usd: round2(numeric), rateMissing: false };
-  const rate = rates[moneda];
+  const currencyCode = moneda.trim().toUpperCase();
+  if (currencyCode === 'USD') {
+    return { usd: round2(numeric), rateMissing: false };
+  }
+  const rate = rates[currencyCode];
   if (!rate) return { usd: null, rateMissing: true };
   return { usd: round2(numeric / rate), rateMissing: false };
 }

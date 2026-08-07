@@ -261,6 +261,7 @@ export class StagingProcessorService implements IStagingProcessor {
     if (!r['_fuente']) r['_fuente'] = source;
     r = standardizeDates(r, DATE_COLS);
     const moneda = typeof r['moneda'] === 'string' ? r['moneda'] : 'USD';
+    r['moneda'] = moneda;
     const converted = cleanAndConvertToUsd(r['precio_raw'], moneda, rates);
     if (converted.rateMissing) {
       this.logger.warn(
@@ -269,6 +270,7 @@ export class StagingProcessorService implements IStagingProcessor {
       );
     }
     r['precio_usd'] = converted.usd;
+    r['_rate_missing'] = converted.rateMissing;
     r = this.normalizeStrings(r);
     r['categoria_normalizada'] = classifyCategory(
       typeof r['titulo_oferta'] === 'string' ? r['titulo_oferta'] : null,
