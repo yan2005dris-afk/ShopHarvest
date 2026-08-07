@@ -6,6 +6,7 @@ import type {
 import { requiredFieldsCheck } from './quality/checks/required-fields.check';
 import { pricePositiveCheck } from './quality/checks/price-positive.check';
 import { currencyKnownCheck } from './quality/checks/currency-known.check';
+import { rateKnownCheck } from './quality/checks/rate-known.check';
 import { urlWellFormedCheck } from './quality/checks/url-well-formed.check';
 import { categoryNonemptyCheck } from './quality/checks/category-nonempty.check';
 import { duplicateProductIdCheck } from './quality/checks/duplicate-product-id.check';
@@ -16,13 +17,14 @@ const CHECKS: ReadonlyArray<{ name: string; fn: QualityCheckFn }> = [
   { name: 'required-fields', fn: requiredFieldsCheck },
   { name: 'price-positive', fn: pricePositiveCheck },
   { name: 'currency-known', fn: currencyKnownCheck },
+  { name: 'rate-known', fn: rateKnownCheck },
   { name: 'url-well-formed', fn: urlWellFormedCheck },
   { name: 'category-nonempty', fn: categoryNonemptyCheck },
   { name: 'duplicate-product-id', fn: duplicateProductIdCheck },
 ];
 
 /**
- * QualityService — runs the 7 quality checks (ETL-3) against a staging
+ * QualityService — runs the 8 quality checks (ETL-3) against a staging
  * batch and fails fast (ETL-4): if any check fails, `run()` returns a
  * `QualityReport` with `state: 'failed'` and the caller (DwLoaderService)
  * MUST NOT proceed to write `dw.*`.

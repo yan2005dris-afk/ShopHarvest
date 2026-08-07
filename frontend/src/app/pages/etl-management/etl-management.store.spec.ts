@@ -155,6 +155,36 @@ describe('EtlManagementStore', () => {
     expect(store.streamActive()).toBe(true);
   });
 
+  it('should surface a friendly message on 403 instead of the raw HTTP failure text', () => {
+    store.triggerRun();
+
+    const triggerReq = httpMock.expectOne('/api/pipeline/etl-runs/trigger');
+    triggerReq.flush(
+      { type: 'about:blank', title: 'Forbidden', status: 403, detail: 'Forbidden resource' },
+      { status: 403, statusText: 'Forbidden' },
+    );
+
+    expect(store.error()).toBe("You don't have permission to perform this action.");
+    expect(store.loading()).toBe(false);
+  });
+
+  it('should surface the RFC 7807 detail field for other trigger failures', () => {
+    store.triggerRun();
+
+    const triggerReq = httpMock.expectOne('/api/pipeline/etl-runs/trigger');
+    triggerReq.flush(
+      {
+        type: 'about:blank',
+        title: 'Conflict',
+        status: 409,
+        detail: 'A run is already in progress',
+      },
+      { status: 409, statusText: 'Conflict' },
+    );
+
+    expect(store.error()).toBe('A run is already in progress');
+  });
+
   it('should process progress and complete events in SSE stream', () => {
     store.selectRunId('run-123');
 

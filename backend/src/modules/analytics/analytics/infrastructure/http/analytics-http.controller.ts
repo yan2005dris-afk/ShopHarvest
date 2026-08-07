@@ -14,6 +14,7 @@ import {
   EncuestaRowDto,
 } from '@web-scraping/contracts/analytics';
 import { Public } from '../../../../operational/auth/common/public.decorator';
+import { Roles } from '../../../../operational/auth/common/roles.decorator';
 import { KpisService } from '../../application/kpis.service';
 import { QueriesService } from '../../application/queries.service';
 import { DwLoaderService } from '../../application/dw-loader.service';
@@ -159,6 +160,7 @@ export class AnalyticsHttpController {
     return this.queriesService.runDwSummary();
   }
 
+  @Roles('admin')
   @ApiOperation({
     summary:
       'Refresca la vista materializada dw.mv_resumen_precios (CONCURRENTLY si está disponible).',
@@ -174,6 +176,7 @@ export class AnalyticsHttpController {
     summary:
       'Carga el DW desde backend/pipeline/staging/*.json (replica del script CLI dw_load_staging.ts).',
   })
+  @Roles('admin')
   @ApiResponse({ status: 201, type: Object })
   @ApiResponse({ status: 400, type: ErrorResponseDto })
   @Post('load')
