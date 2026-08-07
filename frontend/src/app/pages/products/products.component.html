@@ -213,8 +213,9 @@
                a cramped fixed-width rail. -->
           <div class="mt-10">
             <h4
-              class="text-label-caps m-0 mb-4 font-bold tracking-wider text-on-surface-variant uppercase"
+              class="m-0 mb-4 flex items-center gap-1.5 border-b border-outline-variant pb-2 text-label-caps font-bold tracking-wider text-on-surface-variant uppercase"
             >
+              <span class="material-symbols-outlined" style="font-size: 16px">sell</span>
               Offers
             </h4>
             <table class="w-full border-collapse text-body-md">
@@ -265,18 +266,79 @@
             </table>
           </div>
 
-          <!-- Zone 3 — Price history chart: secondary, full width (the old
-               max-w-[640px] cap was dead code — it lived inside a 300px
-               column that could never reach it). -->
+          <!-- Zone 3 — Price history: chart plus its per-offer breakdown,
+               one header for both since the breakdown is the same data as
+               the chart above it, not a separate topic. The old max-w-[640px]
+               chart cap was dead code — it lived inside a 300px column that
+               could never reach it. -->
           <div class="mt-10">
             <h4
-              class="text-label-caps m-0 mb-4 font-bold tracking-wider text-on-surface-variant uppercase"
+              class="m-0 mb-4 flex items-center gap-1.5 border-b border-outline-variant pb-2 text-label-caps font-bold tracking-wider text-on-surface-variant uppercase"
             >
+              <span class="material-symbols-outlined" style="font-size: 16px">show_chart</span>
               Price History
             </h4>
             @if (store.priceHistory().length > 0) {
               <div class="overflow-hidden rounded-md">
                 <app-price-history-chart [observations]="store.priceHistory()" />
+              </div>
+
+              <!-- Native <details>: only the first offer is expanded by
+                   default so N offers don't stack N always-open tables. A
+                   neutral left rule (not a colored accent) ties this list
+                   back to the chart above as its breakdown, not a new zone. -->
+              <div class="mt-6 flex flex-col gap-3 border-l border-outline-variant pl-4">
+                @for (offer of selectedProduct.offers; track offer.id; let i = $index) {
+                  @if (store.historyByOffer().get(offer.id)?.length) {
+                    <details data-testid="history-group" [open]="i === 0">
+                      <summary
+                        class="block max-w-full cursor-pointer overflow-hidden text-ellipsis whitespace-nowrap text-body-md text-on-surface-variant"
+                        [title]="sourceName(offer.sourceId) + ' — ' + offer.url"
+                      >
+                        {{ sourceName(offer.sourceId) }} — {{ offer.url }}
+                      </summary>
+                      <table
+                        class="mt-2 w-full border-collapse text-body-md"
+                        style="table-layout: fixed"
+                      >
+                        <thead>
+                          <tr>
+                            <th
+                              class="border-outline-variant text-on-surface-variant w-[45%] border-b px-3 py-1.5 text-left font-normal"
+                            >
+                              Date
+                            </th>
+                            <th
+                              class="border-outline-variant text-on-surface-variant w-[30%] border-b px-3 py-1.5 text-right font-normal"
+                            >
+                              Price
+                            </th>
+                            <th
+                              class="border-outline-variant text-on-surface-variant w-[25%] border-b px-3 py-1.5 text-right font-normal"
+                            >
+                              Currency
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          @for (entry of store.historyByOffer().get(offer.id)!; track entry.id) {
+                            <tr class="border-outline-variant border-b">
+                              <td class="text-on-surface-variant px-3 py-2">
+                                {{ entry.observedAt | date: 'medium' }}
+                              </td>
+                              <td class="text-success px-3 py-2 text-right font-semibold">
+                                {{ entry.price | currency: entry.currency : 'symbol' : '1.2-2' }}
+                              </td>
+                              <td class="text-on-surface-variant px-3 py-2 text-right">
+                                {{ entry.currency }}
+                              </td>
+                            </tr>
+                          }
+                        </tbody>
+                      </table>
+                    </details>
+                  }
+                }
               </div>
             } @else if (isLoadingHistory()) {
               <div
@@ -294,66 +356,6 @@
               </p>
             }
           </div>
-
-          <!-- Zone 4 — Per-offer history: tertiary detail, same full width
-               as zones 2-3. Native <details>: only the first offer is
-               expanded by default so N offers don't stack N always-open
-               tables. -->
-          @if (store.priceHistory().length > 0) {
-            <div class="mt-6 flex flex-col gap-4">
-              @for (offer of selectedProduct.offers; track offer.id; let i = $index) {
-                @if (store.historyByOffer().get(offer.id)?.length) {
-                  <details data-testid="history-group" [open]="i === 0">
-                    <summary
-                      class="block max-w-full cursor-pointer overflow-hidden text-ellipsis whitespace-nowrap text-body-md text-on-surface-variant"
-                      [title]="sourceName(offer.sourceId) + ' — ' + offer.url"
-                    >
-                      {{ sourceName(offer.sourceId) }} — {{ offer.url }}
-                    </summary>
-                    <table
-                      class="mt-2 w-full border-collapse text-body-md"
-                      style="table-layout: fixed"
-                    >
-                      <thead>
-                        <tr>
-                          <th
-                            class="border-outline-variant text-label-caps text-on-surface-variant w-[45%] border-b px-3 py-2 text-left font-bold tracking-wider uppercase"
-                          >
-                            Date
-                          </th>
-                          <th
-                            class="border-outline-variant text-label-caps text-on-surface-variant w-[30%] border-b px-3 py-2 text-right font-bold tracking-wider uppercase"
-                          >
-                            Price
-                          </th>
-                          <th
-                            class="border-outline-variant text-label-caps text-on-surface-variant w-[25%] border-b px-3 py-2 text-right font-bold tracking-wider uppercase"
-                          >
-                            Currency
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        @for (entry of store.historyByOffer().get(offer.id)!; track entry.id) {
-                          <tr class="border-outline-variant border-b">
-                            <td class="text-on-surface-variant px-3 py-2.5">
-                              {{ entry.observedAt | date: 'medium' }}
-                            </td>
-                            <td class="text-success px-3 py-2.5 text-right font-semibold">
-                              {{ entry.price | currency: entry.currency : 'symbol' : '1.2-2' }}
-                            </td>
-                            <td class="text-on-surface-variant px-3 py-2.5 text-right">
-                              {{ entry.currency }}
-                            </td>
-                          </tr>
-                        }
-                      </tbody>
-                    </table>
-                  </details>
-                }
-              }
-            </div>
-          }
         </div>
       </div>
     </div>
