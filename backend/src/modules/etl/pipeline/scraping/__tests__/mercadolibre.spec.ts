@@ -11,8 +11,6 @@ import * as path from 'path';
 import * as os from 'os';
 import { readFileSync } from 'fs';
 
-/* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
-
 interface FakePageOpts {
   status?: number;
   bodyHtml?: string;
