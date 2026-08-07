@@ -579,22 +579,39 @@ function isNonPriceAmountElement(el: Element): boolean {
  * Pattern-based price detection: finds currency symbol + digits across
  * multi-span scenarios. Returns all matched prices in ascending order.
  * Handles fragmented prices like Temu's: $ | 267 | ,88 in separate spans.
+ *
+ * Search strategy: look in nested price containers first (data-type="price",
+ * hidden divs with _382YgpSF class), then fall back to entire container.
+ * This handles both visible and aria-hidden price elements on Temu.
  */
 function detectPriceByPattern(container: Element): number[] {
+  // Priority 1: Look inside explicit price containers (usually found and sufficient)
+  let priceContainer = container.querySelector('[data-type="price"]');
+  if (!priceContainer) {
+    // Priority 2: Look for hidden price divs (aria-hidden Temu price spans)
+    priceContainer = container.querySelector('[class*="382YgpSF"]');
+  }
+  if (!priceContainer) {
+    // Priority 3: Fall back to entire container
+    priceContainer = container;
+  }
+
   // Collect all text nodes (skipping rating/non-price elements)
-  const allText = Array.from(container.querySelectorAll('span, div, p'))
+  const allText = Array.from(priceContainer.querySelectorAll('span, div, p'))
     .filter((el) => !isRatingElement(el) && !isNonPriceAmountElement(el))
     .map((el) => el.textContent?.trim() ?? '')
-    .join(' ');
+    .join(' ')
+    .replace(/\s/g, ''); // Remove spaces so fragmented prices like "$ 379 ,99" become "$379,99"
 
   // Match currency symbol followed by numbers (with optional decimals/commas)
   // Handles: $100, 100.50, 100,50, €99, £50, ¥1000, ₹500
-  const pricePattern = /[$€£¥₹][\s]*(\d+(?:[.,]\d{1,3})*)/g;
+  // Now robust for multi-span fragments without whitespace interference
+  const pricePattern = /[$€£¥₹](\d+(?:[.,]\d{1,3})*)/g;
   const matches = allText.matchAll(pricePattern);
   const prices: number[] = [];
 
   for (const match of matches) {
-    const priceStr = match[0].replace(/[$€£¥₹\s]/g, '');
+    const priceStr = match[0].replace(/[$€£¥₹]/g, '');
     const parsed = parseLocalizedPrice(priceStr);
     if (parsed !== null && parsed > 0 && parsed < 1000000) {
       // Sanity check: price under 1M (filters obvious false positives)
@@ -944,6 +961,7 @@ export function extractAllFromContainer(container: Element): ExtractedProduct {
   // Fallback to selector-based passes if pattern detection found nothing
   if (allPrices.length === 0) {
     const specificPriceSelectors = [
+      '[data-type="price"]', // Temu: explicit price container
       '[class*="price" i]',
       '[class*="precio" i]',
       '[data-price]',
