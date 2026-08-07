@@ -5,10 +5,13 @@
  * shape of a user and exposes a factory method for creation.
  */
 
+export type UserRole = 'admin' | 'user';
+
 export interface UserProps {
   id: string;
   email: string;
   passwordHash: string;
+  role: UserRole;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -17,6 +20,7 @@ export interface CreateUserInput {
   id: string;
   email: string;
   passwordHash: string;
+  role?: UserRole;
 }
 
 /**
@@ -34,6 +38,7 @@ export class User {
       id: input.id,
       email: normalizeEmail(input.email),
       passwordHash: input.passwordHash,
+      role: input.role ?? 'user',
       createdAt: now,
       updatedAt: now,
     });
@@ -51,6 +56,9 @@ export class User {
   }
   get passwordHash(): string {
     return this.props.passwordHash;
+  }
+  get role(): UserRole {
+    return this.props.role;
   }
   get createdAt(): Date {
     return this.props.createdAt;

@@ -116,4 +116,93 @@ describe('ConfirmModalComponent', () => {
 
     expect(fixture.componentInstance.selectedSources().size).toBe(3);
   });
+
+  it('should seed only the preselected sources and restrict the list to them', () => {
+    const fixture = TestBed.createComponent(ConfirmModalComponent);
+    fixture.componentRef.setInput('preselectedSources', [{ code: 'temu', label: 'Temu' }]);
+    fixture.componentRef.setInput('pendingSources', [
+      { code: 'mercadolibre', label: 'MercadoLibre' },
+      { code: 'temu', label: 'Temu' },
+    ]);
+    fixture.componentRef.setInput('isOpen', true);
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.selectedSources()).toEqual(new Set(['temu']));
+    expect(fixture.componentInstance.availableSources()).toEqual([{ code: 'temu', label: 'Temu' }]);
+
+    const checkboxes = fixture.nativeElement.querySelectorAll(
+      'input[type="checkbox"]',
+    ) as NodeListOf<HTMLInputElement>;
+    expect(checkboxes.length).toBe(1);
+
+    const confirmSpy = vi.fn();
+    fixture.componentInstance.confirm.subscribe(confirmSpy);
+    (
+      fixture.nativeElement.querySelector('[data-testid="btn-confirm"]') as HTMLButtonElement
+    ).click();
+    // Opened scoped by a preselection → local is the lead action.
+    expect(confirmSpy).toHaveBeenCalledWith({ action: 'local', source: 'temu' });
+  });
+
+  it('should emit source=all when the preselection covers every source', () => {
+    const fixture = TestBed.createComponent(ConfirmModalComponent);
+    fixture.componentRef.setInput('preselectedSources', [
+      { code: 'mercadolibre', label: 'MercadoLibre' },
+      { code: 'aliexpress', label: 'AliExpress' },
+      { code: 'temu', label: 'Temu' },
+      { code: 'shein', label: 'SHEIN' },
+    ]);
+    fixture.componentRef.setInput('isOpen', true);
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.selectedSources().size).toBe(4);
+
+    const confirmSpy = vi.fn();
+    fixture.componentInstance.confirm.subscribe(confirmSpy);
+    (
+      fixture.nativeElement.querySelector('[data-testid="btn-confirm"]') as HTMLButtonElement
+    ).click();
+    // Opened scoped by a preselection covering every source → local is the
+    // lead action, but source=all still resolves across the full set.
+    expect(confirmSpy).toHaveBeenCalledWith({ action: 'local', source: 'all' });
+  });
+
+  it('should restrict the local list to preselected codes that also have pending items', () => {
+    const fixture = TestBed.createComponent(ConfirmModalComponent);
+    fixture.componentRef.setInput('preselectedSources', [
+      { code: 'temu', label: 'Temu' },
+      { code: 'shein', label: 'SHEIN' },
+    ]);
+    fixture.componentRef.setInput('pendingSources', [{ code: 'shein', label: 'SHEIN' }]);
+    fixture.componentRef.setInput('isOpen', true);
+    fixture.detectChanges();
+
+    // Switch to local action → effective list is only the intersection.
+    fixture.componentInstance.onActionChange('local');
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.action()).toBe('local');
+    expect(fixture.componentInstance.availableSources()).toEqual([
+      { code: 'shein', label: 'SHEIN' },
+    ]);
+    expect(fixture.componentInstance.selectedSources()).toEqual(new Set(['shein']));
+  });
+
+  it('should default to the local action when opened scoped by a preselected source', () => {
+    const fixture = TestBed.createComponent(ConfirmModalComponent);
+    fixture.componentRef.setInput('preselectedSources', [{ code: 'shein', label: 'SHEIN' }]);
+    fixture.componentRef.setInput('pendingSources', [
+      { code: 'shein', label: 'SHEIN' },
+      { code: 'temu', label: 'Temu' },
+    ]);
+    fixture.componentRef.setInput('isOpen', true);
+    fixture.detectChanges();
+
+    // Opened with a card selected → ETL Local is the lead action,
+    // scoped to the preselected source with pending items.
+    expect(fixture.componentInstance.action()).toBe('local');
+    expect(fixture.componentInstance.availableSources()).toEqual([
+      { code: 'shein', label: 'SHEIN' },
+    ]);
+  });
 });

@@ -141,7 +141,7 @@ describe('readTemuExtensionExport', () => {
 
     await expect(readTemuExtensionExport(config, cs)).rejects.toMatchObject({
       reason: 'schema',
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
       message: expect.stringContaining('products'),
     });
   });
@@ -163,7 +163,7 @@ describe('readTemuExtensionExport', () => {
 
     await expect(readTemuExtensionExport(config, cs)).rejects.toMatchObject({
       reason: 'schema',
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
       message: expect.stringContaining('source'),
     });
   });

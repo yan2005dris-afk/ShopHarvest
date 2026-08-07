@@ -4,6 +4,7 @@ import * as bcrypt from 'bcryptjs';
 import type { AuthResponseDto } from '@web-scraping/contracts/auth';
 import { InvalidCredentialsError } from '../domain/auth.errors';
 import { normalizeEmail } from '../domain/user.entity';
+import type { User } from '../domain/user.entity';
 import { USERS_REPOSITORY } from '../domain/users.repository';
 import type { UsersRepository } from '../domain/users.repository';
 import type { JwtPayload } from '../common/jwt.strategy';
@@ -28,14 +29,18 @@ export class LoginUseCase {
     if (!user || !ok) {
       throw new InvalidCredentialsError();
     }
-    return this.issueToken(user.id, user.email);
+    return this.issueToken(user);
   }
 
-  private issueToken(sub: string, email: string): AuthResponseDto {
-    const payload: JwtPayload = { sub, email };
+  private issueToken(user: User): AuthResponseDto {
+    const payload: JwtPayload = {
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+    };
     return {
       accessToken: this.jwt.sign(payload),
-      user: { id: sub, email },
+      user: { id: user.id, email: user.email, role: user.role },
     };
   }
 }
