@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import { postIngest } from './scheduler';
+import { postIngest, normalizeBackendUrl } from './scheduler';
 
 /**
  * Unit test for the scheduler's ingest POST. The fix ensures that a non-OK
@@ -94,5 +94,49 @@ describe('postIngest', () => {
     const parsed = JSON.parse(init?.body as string);
     expect(parsed.domain).toBe('temu.com');
     expect(parsed.products).toEqual([{ title: 'X', price: '9.99' }]);
+  });
+});
+
+describe('normalizeBackendUrl', () => {
+  it('accepts an https production URL and strips a trailing slash', () => {
+    expect(normalizeBackendUrl('https://bi.dihm-muertos.site/api/')).toBe(
+      'https://bi.dihm-muertos.site/api',
+    );
+  });
+
+  it('accepts a dev http URL', () => {
+    expect(normalizeBackendUrl('http://localhost:3000/api')).toBe(
+      'http://localhost:3000/api',
+    );
+  });
+
+  it('rejects non-http(s) protocols', () => {
+    for (const input of [
+      'file:///etc/passwd',
+      'ftp://example.com',
+      'javascript:alert(1)',
+      'data:text/plain,hi',
+    ]) {
+      expect(normalizeBackendUrl(input)).toBeNull();
+    }
+  });
+
+  it('rejects malformed URLs and empty strings', () => {
+    for (const input of ['not a url', '', 'https://', '//host/path']) {
+      expect(normalizeBackendUrl(input)).toBeNull();
+    }
+  });
+
+  it('rejects well-formed http(s) URLs on a non-allowlisted host', () => {
+    // Regression test: a valid protocol used to be enough to pass, letting
+    // SET_BACKEND_URL redirect replay traffic (and the JWT it carries) to
+    // any attacker-controlled origin. See config.ts / ALLOWED_BACKEND_ORIGINS.
+    for (const input of [
+      'https://attacker.example/api',
+      'https://bi.dihm-muertos.site.attacker.example/api',
+      'http://localhost:4200/api',
+    ]) {
+      expect(normalizeBackendUrl(input)).toBeNull();
+    }
   });
 });
