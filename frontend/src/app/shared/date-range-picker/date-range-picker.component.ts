@@ -1,4 +1,13 @@
-import { Component, ElementRef, HostListener, computed, inject, input, output, signal } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  HostListener,
+  computed,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 
 /** Parse a 'YYYY-MM-DD' string (or null/empty) into a local-midnight Date (or null). */
 export function fromIsoDate(iso: string | null | undefined): Date | null {
@@ -22,7 +31,11 @@ function stripTime(date: Date): Date {
 }
 
 function isSameDay(a: Date, b: Date): boolean {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
 }
 
 interface CalendarDay {
