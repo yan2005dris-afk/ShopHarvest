@@ -111,6 +111,7 @@
         <app-product-card
           [product]="product"
           [isSelected]="store.selectedProduct()?.id === product.id"
+          [sourceNames]="store.sourceNameById()"
           (click)="selectProduct(product)"
         />
       }
@@ -129,11 +130,16 @@
         class="flex w-full max-w-5xl flex-col overflow-hidden rounded-xl border border-outline-variant bg-surface max-h-[90vh]"
         style="animation: slide-up 0.2s ease-out"
         (click)="$event.stopPropagation()"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="product-detail-title"
       >
         <div
           class="flex items-center justify-between border-b border-outline-variant px-6 py-4"
         >
-          <h2 class="text-headline-sm m-0 font-bold text-on-surface">Product Details</h2>
+          <h2 id="product-detail-title" class="text-headline-sm m-0 font-bold text-on-surface">
+            Product Details
+          </h2>
           <button
             type="button"
             class="flex cursor-pointer items-center gap-1.5 rounded-md border border-outline-variant bg-transparent px-3 py-1.5 text-body-md font-medium text-on-surface-variant transition-colors hover:bg-surface-container hover:text-on-surface"
@@ -150,7 +156,7 @@
               >
                 <img
                   [src]="selectedProduct.imageUrl"
-                  alt=""
+                  [alt]="selectedProduct.title"
                   class="size-full object-contain p-4"
                 />
               </div>
@@ -167,7 +173,9 @@
               </h3>
               @if (primaryOffer(selectedProduct); as offer) {
                 <div class="flex flex-wrap items-center gap-3">
-                  <span class="text-headline-sm font-bold text-success">{{ offer.currency }} {{ offer.price }}</span>
+                  <span class="text-headline-sm font-bold text-success">{{
+                    offer.price | currency: offer.currency : 'symbol' : '1.2-2'
+                  }}</span>
                   @if (selectedProduct.offers.length > 1) {
                     <span
                       class="rounded-full border border-outline-variant bg-surface-container px-2.5 py-1 text-label-caps text-on-surface-variant"
@@ -212,8 +220,11 @@
               <tbody>
                 @for (offer of selectedProduct.offers; track offer.id) {
                   <tr class="border-outline-variant border-b" data-testid="offer-row">
-                    <td class="text-on-surface-variant overflow-hidden px-3 py-2.5 text-ellipsis whitespace-nowrap">
-                      {{ offer.sourceId }}
+                    <td
+                      class="text-on-surface-variant overflow-hidden px-3 py-2.5 text-ellipsis whitespace-nowrap"
+                      [attr.data-source-id]="offer.sourceId"
+                    >
+                      {{ sourceName(offer.sourceId) }}
                     </td>
                     <td class="text-success px-3 py-2.5 text-right font-semibold">
                       {{ offer.price | currency: offer.currency : 'symbol' : '1.2-2' }}
@@ -241,15 +252,20 @@
               <div class="mb-5 max-w-[640px] overflow-hidden rounded-md">
                 <app-price-history-chart [observations]="store.priceHistory()" />
               </div>
-              @for (offer of selectedProduct.offers; track offer.id) {
+              @for (offer of selectedProduct.offers; track offer.id; let i = $index) {
                 @if (store.historyByOffer().get(offer.id)?.length) {
-                  <div class="mb-4" data-testid="history-group">
-                    <p
-                      class="m-0 mb-1.5 block max-w-full overflow-hidden text-ellipsis whitespace-nowrap text-body-md text-on-surface-variant"
+                  <!-- Native <details>: only the first offer's history is expanded by
+                       default so N offers don't stack N always-open tables. -->
+                  <details class="mb-4" data-testid="history-group" [open]="i === 0">
+                    <summary
+                      class="mb-1.5 block max-w-full cursor-pointer overflow-hidden text-ellipsis whitespace-nowrap text-body-md text-on-surface-variant"
                     >
-                      {{ offer.url }}
-                    </p>
-                    <table class="w-full border-collapse text-body-md" style="table-layout: fixed">
+                      {{ sourceName(offer.sourceId) }} — {{ offer.url }}
+                    </summary>
+                    <table
+                      class="mt-2 w-full border-collapse text-body-md"
+                      style="table-layout: fixed"
+                    >
                       <thead>
                         <tr>
                           <th
@@ -285,7 +301,7 @@
                         }
                       </tbody>
                     </table>
-                  </div>
+                  </details>
                 }
               }
             } @else if (isLoadingHistory()) {

@@ -13,6 +13,9 @@ export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
   { path: 'mapper', component: VisualMapperPage, canActivate: [authGuard] },
   { path: 'products', component: ProductsComponent, canActivate: [authGuard] },
+  // Deep link into a single product — same component, opens the detail
+  // overlay for `:id` once the list has loaded (see ProductsComponent).
+  { path: 'products/:id', component: ProductsComponent, canActivate: [authGuard] },
   { path: 'categories', component: CategoriesComponent, canActivate: [authGuard] },
   { path: 'setup', component: ExtensionSetupComponent, canActivate: [authGuard] },
   { path: 'sources', component: SourcesComponent, canActivate: [authGuard] },

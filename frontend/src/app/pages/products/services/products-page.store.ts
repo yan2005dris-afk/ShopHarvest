@@ -1,5 +1,5 @@
 import { Injectable, computed, signal } from '@angular/core';
-import { Product, Offer, PriceObservation } from '../../../services/api.service';
+import { Product, Offer, PriceObservation, Source } from '../../../services/api.service';
 
 /**
  * Products page state management.
@@ -9,6 +9,10 @@ import { Product, Offer, PriceObservation } from '../../../services/api.service'
 export class ProductsPageStore {
   // ─── Data ──────────────────────────────────────────────
   readonly products = signal<Product[]>([]);
+  readonly sources = signal<Source[]>([]);
+
+  /** Offer.sourceId → Source.name, so the UI never shows a raw UUID. */
+  readonly sourceNameById = computed(() => new Map(this.sources().map((s) => [s.id, s.name])));
   readonly filteredProducts = computed(() => {
     const term = this.searchTerm()
       .toLowerCase()
@@ -45,9 +49,18 @@ export class ProductsPageStore {
     return map;
   });
 
+  /** Resolved source name for an offer, falling back to the raw id if unknown/unloaded. */
+  sourceName(sourceId: string): string {
+    return this.sourceNameById().get(sourceId) ?? sourceId;
+  }
+
   // ─── Actions ───────────────────────────────────────────
   setProducts(products: Product[]): void {
     this.products.set(products);
+  }
+
+  setSources(sources: Source[]): void {
+    this.sources.set(sources);
   }
 
   setLoading(loading: boolean): void {

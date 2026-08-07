@@ -104,6 +104,8 @@ describe('ProductsComponent (offer-level model)', () => {
     const fixture = TestBed.createComponent(ProductsComponent);
     fixture.detectChanges();
 
+    httpMock.expectOne((r) => r.url === '/api/sources' && r.method === 'GET').flush([]);
+
     const req = httpMock.expectOne((r) => r.url === '/api/products' && r.method === 'GET');
     req.flush([productFixture()]);
     fixture.detectChanges();
@@ -123,9 +125,40 @@ describe('ProductsComponent (offer-level model)', () => {
     expect(offerRows[1].textContent).toContain('24.5');
   });
 
+  it("resolves each offer's sourceId to the source's name instead of showing the raw uuid", () => {
+    const fixture = TestBed.createComponent(ProductsComponent);
+    fixture.detectChanges();
+
+    httpMock
+      .expectOne((r) => r.url === '/api/sources' && r.method === 'GET')
+      .flush([
+        { id: 's1', code: 'TEMU', name: 'Temu', baseUrl: 'https://temu.com', status: 'active' },
+        // 's2' intentionally omitted — the offer must fall back to the raw id.
+      ]);
+
+    httpMock
+      .expectOne((r) => r.url === '/api/products' && r.method === 'GET')
+      .flush([productFixture()]);
+    fixture.detectChanges();
+
+    const component = fixture.componentInstance;
+    component.selectProduct(component.products[0]);
+    fixture.detectChanges();
+    httpMock.expectOne((r) => r.url === '/api/products/p1/history').flush([]);
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+    const offerRows = host.querySelectorAll('[data-testid="offer-row"]');
+    expect(offerRows[0].textContent).toContain('Temu');
+    expect(offerRows[0].textContent).not.toContain('s1');
+    expect(offerRows[1].textContent).toContain('s2'); // unresolved id: falls back, never blank
+  });
+
   it('requests price history by productId and attributes each observation to its own Offer', () => {
     const fixture = TestBed.createComponent(ProductsComponent);
     fixture.detectChanges();
+
+    httpMock.expectOne((r) => r.url === '/api/sources' && r.method === 'GET').flush([]);
 
     const listReq = httpMock.expectOne((r) => r.url === '/api/products' && r.method === 'GET');
     listReq.flush([productFixture()]);
@@ -166,11 +199,18 @@ describe('ProductsComponent (offer-level model)', () => {
     const host = fixture.nativeElement as HTMLElement;
     const historyGroups = host.querySelectorAll('[data-testid="history-group"]');
     expect(historyGroups).toHaveLength(2);
+
+    // Progressive disclosure: only the first offer's history is expanded
+    // by default so N offers don't stack N always-open tables.
+    expect((historyGroups[0] as HTMLDetailsElement).open).toBe(true);
+    expect((historyGroups[1] as HTMLDetailsElement).open).toBe(false);
   });
 
   it('collapses the selection (and clears price history) when the same product is clicked twice', () => {
     const fixture = TestBed.createComponent(ProductsComponent);
     fixture.detectChanges();
+
+    httpMock.expectOne((r) => r.url === '/api/sources' && r.method === 'GET').flush([]);
 
     const listReq = httpMock.expectOne((r) => r.url === '/api/products' && r.method === 'GET');
     listReq.flush([productFixture()]);
@@ -191,5 +231,42 @@ describe('ProductsComponent (offer-level model)', () => {
 
     expect(component.selectedProduct).toBeNull();
     expect(component.priceHistory).toEqual([]);
+  });
+
+  it('closes the detail overlay on Escape, matching ConfirmModal', () => {
+    const fixture = TestBed.createComponent(ProductsComponent);
+    fixture.detectChanges();
+
+    httpMock.expectOne((r) => r.url === '/api/sources' && r.method === 'GET').flush([]);
+
+    const listReq = httpMock.expectOne((r) => r.url === '/api/products' && r.method === 'GET');
+    listReq.flush([productFixture()]);
+    fixture.detectChanges();
+
+    const component = fixture.componentInstance;
+    component.selectProduct(component.products[0]);
+    fixture.detectChanges();
+
+    httpMock.expectOne((r) => r.url === '/api/products/p1/history').flush([]);
+    fixture.detectChanges();
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    fixture.detectChanges();
+
+    expect(component.selectedProduct).toBeNull();
+  });
+
+  it('Escape is a no-op when no product is selected', () => {
+    const fixture = TestBed.createComponent(ProductsComponent);
+    fixture.detectChanges();
+
+    httpMock.expectOne((r) => r.url === '/api/sources' && r.method === 'GET').flush([]);
+    httpMock.expectOne((r) => r.url === '/api/products' && r.method === 'GET').flush([]);
+    fixture.detectChanges();
+
+    expect(() =>
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })),
+    ).not.toThrow();
+    expect(fixture.componentInstance.selectedProduct).toBeNull();
   });
 });
