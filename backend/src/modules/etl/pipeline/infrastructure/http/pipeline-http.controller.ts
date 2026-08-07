@@ -107,9 +107,7 @@ export class PipelineController {
       extra?: Record<string, unknown>;
     },
   ): Promise<ScrapeResult> {
-    const validSource = (Object.values(PipelineSource) as string[]).includes(
-      source,
-    )
+    const validSource = Object.values(PipelineSource).includes(source)
       ? (source as PipelineSource)
       : (() => {
           throw new BadRequestException(

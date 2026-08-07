@@ -45,7 +45,7 @@ describe('AuthResponseDto (RED regression for D2)', () => {
     };
     const dto = plainToInstance(AuthResponseDto, raw, {
       excludeExtraneousValues: true,
-    }) as Record<string, unknown>;
+    });
 
     expect(dto).not.toHaveProperty('passwordHash');
     expect(dto['user']).not.toHaveProperty('internalTraceId');
