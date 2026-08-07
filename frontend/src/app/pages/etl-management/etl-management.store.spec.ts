@@ -173,7 +173,12 @@ describe('EtlManagementStore', () => {
 
     const triggerReq = httpMock.expectOne('/api/pipeline/etl-runs/trigger');
     triggerReq.flush(
-      { type: 'about:blank', title: 'Conflict', status: 409, detail: 'A run is already in progress' },
+      {
+        type: 'about:blank',
+        title: 'Conflict',
+        status: 409,
+        detail: 'A run is already in progress',
+      },
       { status: 409, statusText: 'Conflict' },
     );
 

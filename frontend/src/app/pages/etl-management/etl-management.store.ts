@@ -46,7 +46,8 @@ export class EtlManagementStore implements OnDestroy {
         return "You don't have permission to perform this action.";
       }
       const body = err.error as { detail?: string; message?: string | string[] } | null;
-      const detail = body?.detail ?? (Array.isArray(body?.message) ? body.message.join('; ') : body?.message);
+      const detail =
+        body?.detail ?? (Array.isArray(body?.message) ? body.message.join('; ') : body?.message);
       if (detail) return detail;
     }
     return fallback;
