@@ -13,5 +13,7 @@
 export { ProductQueryDto } from './product-query.dto.js';
 export { IngestProductsDto } from './ingest-products.dto.js';
 export { ProductResponseDto } from './product-response.dto.js';
+export { ProductListResponseDto, PaginationMetaDto } from './product-list-response.dto.js';
 export { OfferResponseDto } from './offer-response.dto.js';
 export { PriceObservationResponseDto } from './price-observation-response.dto.js';
+
