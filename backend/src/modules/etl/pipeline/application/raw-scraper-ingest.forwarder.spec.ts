@@ -112,7 +112,9 @@ describe('RawScraperIngestForwarder', () => {
       expect(ingestUseCase.execute).toHaveBeenCalledTimes(1);
       const dto = ingestUseCase.execute.mock.calls[0][0];
       expect(dto.domain).toBe(PipelineSource.MERCADOLIBRE);
-      expect(dto.pageUrl).toBeUndefined();
+      // The forwarder anchors the dedup URL to a well-formed source page so
+      // the ETL `url-well-formed` quality gate passes (see forwarder docs).
+      expect(dto.pageUrl).toBe('https://mercadolibre.com/');
       expect(dto.fieldMappings).toBeUndefined();
       expect(dto.products).toHaveLength(2);
       expect(dto.products[0]).toEqual({
