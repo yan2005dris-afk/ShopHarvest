@@ -16,10 +16,14 @@ async function main() {
 
   await prisma.user.upsert({
     where: { email },
-    update: {},
+    // The seed is the single deterministic source of administration: it both
+    // creates the first operator and re-promotes an existing account on a
+    // populated DB (whose migration defaulted every account to `user`).
+    update: { role: 'admin' },
     create: {
       email,
       passwordHash,
+      role: 'admin',
     },
   });
 

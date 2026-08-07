@@ -8,6 +8,8 @@ import {
 } from '@web-scraping/contracts/pipeline';
 import { PipelineController } from './infrastructure/http/pipeline-http.controller';
 import { PipelineService } from './application/pipeline.service';
+import { RawScraperIngestForwarder } from './application/raw-scraper-ingest.forwarder';
+import { ProductsModule } from '../../operational/products/products.module';
 import { SseAuthGuard } from './guards/sse-auth.guard';
 import { DwLoaderAdapter } from './adapters/dw-loader.adapter';
 import { StagingProcessorAdapter } from './adapters/staging-processor.adapter';
@@ -48,12 +50,19 @@ import {
         signOptions: { expiresIn: '7d' },
       }),
     }),
+    // Provides IngestProductsUseCase for the RawScraperIngestForwarder,
+    // which funnels headless-scrape items into the operational flow. Safe:
+    // ProductsModule and PipelineModule are siblings under app.module and
+    // ProductsModule does not import back into PipelineModule, so there is
+    // no circular dependency.
+    ProductsModule,
   ],
   controllers: [PipelineController],
   providers: [
     PipelineService,
     EtlSchedulerService,
     SseAuthGuard,
+    RawScraperIngestForwarder,
     // BrowserFactoryService — singleton, stealth always-on, proxy opt-in
     // Consumed by Playwright-based scrapers (MELI/AliExpress in PR 3/4).
     // Extension-based scrapers (Temu/Shein in PR 5) MUST NOT inject it.

@@ -18,20 +18,42 @@ describe('ListProductsUseCase', () => {
     useCase = new ListProductsUseCase(repository);
   });
 
-  it('passes includeHistory=true when none is provided (legacy default)', async () => {
-    const products = [Product.create({ id: 'p_1', title: 'X' })];
-    repository.findAll.mockResolvedValue(products);
+  it('uses default page=1 and limit=24 when no options are provided', async () => {
+    const items = [Product.create({ id: 'p_1', title: 'X' })];
+    repository.findAll.mockResolvedValue({ items, total: 1 });
 
     const result = await useCase.execute();
 
-    expect(repository.findAll).toHaveBeenCalledWith({ includeHistory: true });
-    expect(result).toBe(products);
+    expect(repository.findAll).toHaveBeenCalledWith({
+      page: 1,
+      limit: 24,
+      q: undefined,
+    });
+    expect(result).toEqual({ items, total: 1 });
   });
 
-  it('forwards an explicit includeHistory=false', async () => {
-    repository.findAll.mockResolvedValue([]);
-    await useCase.execute(false);
-    expect(repository.findAll).toHaveBeenCalledWith({ includeHistory: false });
+  it('forwards page, limit, and trimmed q (min 2 chars)', async () => {
+    repository.findAll.mockResolvedValue({ items: [], total: 0 });
+
+    await useCase.execute({ page: 2, limit: 10, q: '  camisa  ' });
+
+    expect(repository.findAll).toHaveBeenCalledWith({
+      page: 2,
+      limit: 10,
+      q: 'camisa',
+    });
+  });
+
+  it('ignores q if trimmed length < 2', async () => {
+    repository.findAll.mockResolvedValue({ items: [], total: 0 });
+
+    await useCase.execute({ q: ' a ' });
+
+    expect(repository.findAll).toHaveBeenCalledWith({
+      page: 1,
+      limit: 24,
+      q: undefined,
+    });
   });
 
   it('findAllByDomainRule forwards the rule id', async () => {

@@ -1,11 +1,29 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DashboardStore } from '../../core/dashboard.store';
+import { DateRangePickerComponent } from '../../../../shared/date-range-picker/date-range-picker.component';
 import { PrecioPromedioFuenteCategoriaChartComponent } from '../../shared/charts/precio-promedio-fuente-categoria.chart';
 import { SerieTemporalPreciosChartComponent } from '../../shared/charts/serie-temporal-precios.chart';
 import { DispersionOutliersChartComponent } from '../../shared/charts/dispersion-outliers.chart';
 import { BoxPlotPorFuenteChartComponent } from '../../shared/charts/boxplot-por-fuente.chart';
 import { ChartCardComponent } from '../../shared/chart-card/chart-card.component';
+
+/** Parse a 'YYYY-MM-DD' string (or null) into a local-midnight Date (or null). */
+function toDate(iso: string | null): Date | null {
+  if (!iso) return null;
+  const [y, m, d] = iso.split('-').map(Number);
+  if ([y, m, d].some((v) => Number.isNaN(v))) return null;
+  return new Date(y, m - 1, d);
+}
+
+/** Format a Date as a local 'YYYY-MM-DD' string, or null for "no bound". */
+function fromDate(date: Date | null): string | null {
+  if (!date) return null;
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
 
 /**
  * Analisis page — 4 chart families + reactive filter sidebar.
@@ -27,6 +45,7 @@ import { ChartCardComponent } from '../../shared/chart-card/chart-card.component
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     FormsModule,
+    DateRangePickerComponent,
     PrecioPromedioFuenteCategoriaChartComponent,
     SerieTemporalPreciosChartComponent,
     DispersionOutliersChartComponent,
@@ -161,42 +180,32 @@ import { ChartCardComponent } from '../../shared/chart-card/chart-card.component
             </p>
           } @else {
             <div class="flex flex-col gap-2">
-              <label
-                class="text-body-md text-on-surface-variant grid grid-cols-[60px_1fr] cursor-pointer items-center gap-2 py-1"
-              >
+              <div class="grid grid-cols-[60px_1fr] items-center gap-2">
                 <span
                   class="text-label-caps text-on-surface-variant font-semibold tracking-wider uppercase"
                   >Desde</span
                 >
-                <input
-                  type="date"
-                  class="rounded-md border border-outline-variant bg-surface-container-low px-2 py-1.5 text-body-md text-on-surface outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary"
-                  style="color-scheme: light dark"
-                  [min]="store.timeRangeBounds().min"
-                  [max]="store.timeRangeBounds().max"
-                  [value]="fechaDesde() ?? ''"
-                  (change)="setFechaDesde($event)"
-                  [attr.aria-label]="'Fecha desde'"
+                <app-date-range-picker
+                  [value]="fechaDesde()"
+                  [min]="fechaMin()"
+                  [max]="fechaMax()"
+                  ariaLabel="Fecha desde"
+                  (dateChange)="setFechaDesde($event)"
                 />
-              </label>
-              <label
-                class="text-body-md text-on-surface-variant grid grid-cols-[60px_1fr] cursor-pointer items-center gap-2 py-1"
-              >
+              </div>
+              <div class="grid grid-cols-[60px_1fr] items-center gap-2">
                 <span
                   class="text-label-caps text-on-surface-variant font-semibold tracking-wider uppercase"
                   >Hasta</span
                 >
-                <input
-                  type="date"
-                  class="rounded-md border border-outline-variant bg-surface-container-low px-2 py-1.5 text-body-md text-on-surface outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary"
-                  style="color-scheme: light dark"
-                  [min]="store.timeRangeBounds().min"
-                  [max]="store.timeRangeBounds().max"
-                  [value]="fechaHasta() ?? ''"
-                  (change)="setFechaHasta($event)"
-                  [attr.aria-label]="'Fecha hasta'"
+                <app-date-range-picker
+                  [value]="fechaHasta()"
+                  [min]="fechaMin()"
+                  [max]="fechaMax()"
+                  ariaLabel="Fecha hasta"
+                  (dateChange)="setFechaHasta($event)"
                 />
-              </label>
+              </div>
             </div>
             <p
               class="text-label-caps text-on-surface-variant mt-2 leading-snug tracking-wider uppercase"
@@ -319,8 +328,11 @@ export class AnalisisPage {
 
   readonly rangoMin = computed(() => this.store.filtros().rangoPrecio[0]);
   readonly rangoMax = computed(() => this.store.filtros().rangoPrecio[1]);
-  readonly fechaDesde = computed(() => this.store.filtros().fechaDesde);
-  readonly fechaHasta = computed(() => this.store.filtros().fechaHasta);
+  readonly fechaDesde = computed<Date | null>(() => toDate(this.store.filtros().fechaDesde));
+  readonly fechaHasta = computed<Date | null>(() => toDate(this.store.filtros().fechaHasta));
+  /** Datepicker min/max bounds, converted from the store's ISO strings. */
+  readonly fechaMin = computed<Date | null>(() => toDate(this.store.timeRangeBounds().min));
+  readonly fechaMax = computed<Date | null>(() => toDate(this.store.timeRangeBounds().max));
 
   isFuenteSelected(value: string): boolean {
     return this.store.filtros().fuentes.includes(value);
@@ -344,15 +356,13 @@ export class AnalisisPage {
   }
 
   /**
-   * Date-range handlers for the new "Rango de fechas" fieldset.
-   * Empty value → null (treated as "no bound" by the store).
+   * Date-range handlers for the "Rango de fechas" fieldset.
+   * Null date → null (treated as "no bound" by the store).
    */
-  setFechaDesde(event: Event): void {
-    const value = (event.target as HTMLInputElement).value || null;
-    this.store.setFechaRange(value, this.store.filtros().fechaHasta);
+  setFechaDesde(value: Date | null): void {
+    this.store.setFechaRange(fromDate(value), this.store.filtros().fechaHasta);
   }
-  setFechaHasta(event: Event): void {
-    const value = (event.target as HTMLInputElement).value || null;
-    this.store.setFechaRange(this.store.filtros().fechaDesde, value);
+  setFechaHasta(value: Date | null): void {
+    this.store.setFechaRange(this.store.filtros().fechaDesde, fromDate(value));
   }
 }

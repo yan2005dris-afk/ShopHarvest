@@ -15,6 +15,7 @@ import type {
   SourceConfig,
   StagingResult,
 } from '../interfaces';
+import { RawScraperIngestForwarder } from './raw-scraper-ingest.forwarder';
 
 /**
  * PipelineService — orchestrator for the seven scrapers, the
@@ -39,7 +40,23 @@ export class PipelineService {
     @Inject(DW_LOADER) private readonly dwLoader: IDwLoader,
     @Inject(DATA_SOURCES) private readonly dataSources: IDataSource[],
     @Inject(STAGING_PROCESSOR) private readonly staging: IStagingProcessor,
+    private readonly ingestForwarder: RawScraperIngestForwarder,
   ) {}
+
+  /**
+   * Sources with a working adapter today. CSV dataset, encuesta, and
+   * API-rates are still stubs (they throw "not implemented yet"), so a
+   * default full run must NOT fan out to them — otherwise every
+   * scheduled run reports those as failed and the whole batch can't be
+   * a clean SUCCESS. They remain reachable on explicit request via
+   * `opts.sources` so an implementor can still drive them manually.
+   */
+  private readonly DEFAULT_RUN_SOURCES: PipelineSource[] = [
+    PipelineSource.MERCADOLIBRE,
+    PipelineSource.ALIEXPRESS,
+    PipelineSource.TEMU,
+    PipelineSource.SHEIN,
+  ];
 
   /** All PipelineSource enum values, in declaration order. */
   getAvailableSources(): PipelineSource[] {
@@ -83,7 +100,17 @@ export class PipelineService {
         `Source mismatch: adapter=${adapter.source}, config=${config.source}`,
       );
     }
-    return adapter.run(config);
+    const result = await adapter.run(config);
+    // Bridge the successful dump into the operational flow. Fire-and-forget:
+    // a forwarding failure must not change the returned ScrapeResult.
+    try {
+      await this.ingestForwarder.forwardIfProducible(result);
+    } catch (err) {
+      this.logger.warn(
+        `Scrape result forwarder skipped for ${source}: ${(err as Error).message}`,
+      );
+    }
+    return result;
   }
 
   /** Run only the staging transform (raw → staging). */
@@ -107,10 +134,11 @@ export class PipelineService {
   }
 
   /**
-   * Full pipeline: scrape every registered source in parallel → run
-   * staging → load the DW. Each phase's errors are surfaced via the
-   * returned envelope rather than thrown so the dashboard can render
-   * a partial-success summary.
+   * Full pipeline: scrape every runnable source in parallel → run
+   * staging → load the DW. By default only the implemented (non-stub)
+   * sources run; pass `opts.sources` to explicitly include a stub.
+   * Each phase's errors are surfaced via the returned envelope rather
+   * than thrown so the dashboard can render a partial-success summary.
    */
   async runAll(opts?: {
     sources?: PipelineSource[];
@@ -118,7 +146,7 @@ export class PipelineService {
     loadOpts?: { truncateFirst?: boolean };
   }): Promise<PipelineRunSummary> {
     const start = Date.now();
-    const requested = opts?.sources ?? this.getAvailableSources();
+    const requested = opts?.sources ?? this.DEFAULT_RUN_SOURCES;
     const adapters = requested.map((s) => this.pickSource(s));
 
     this.logger.log(`runAll starting: ${requested.length} sources`);
@@ -148,6 +176,19 @@ export class PipelineService {
     this.logger.log(
       `runAll scrapes done in ${scrapeResults.reduce((acc: number, r: ScrapeResult) => acc + r.durationMs, 0)}ms`,
     );
+
+    // Bridge every successful dump into the operational flow. Each result
+    // is forwarded in isolation so one failure cannot abort the rest; the
+    // forwarder itself also swallows its own errors.
+    for (const result of scrapeResults) {
+      try {
+        await this.ingestForwarder.forwardIfProducible(result);
+      } catch (err) {
+        this.logger.warn(
+          `Scrape result forwarder skipped for ${result.source}: ${(err as Error).message}`,
+        );
+      }
+    }
 
     // Staging is sequential by design (single writer to disk).
     let stagingResult: StagingResult | undefined;

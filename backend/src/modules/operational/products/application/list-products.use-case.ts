@@ -5,11 +5,14 @@ import {
   type ProductsRepository,
 } from '../domain/products.repository';
 
+export interface ListProductsQuery {
+  page?: number;
+  limit?: number;
+  q?: string;
+}
+
 /**
- * Returns every persisted Product. The optional `includeHistory` flag
- * mirrors the legacy `?includeHistory=` query parameter and joins
- * `PriceObservation[]` on every offer when true (the frontend in-line
- * price sparkline default).
+ * Returns paginated Products with total matching count.
  */
 @Injectable()
 export class ListProductsUseCase {
@@ -18,8 +21,13 @@ export class ListProductsUseCase {
     private readonly repository: ProductsRepository,
   ) {}
 
-  async execute(includeHistory: boolean = true): Promise<Product[]> {
-    return this.repository.findAll({ includeHistory });
+  async execute(query: ListProductsQuery = {}): Promise<{ items: Product[]; total: number }> {
+    const page = Math.max(1, query.page ?? 1);
+    const limit = Math.min(100, Math.max(1, query.limit ?? 24));
+    const q = query.q?.trim();
+    const cleanQ = q && q.length >= 2 ? q : undefined;
+
+    return this.repository.findAll({ page, limit, q: cleanQ });
   }
 
   async findAllByDomainRule(domainRuleId: string): Promise<Product[]> {

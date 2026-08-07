@@ -24,6 +24,8 @@ import type { PriceObservation } from '../../../services/api.service';
       [width]="width"
       [height]="height"
       style="width: 100%; height: auto; display: block;"
+      role="img"
+      [attr.aria-label]="ariaLabel()"
     ></canvas>
   `,
   styles: [
@@ -47,6 +49,13 @@ export class PriceHistoryChartComponent implements AfterViewInit {
   readonly height = 240;
 
   readonly dpr = computed(() => window.devicePixelRatio || 1);
+
+  /** Canvas has no text content for screen readers; the per-offer tables below are the accessible fallback. */
+  readonly ariaLabel = computed(() => {
+    const count = this.observations().length;
+    if (count === 0) return 'Price history chart, no data';
+    return `Price history chart, ${count} price observation${count === 1 ? '' : 's'}`;
+  });
 
   private canvasEl!: HTMLCanvasElement;
   private ctx!: CanvasRenderingContext2D;

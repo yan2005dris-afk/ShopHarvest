@@ -35,7 +35,9 @@ import {
   PipelineRunSummary,
 } from '@web-scraping/contracts/pipeline';
 import type { EtlRunDto } from '@web-scraping/contracts/pipeline';
+import { ScrapeOneDto } from '../../dto/scrape-one.dto';
 import { Public } from '../../../../../modules/operational/auth/common/public.decorator';
+import { Roles } from '../../../../../modules/operational/auth/common/roles.decorator';
 import { OperationalPrismaService } from '../../../../../common/prisma/operational-prisma.service';
 import { PipelineService } from '../../application/pipeline.service';
 import { EtlSchedulerService } from '../../application/etl-scheduler.service';
@@ -96,16 +98,12 @@ export class PipelineController {
   })
   @ApiResponse({ status: 200, type: Object })
   @ApiResponse({ status: 400, type: ErrorResponseDto })
+  @Roles('admin')
   @HttpCode(200)
   @Post('scrape/:source')
   async scrapeOne(
     @Param('source') source: string,
-    @Body()
-    config: {
-      outputDir: string;
-      maxItems?: number;
-      extra?: Record<string, unknown>;
-    },
+    @Body() config: ScrapeOneDto,
   ): Promise<ScrapeResult> {
     const validSource = Object.values(PipelineSource).includes(source)
       ? (source as PipelineSource)
@@ -128,7 +126,7 @@ export class PipelineController {
       source: validSource,
       outputDir: config.outputDir,
       maxItems: config.maxItems,
-      extra: config.extra,
+      extra: config.extra ? { ...config.extra } : undefined,
     };
     return this.pipelineService.runScraper(validSource, sourceConfig);
   }
@@ -136,6 +134,7 @@ export class PipelineController {
   @ApiOperation({ summary: 'Ejecuta la fase de staging (raw → staging JSON).' })
   @ApiResponse({ status: 200, type: Object })
   @ApiResponse({ status: 400, type: ErrorResponseDto })
+  @Roles('admin')
   @HttpCode(200)
   @Post('staging')
   async runStaging(
@@ -151,6 +150,7 @@ export class PipelineController {
   @ApiOperation({ summary: 'Ejecuta la carga del DW (staging → dw.*).' })
   @ApiResponse({ status: 200, type: Object })
   @ApiResponse({ status: 400, type: ErrorResponseDto })
+  @Roles('admin')
   @HttpCode(200)
   @Post('load-dw')
   async loadDw(@Body() dto?: { truncateFirst?: boolean }): Promise<LoadResult> {
@@ -165,6 +165,7 @@ export class PipelineController {
   })
   @ApiResponse({ status: 200, type: Object })
   @ApiResponse({ status: 400, type: ErrorResponseDto })
+  @Roles('admin')
   @HttpCode(200)
   @Post('run-all')
   async runAll(
@@ -308,6 +309,7 @@ export class PipelineController {
     status: 201,
     description: 'Run triggered or existing RUNNING run returned.',
   })
+  @Roles('admin')
   @HttpCode(201)
   @Post('etl-runs/trigger')
   async triggerEtlRun(

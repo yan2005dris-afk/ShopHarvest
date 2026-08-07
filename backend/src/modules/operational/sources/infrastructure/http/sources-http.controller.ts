@@ -6,7 +6,6 @@ import {
   Delete,
   Get,
   HttpException,
-  HttpStatus,
   Inject,
   NotFoundException,
   Param,
@@ -173,9 +172,12 @@ export class SourcesHttpController {
     if (error instanceof InvalidSourceStatusTransitionError) {
       return new BadRequestException(error.message);
     }
-    return new HttpException(
-      (error as Error)?.message ?? 'Internal error',
-      HttpStatus.INTERNAL_SERVER_ERROR,
-    );
+    // Anything unexpected is NOT wrapped into an HttpException with its
+    // raw message. Wrapping here would make the global HttpExceptionFilter
+    // echo that message verbatim (even in production), leaking internal
+    // details (SQL, paths, stack text) to the client. Instead we let it
+    // bubble up to the filter, which logs the real error server-side and
+    // redacts it to 'Unexpected error' on the wire in production.
+    throw error;
   }
 }

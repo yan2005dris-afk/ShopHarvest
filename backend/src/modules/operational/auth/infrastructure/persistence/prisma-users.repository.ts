@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { OperationalPrismaService } from '../../../../../common/prisma/operational-prisma.service';
 import { User } from '../../domain/user.entity';
-import type { UserProps } from '../../domain/user.entity';
+import type { UserProps, UserRole } from '../../domain/user.entity';
 import type { UsersRepository } from '../../domain/users.repository';
 
 /**
@@ -26,9 +26,17 @@ export class PrismaUsersRepository implements UsersRepository {
     return User.fromPersistence(this.toProps(row));
   }
 
-  async create(email: string, passwordHash: string): Promise<User> {
+  async count(): Promise<number> {
+    return this.prisma.user.count();
+  }
+
+  async create(
+    email: string,
+    passwordHash: string,
+    role: UserRole,
+  ): Promise<User> {
     const row = await this.prisma.user.create({
-      data: { email, passwordHash },
+      data: { email, passwordHash, role },
     });
     return User.fromPersistence(this.toProps(row));
   }
@@ -37,6 +45,7 @@ export class PrismaUsersRepository implements UsersRepository {
     id: string;
     email: string;
     passwordHash: string;
+    role: string;
     createdAt: Date;
     updatedAt: Date;
   }): UserProps {
@@ -44,6 +53,7 @@ export class PrismaUsersRepository implements UsersRepository {
       id: row.id,
       email: row.email,
       passwordHash: row.passwordHash,
+      role: row.role === 'admin' ? 'admin' : 'user',
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     };

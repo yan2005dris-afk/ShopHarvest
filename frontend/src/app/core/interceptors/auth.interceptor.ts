@@ -3,17 +3,20 @@ import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
+import { environment } from '../../../environments/environment';
 
 /**
  * Returns true when the request URL should receive the Bearer token. We
- * scope the JWT to /api/* so that external URLs (CDNs, third-party APIs,
- * analytics endpoints) never carry the credential — that would leak it
- * via intermediate proxies and into request logs the user never saw.
+ * scope the JWT to the web API path (default "/api/...") so that external
+ * URLs (CDNs, third-party APIs, analytics endpoints) never carry the
+ * credential — that would leak it via intermediate proxies and into
+ * request logs the user never saw.
  */
 function isScopedApiRequest(url: string): boolean {
-  // Same-origin relative paths only: "/api/..." matches; absolute URLs
-  // (https://cdn...) and other same-origin paths do not.
-  return url.startsWith('/api/');
+  // Same-origin relative paths only: the configured apiBaseUrl + "/"
+  // matches; absolute URLs (https://cdn...) and other same-origin paths
+  // do not.
+  return url.startsWith(`${environment.apiBaseUrl}/`);
 }
 
 /**

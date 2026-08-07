@@ -5,6 +5,8 @@ import type {
   OfferResponseDto,
   PriceObservationResponseDto,
   ProductResponseDto,
+  ProductListResponseDto,
+  PaginationMetaDto,
 } from '@web-scraping/contracts/products';
 import type {
   DomainResponseDto,
@@ -16,30 +18,26 @@ import type {
   CreateCategoryDto,
   UpdateCategoryDto,
 } from '@web-scraping/contracts/categories';
+import type { SourceResponseDto } from '@web-scraping/contracts/sources';
 import type { ScrapeResult } from '@web-scraping/contracts/pipeline';
 import type { ExtensionFieldMapping } from './extension.service';
-
-// ─── Aliases — keep the existing call-site names so consumers don't
-// have to change. The wire shape is owned by `@web-scraping/contracts`.
-//
-// `product-offer-split`: `Product` shrinks to canonical fields + `offers[]`
-// (price/url/externalId moved onto `Offer`). `PriceHistory` is replaced by
-// `PriceObservation`, keyed by `offerId` instead of `productId`.
+import { environment } from '../../environments/environment';
 
 export type DomainRule = DomainResponseDto;
 export type FieldMapping = FieldMappingDto;
 export type Product = ProductResponseDto;
+export type ProductListResponse = ProductListResponseDto;
+export type PaginationMeta = PaginationMetaDto;
 export type Offer = OfferResponseDto;
 export type PriceObservation = PriceObservationResponseDto;
 export type Category = CategoryResponseDto;
-
-// ─── ApiService ─────────────────────────────────────────────
+export type Source = SourceResponseDto;
 
 @Injectable({
   providedIn: 'root',
 })
 export class ApiService {
-  private readonly baseUrl = '/api';
+  private readonly baseUrl = environment.apiBaseUrl;
 
   constructor(private readonly http: HttpClient) {}
 
@@ -61,6 +59,10 @@ export class ApiService {
     return this.http.get<string[]>(`${this.baseUrl}/pipeline/sources`);
   }
 
+  listSources(): Observable<Source[]> {
+    return this.http.get<Source[]>(`${this.baseUrl}/sources`);
+  }
+
   scrapeSource(source: string, outputDir: string): Observable<ScrapeResult> {
     return this.http.post<ScrapeResult>(`${this.baseUrl}/pipeline/scrape/${source}`, { outputDir });
   }
@@ -75,9 +77,6 @@ export class ApiService {
   ): Observable<{ ingested: number; domainRuleId: string }> {
     const body: Record<string, unknown> = { domain, pageUrl, products };
     if (fieldMappings && fieldMappings.length > 0) {
-      // Transform ExtensionFieldMapping to FieldMappingDto for backend
-      // - Remove extractedKey (frontend-only)
-      // - Replace empty selector with placeholder (backend requires non-empty)
       const dtoMappings: FieldMappingDto[] = fieldMappings.map((m) => ({
         canonicalField: m.canonicalField,
         selector: m.selector || '[extractAll]',
@@ -111,10 +110,16 @@ export class ApiService {
     return this.http.delete<{ deleted: boolean }>(`${this.baseUrl}/categories/${id}`);
   }
 
-  getProducts(includeHistory?: boolean): Observable<Product[]> {
+  getProducts(query?: {
+    page?: number;
+    limit?: number;
+    q?: string;
+  }): Observable<ProductListResponseDto> {
     const params: Record<string, string> = {};
-    if (includeHistory !== undefined) params['includeHistory'] = String(includeHistory);
-    return this.http.get<Product[]>(`${this.baseUrl}/products`, { params });
+    if (query?.page !== undefined) params['page'] = String(query.page);
+    if (query?.limit !== undefined) params['limit'] = String(query.limit);
+    if (query?.q !== undefined && query.q.trim() !== '') params['q'] = query.q.trim();
+    return this.http.get<ProductListResponseDto>(`${this.baseUrl}/products`, { params });
   }
 
   getProduct(id: string): Observable<Product> {
