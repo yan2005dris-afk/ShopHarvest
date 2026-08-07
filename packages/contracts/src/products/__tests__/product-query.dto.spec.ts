@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { plainToInstance } from 'class-transformer';
-import { ProductQueryDto } from '../product-query.dto.js';
+import { ProductQueryDto } from '../product-query.dto';
 
 /**
  * Wire-shape contract for `ProductQueryDto`.
