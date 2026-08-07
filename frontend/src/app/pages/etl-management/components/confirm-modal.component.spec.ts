@@ -119,9 +119,7 @@ describe('ConfirmModalComponent', () => {
 
   it('should seed only the preselected sources and restrict the list to them', () => {
     const fixture = TestBed.createComponent(ConfirmModalComponent);
-    fixture.componentRef.setInput('preselectedSources', [
-      { code: 'temu', label: 'Temu' },
-    ]);
+    fixture.componentRef.setInput('preselectedSources', [{ code: 'temu', label: 'Temu' }]);
     fixture.componentRef.setInput('pendingSources', [
       { code: 'mercadolibre', label: 'MercadoLibre' },
       { code: 'temu', label: 'Temu' },
@@ -130,9 +128,7 @@ describe('ConfirmModalComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.componentInstance.selectedSources()).toEqual(new Set(['temu']));
-    expect(fixture.componentInstance.availableSources()).toEqual([
-      { code: 'temu', label: 'Temu' },
-    ]);
+    expect(fixture.componentInstance.availableSources()).toEqual([{ code: 'temu', label: 'Temu' }]);
 
     const checkboxes = fixture.nativeElement.querySelectorAll(
       'input[type="checkbox"]',
@@ -141,7 +137,9 @@ describe('ConfirmModalComponent', () => {
 
     const confirmSpy = vi.fn();
     fixture.componentInstance.confirm.subscribe(confirmSpy);
-    (fixture.nativeElement.querySelector('[data-testid="btn-confirm"]') as HTMLButtonElement).click();
+    (
+      fixture.nativeElement.querySelector('[data-testid="btn-confirm"]') as HTMLButtonElement
+    ).click();
     // Opened scoped by a preselection → local is the lead action.
     expect(confirmSpy).toHaveBeenCalledWith({ action: 'local', source: 'temu' });
   });
@@ -161,7 +159,9 @@ describe('ConfirmModalComponent', () => {
 
     const confirmSpy = vi.fn();
     fixture.componentInstance.confirm.subscribe(confirmSpy);
-    (fixture.nativeElement.querySelector('[data-testid="btn-confirm"]') as HTMLButtonElement).click();
+    (
+      fixture.nativeElement.querySelector('[data-testid="btn-confirm"]') as HTMLButtonElement
+    ).click();
     // Opened scoped by a preselection covering every source → local is the
     // lead action, but source=all still resolves across the full set.
     expect(confirmSpy).toHaveBeenCalledWith({ action: 'local', source: 'all' });
@@ -173,9 +173,7 @@ describe('ConfirmModalComponent', () => {
       { code: 'temu', label: 'Temu' },
       { code: 'shein', label: 'SHEIN' },
     ]);
-    fixture.componentRef.setInput('pendingSources', [
-      { code: 'shein', label: 'SHEIN' },
-    ]);
+    fixture.componentRef.setInput('pendingSources', [{ code: 'shein', label: 'SHEIN' }]);
     fixture.componentRef.setInput('isOpen', true);
     fixture.detectChanges();
 
