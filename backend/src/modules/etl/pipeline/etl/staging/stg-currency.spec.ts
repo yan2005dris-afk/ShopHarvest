@@ -16,7 +16,7 @@ describe('parsePriceRaw', () => {
     ['plain', '"200"', 200],
     ['mixed separators, 3-digit fraction', '1,234.567', 1234.567],
   ])('%s -> %s', (_name, input, expected) => {
-    expect(parsePriceRaw(input as string)).toBe(expected);
+    expect(parsePriceRaw(input)).toBe(expected);
   });
 
   it('does not mistake a currency-code "k" for the magnitude suffix', () => {

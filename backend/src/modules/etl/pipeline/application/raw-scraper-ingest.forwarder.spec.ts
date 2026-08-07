@@ -23,9 +23,7 @@ describe('RawScraperIngestForwarder', () => {
   let warnSpy: jest.SpyInstance;
 
   beforeEach(() => {
-    jest
-      .spyOn(Logger.prototype, 'log')
-      .mockImplementation(() => undefined);
+    jest.spyOn(Logger.prototype, 'log').mockImplementation(() => undefined);
     warnSpy = jest
       .spyOn(Logger.prototype, 'warn')
       .mockImplementation(() => undefined);
@@ -95,9 +93,7 @@ describe('RawScraperIngestForwarder', () => {
         outputPath: path.join(os.tmpdir(), 'does-not-exist-forwarder.json'),
       }),
     );
-    expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining('outputPath'),
-    );
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('outputPath'));
     expect(ingestUseCase.execute).not.toHaveBeenCalled();
   });
 
