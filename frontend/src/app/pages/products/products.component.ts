@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   HostListener,
   inject,
   OnInit,
@@ -9,10 +10,14 @@ import {
 import { DatePipe, CurrencyPipe } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { debounceTime, distinctUntilChanged, filter, skip, switchMap } from 'rxjs';
+
 import { ApiService, Product, Offer, PriceObservation } from '../../services/api.service';
 import { ProductsPageStore } from './services/products-page.store';
 import { PriceHistoryChartComponent } from './components/price-history-chart.component';
 import { ProductCardComponent } from './components/product-card.component';
+import { IntersectionObserverDirective } from '../../shared/directives/intersection-observer.directive';
 import { SkeletonComponent } from 'boneyard-js/angular';
 
 @Component({
@@ -25,6 +30,7 @@ import { SkeletonComponent } from 'boneyard-js/angular';
     FormsModule,
     PriceHistoryChartComponent,
     ProductCardComponent,
+    IntersectionObserverDirective,
     SkeletonComponent,
   ],
   templateUrl: './products.component.html',
@@ -34,33 +40,87 @@ import { SkeletonComponent } from 'boneyard-js/angular';
 export class ProductsComponent implements OnInit {
   private readonly apiService = inject(ApiService);
   private readonly route = inject(ActivatedRoute);
+  private readonly destroyRef = inject(DestroyRef);
   protected readonly store = inject(ProductsPageStore);
 
   protected isLoadingHistory = signal(false);
 
-  ngOnInit(): void {
-    this.loadSources();
-    this.loadProducts();
-  }
+  private readonly searchPipe$ = toObservable(this.store.searchTerm).pipe(
+    skip(1),
+    debounceTime(300),
+    distinctUntilChanged(),
+    filter((t) => t.length === 0 || t.length >= 2),
+    switchMap((term) => {
+      this.store.setLoading(true);
+      this.store.setError(null);
+      return this.apiService.getProducts({ page: 1, limit: 24, q: term || undefined });
+    }),
+    takeUntilDestroyed(),
+  );
 
-  loadProducts(): void {
-    this.store.setLoading(true);
-    this.store.setError(null);
-    this.apiService.getProducts(true).subscribe({
-      next: (products) => {
-        this.store.setProducts(products);
+  constructor() {
+    this.searchPipe$.subscribe({
+      next: (res) => {
+        this.store.setProducts(res.data, res.meta);
         this.store.setLoading(false);
-        this.openProductFromRoute(products);
+        this.openProductFromRoute(res.data);
       },
       error: (err) => {
         this.store.setLoading(false);
-        this.store.setError('Error al cargar productos. Verificá que el backend esté funcionando.');
-        console.error('Failed to load products', err);
+        this.store.setError('Error al buscar productos. Verificá que el backend esté funcionando.');
+        console.error('Failed search query', err);
       },
     });
   }
 
-  /** Resolves Offer.sourceId → Source.name for display; degrades to the raw id on failure. */
+  ngOnInit(): void {
+    this.loadSources();
+    this.fetchPage(1, this.store.searchTerm(), false);
+  }
+
+  fetchPage(page: number, q?: string, append = false): void {
+    if (append) {
+      if (this.store.isLoadingMore() || !this.store.hasMore()) return;
+      this.store.setIsLoadingMore(true);
+      this.store.setLoadMoreError(null);
+    } else {
+      this.store.setLoading(true);
+      this.store.setError(null);
+    }
+
+    this.apiService.getProducts({ page, limit: 24, q: q || undefined }).subscribe({
+      next: (res) => {
+        if (append) {
+          this.store.appendProducts(res.data, res.meta);
+          this.store.setIsLoadingMore(false);
+        } else {
+          this.store.setProducts(res.data, res.meta);
+          this.store.setLoading(false);
+          this.openProductFromRoute(res.data);
+        }
+      },
+      error: (err) => {
+        if (append) {
+          this.store.setIsLoadingMore(false);
+          this.store.setLoadMoreError('Error al cargar más productos.');
+        } else {
+          this.store.setLoading(false);
+          this.store.setError('Error al cargar productos. Verificá que el backend esté funcionando.');
+        }
+        console.error('Failed to fetch page', err);
+      },
+    });
+  }
+
+  loadMore(): void {
+    if (this.store.isLoadingMore() || !this.store.hasMore()) return;
+    this.fetchPage(this.store.page() + 1, this.store.searchTerm(), true);
+  }
+
+  retryLoadMore(): void {
+    this.loadMore();
+  }
+
   private loadSources(): void {
     this.apiService.listSources().subscribe({
       next: (sources) => this.store.setSources(sources),
@@ -68,42 +128,42 @@ export class ProductsComponent implements OnInit {
     });
   }
 
-  /** Deep-linked via `/products/:id` (e.g. the product-card title link) — opens the overlay once products are loaded. */
-  private openProductFromRoute(products: Product[]): void {
+  private openProductFromRoute(loadedProducts: Product[]): void {
     const id = this.route.snapshot.paramMap.get('id');
     if (!id) return;
-    const product = products.find((p) => p.id === id);
-    if (product) this.selectProduct(product);
+    const product = loadedProducts.find((p) => p.id === id);
+    if (product) {
+      this.selectProduct(product);
+    } else {
+      this.apiService.getProduct(id).subscribe({
+        next: (p) => this.selectProduct(p),
+        error: (err) => console.error('Failed to load deep-linked product', err),
+      });
+    }
   }
 
-  // ── Public store delegates (for template + test access) ──
+  // ── Public store delegates ──
 
-  /** All loaded products (from store). */
   get products(): Product[] {
     return this.store.products();
   }
 
-  /** Currently selected product or null. */
   get selectedProduct(): Product | null {
     return this.store.selectedProduct();
   }
 
-  /** Loaded price observations. */
   get priceHistory(): PriceObservation[] {
     return this.store.priceHistory();
   }
 
-  /** Primary offer for a product (first offer — price, url, source for card summary). */
   protected primaryOffer(product: Product): Offer | undefined {
     return product.offers[0];
   }
 
-  /** Human-readable source name for an offer's sourceId (falls back to the raw id). */
   protected sourceName(sourceId: string): string {
     return this.store.sourceName(sourceId);
   }
 
-  /** Select a product and load its price history. */
   selectProduct(product: Product): void {
     if (this.store.selectedProduct()?.id === product.id) {
       this.store.selectProduct(null);
@@ -115,7 +175,6 @@ export class ProductsComponent implements OnInit {
     this.loadPriceHistory(product.id);
   }
 
-  /** Price observations for one specific `Offer` within the selected product. */
   historyForOffer(offerId: string): PriceObservation[] {
     return this.store.historyByOffer().get(offerId) ?? [];
   }
@@ -134,7 +193,6 @@ export class ProductsComponent implements OnInit {
     });
   }
 
-  /** Matches ConfirmModalComponent's Escape-to-close pattern. */
   @HostListener('document:keydown.escape')
   onEscape(): void {
     if (this.store.selectedProduct()) {

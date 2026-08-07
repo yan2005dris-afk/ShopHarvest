@@ -1,9 +1,9 @@
 import { Injectable, computed, signal } from '@angular/core';
-import { Product, Offer, PriceObservation, Source } from '../../../services/api.service';
+import type { Product, PriceObservation, Source, PaginationMeta } from '../../../services/api.service';
 
 /**
  * Products page state management.
- * Centralizes all UI state for the products page.
+ * Centralizes all UI state for the products page, including server-side pagination & infinite scroll.
  */
 @Injectable({ providedIn: 'root' })
 export class ProductsPageStore {
@@ -11,21 +11,21 @@ export class ProductsPageStore {
   readonly products = signal<Product[]>([]);
   readonly sources = signal<Source[]>([]);
 
+  // ─── Pagination & Async State ──────────────────────────
+  readonly page = signal<number>(1);
+  readonly limit = signal<number>(24);
+  readonly total = signal<number>(0);
+  readonly totalPages = signal<number>(0);
+  readonly isLoadingMore = signal<boolean>(false);
+  readonly loadMoreError = signal<string | null>(null);
+
+  /** Whether there are more pages available on the server. */
+  readonly hasMore = computed(() => {
+    return this.page() < this.totalPages() && this.products().length < this.total();
+  });
+
   /** Offer.sourceId → Source.name, so the UI never shows a raw UUID. */
   readonly sourceNameById = computed(() => new Map(this.sources().map((s) => [s.id, s.name])));
-  readonly filteredProducts = computed(() => {
-    const term = this.searchTerm()
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '');
-    return this.products().filter((p) =>
-      p.title
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .includes(term),
-    );
-  });
 
   // ─── UI State ──────────────────────────────────────────
   readonly searchTerm = signal('');
@@ -55,8 +55,32 @@ export class ProductsPageStore {
   }
 
   // ─── Actions ───────────────────────────────────────────
-  setProducts(products: Product[]): void {
+  /**
+   * Sets the initial/replaced list of products from page 1 response.
+   */
+  setProducts(products: Product[], meta?: PaginationMeta): void {
     this.products.set(products);
+    if (meta) {
+      this.page.set(meta.page);
+      this.limit.set(meta.limit);
+      this.total.set(meta.total);
+      this.totalPages.set(meta.totalPages);
+    }
+  }
+
+  /**
+   * Appends a new page of products, de-duplicating by product ID to tolerate offset drift.
+   */
+  appendProducts(newProducts: Product[], meta: PaginationMeta): void {
+    const existingIds = new Set(this.products().map((p) => p.id));
+    const uniqueIncoming = newProducts.filter((p) => !existingIds.has(p.id));
+    this.products.update((prev) => [...prev, ...uniqueIncoming]);
+
+    this.page.set(meta.page);
+    this.limit.set(meta.limit);
+    this.total.set(meta.total);
+    this.totalPages.set(meta.totalPages);
+    this.loadMoreError.set(null);
   }
 
   setSources(sources: Source[]): void {
@@ -67,8 +91,16 @@ export class ProductsPageStore {
     this.isLoading.set(loading);
   }
 
+  setIsLoadingMore(loadingMore: boolean): void {
+    this.isLoadingMore.set(loadingMore);
+  }
+
   setError(error: string | null): void {
     this.error.set(error);
+  }
+
+  setLoadMoreError(error: string | null): void {
+    this.loadMoreError.set(error);
   }
 
   selectProduct(product: Product | null): void {
@@ -77,5 +109,9 @@ export class ProductsPageStore {
 
   setPriceHistory(history: PriceObservation[]): void {
     this.priceHistory.set(history);
+  }
+
+  setSearchTerm(term: string): void {
+    this.searchTerm.set(term);
   }
 }

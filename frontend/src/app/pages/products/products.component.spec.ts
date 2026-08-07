@@ -5,15 +5,6 @@ import { provideRouter } from '@angular/router';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { ProductsComponent } from './products.component';
 
-/**
- * Spec for `ProductsComponent`, adapted by `product-offer-split` to the
- * offer-level model: price/url/extractedAt now live on `Offer`, nested
- * under `Product.offers[]`, instead of flat on `Product`.
- *
- * Drives the component through the real `provideHttpClientTesting()`
- * stack (matching `dashboard.service.spec.ts`'s convention) so we exercise
- * the actual `ApiService` calls, not a hand-rolled mock.
- */
 if (typeof globalThis.ResizeObserver === 'undefined') {
   (globalThis as any).ResizeObserver = class {
     observe(): void {}
@@ -107,11 +98,12 @@ describe('ProductsComponent (offer-level model)', () => {
     httpMock.expectOne((r) => r.url === '/api/sources' && r.method === 'GET').flush([]);
 
     const req = httpMock.expectOne((r) => r.url === '/api/products' && r.method === 'GET');
-    req.flush([productFixture()]);
+    req.flush({
+      data: [productFixture()],
+      meta: { page: 1, limit: 24, total: 1, totalPages: 1 },
+    });
     fixture.detectChanges();
 
-    // The full offers[] breakdown renders in the expanded detail —
-    // selecting the product also triggers the price-history request.
     const component = fixture.componentInstance;
     component.selectProduct(component.products[0]);
     fixture.detectChanges();
@@ -133,12 +125,14 @@ describe('ProductsComponent (offer-level model)', () => {
       .expectOne((r) => r.url === '/api/sources' && r.method === 'GET')
       .flush([
         { id: 's1', code: 'TEMU', name: 'Temu', baseUrl: 'https://temu.com', status: 'active' },
-        // 's2' intentionally omitted — the offer must fall back to the raw id.
       ]);
 
     httpMock
       .expectOne((r) => r.url === '/api/products' && r.method === 'GET')
-      .flush([productFixture()]);
+      .flush({
+        data: [productFixture()],
+        meta: { page: 1, limit: 24, total: 1, totalPages: 1 },
+      });
     fixture.detectChanges();
 
     const component = fixture.componentInstance;
@@ -151,7 +145,7 @@ describe('ProductsComponent (offer-level model)', () => {
     const offerRows = host.querySelectorAll('[data-testid="offer-row"]');
     expect(offerRows[0].textContent).toContain('Temu');
     expect(offerRows[0].textContent).not.toContain('s1');
-    expect(offerRows[1].textContent).toContain('s2'); // unresolved id: falls back, never blank
+    expect(offerRows[1].textContent).toContain('s2');
   });
 
   it('requests price history by productId and attributes each observation to its own Offer', () => {
@@ -161,7 +155,10 @@ describe('ProductsComponent (offer-level model)', () => {
     httpMock.expectOne((r) => r.url === '/api/sources' && r.method === 'GET').flush([]);
 
     const listReq = httpMock.expectOne((r) => r.url === '/api/products' && r.method === 'GET');
-    listReq.flush([productFixture()]);
+    listReq.flush({
+      data: [productFixture()],
+      meta: { page: 1, limit: 24, total: 1, totalPages: 1 },
+    });
     fixture.detectChanges();
 
     const component = fixture.componentInstance;
@@ -200,8 +197,6 @@ describe('ProductsComponent (offer-level model)', () => {
     const historyGroups = host.querySelectorAll('[data-testid="history-group"]');
     expect(historyGroups).toHaveLength(2);
 
-    // Progressive disclosure: only the first offer's history is expanded
-    // by default so N offers don't stack N always-open tables.
     expect((historyGroups[0] as HTMLDetailsElement).open).toBe(true);
     expect((historyGroups[1] as HTMLDetailsElement).open).toBe(false);
   });
@@ -213,7 +208,10 @@ describe('ProductsComponent (offer-level model)', () => {
     httpMock.expectOne((r) => r.url === '/api/sources' && r.method === 'GET').flush([]);
 
     const listReq = httpMock.expectOne((r) => r.url === '/api/products' && r.method === 'GET');
-    listReq.flush([productFixture()]);
+    listReq.flush({
+      data: [productFixture()],
+      meta: { page: 1, limit: 24, total: 1, totalPages: 1 },
+    });
     fixture.detectChanges();
 
     const component = fixture.componentInstance;
@@ -240,7 +238,10 @@ describe('ProductsComponent (offer-level model)', () => {
     httpMock.expectOne((r) => r.url === '/api/sources' && r.method === 'GET').flush([]);
 
     const listReq = httpMock.expectOne((r) => r.url === '/api/products' && r.method === 'GET');
-    listReq.flush([productFixture()]);
+    listReq.flush({
+      data: [productFixture()],
+      meta: { page: 1, limit: 24, total: 1, totalPages: 1 },
+    });
     fixture.detectChanges();
 
     const component = fixture.componentInstance;
@@ -261,7 +262,10 @@ describe('ProductsComponent (offer-level model)', () => {
     fixture.detectChanges();
 
     httpMock.expectOne((r) => r.url === '/api/sources' && r.method === 'GET').flush([]);
-    httpMock.expectOne((r) => r.url === '/api/products' && r.method === 'GET').flush([]);
+    httpMock.expectOne((r) => r.url === '/api/products' && r.method === 'GET').flush({
+      data: [],
+      meta: { page: 1, limit: 24, total: 0, totalPages: 0 },
+    });
     fixture.detectChanges();
 
     expect(() =>
