@@ -25,10 +25,9 @@ import { ApiService, Category } from '../../services/api.service';
   template: `
     <div class="mx-auto block max-w-3xl p-8 font-sans">
       <header class="mb-8 flex flex-col gap-2">
-        <h1 class="text-headline-lg m-0 font-bold text-on-surface tracking-tight">Categories</h1>
+        <h1 class="text-headline-lg m-0 font-bold text-on-surface tracking-tight">Categorías</h1>
         <p class="text-body-lg m-0 text-on-surface-variant">
-          Define categories to organize scraped domains and set default field mappings (e.g. Ropa →
-          title, image, price).
+          Definí categorías para organizar los dominios scrapeados y establecer el mapeo de campos por defecto (ej. Ropa → title, image, price).
         </p>
         <button
           mat-flat-button
@@ -38,42 +37,42 @@ import { ApiService, Category } from '../../services/api.service';
           data-testid="btn-new-category"
         >
           <mat-icon>add</mat-icon>
-          <span>New Category</span>
+          <span>Nueva categoría</span>
         </button>
       </header>
 
-      <!-- Create / Edit form -->
+      <!-- Formulario Crear / Editar -->
       @if (showForm()) {
         <mat-card
           appearance="outlined"
           class="mb-6 !p-6"
-          aria-label="Category form"
+          aria-label="Formulario de categoría"
         >
           <h3 class="text-body-lg m-0 mb-4 font-semibold text-on-surface">
-            {{ editingId() ? 'Edit' : 'New' }} Category
+            {{ editingId() ? 'Editar' : 'Nueva' }} categoría
           </h3>
           <div class="flex flex-col gap-4">
             <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Name</mat-label>
+              <mat-label>Nombre</mat-label>
               <input
                 matInput
                 [(ngModel)]="formName"
-                placeholder="e.g. Ropa, Electrónica"
+                placeholder="ej. Ropa, Electrónica"
               />
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Description</mat-label>
+              <mat-label>Descripción</mat-label>
               <textarea
                 matInput
                 rows="3"
                 [(ngModel)]="formDescription"
-                placeholder="What type of products go here?"
+                placeholder="¿Qué tipo de productos pertenecen a esta categoría?"
               ></textarea>
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Default Field Mappings</mat-label>
+              <mat-label>Mapeo de campos por defecto</mat-label>
               <textarea
                 matInput
                 rows="4"
@@ -81,7 +80,7 @@ import { ApiService, Category } from '../../services/api.service';
                 placeholder="title:text&#10;image:image&#10;price:price"
               ></textarea>
               <mat-hint>
-                One per line: canonicalField:type (e.g. title:text, image:text, price:text). Type can be text, attribute, or html.
+                Uno por línea: campoCanonico:tipo (ej. title:text, image:text, price:text). El tipo puede ser text, attribute o html.
               </mat-hint>
             </mat-form-field>
 
@@ -90,27 +89,27 @@ import { ApiService, Category } from '../../services/api.service';
                 mat-stroked-button
                 (click)="cancelForm()"
               >
-                Cancel
+                Cancelar
               </button>
               <button
                 mat-flat-button
                 color="primary"
                 (click)="saveCategory()"
               >
-                {{ editingId() ? 'Update' : 'Create' }}
+                {{ editingId() ? 'Guardar cambios' : 'Crear categoría' }}
               </button>
             </div>
           </div>
         </mat-card>
       }
 
-      <!-- List -->
+      <!-- Listado -->
       <div class="flex flex-col gap-3">
         @if (categories().length === 0) {
           <div
             class="rounded-xl border border-dashed border-outline-variant p-8 text-center text-body-lg text-on-surface-variant"
           >
-            <p class="m-0">No categories yet. Create one to organize your domains.</p>
+            <p class="m-0">Aún no hay categorías creadas. Creá una para organizar tus dominios.</p>
           </div>
         }
         @for (cat of categories(); track cat.id) {
@@ -123,14 +122,14 @@ import { ApiService, Category } from '../../services/api.service';
                     mat-stroked-button
                     (click)="startEdit(cat)"
                   >
-                    Edit
+                    Editar
                   </button>
                   <button
                     mat-stroked-button
                     color="warn"
                     (click)="deleteCategory(cat.id)"
                   >
-                    Delete
+                    Eliminar
                   </button>
                 </div>
               </div>
@@ -141,7 +140,7 @@ import { ApiService, Category } from '../../services/api.service';
                 <div
                   class="mt-3 flex flex-wrap items-center gap-2 border-t border-outline-variant pt-3"
                 >
-                  <span class="text-label-caps text-on-surface-variant">Default fields:</span>
+                  <span class="text-label-caps text-on-surface-variant">Campos por defecto:</span>
                   <mat-chip-set>
                     @for (m of cat.defaultFieldMappings; track m.canonicalField) {
                       @if (m.canonicalField) {

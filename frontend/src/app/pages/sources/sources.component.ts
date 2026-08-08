@@ -146,11 +146,11 @@ export class SourcesComponent implements OnInit {
   statusLabel(status: SourceMeta['status']): string {
     switch (status) {
       case 'active':
-        return 'Active';
+        return 'Activo';
       case 'extension':
-        return 'Needs extension';
+        return 'Vía extensión';
       case 'pending':
-        return 'Pending';
+        return 'Pendiente';
     }
   }
 

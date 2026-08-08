@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, input, model, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
 import { MappingSessionService } from '../services/mapping-session.service';
 import type { Category, DomainRule } from '../../../services/api.service';
 
@@ -8,51 +10,38 @@ import type { Category, DomainRule } from '../../../services/api.service';
   selector: 'app-mapper-hero',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, MatIconModule, MatButtonModule],
   template: `
-    <div class="vm-hero">
+    <div class="vm-hero font-sans">
       <div class="vm-hero-icon">
-        <svg
-          width="40"
-          height="40"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="1.5"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <circle cx="11" cy="11" r="8" />
-          <path d="m21 21-4.35-4.35" />
-          <line x1="11" y1="8" x2="11" y2="14" />
-          <line x1="8" y1="11" x2="14" y2="11" />
-        </svg>
+        <mat-icon class="!size-10 !text-4xl text-primary">zoom_in</mat-icon>
       </div>
-      <h1 class="vm-hero-title">Map a new store</h1>
+      <h1 class="vm-hero-title">Mapear nueva tienda</h1>
       <p class="vm-hero-sub">
-        Enter a URL, then click the card that wraps one product — we auto-detect the rest
+        Ingresá una URL, luego hacé clic en la tarjeta que envuelve un producto; nosotros detectamos el resto
       </p>
 
       <div class="vm-input-card">
-        <label class="vm-label" for="url-input">Store URL</label>
+        <label class="vm-label" for="url-input">URL de la tienda</label>
         <div class="vm-url-row">
           <input
             id="url-input"
             type="url"
             class="vm-input"
             [(ngModel)]="url"
-            placeholder="https://store.example.com/products"
+            placeholder="https://tienda.ejemplo.com/productos"
             autofocus
           />
           <button
-            class="btn-accent"
+            mat-flat-button
+            color="primary"
             (click)="onOpenMapper.emit()"
             [disabled]="!extensionAvailable()"
           >
             @if (extensionAvailable()) {
-              Open Mapper
+              Abrir mapeador
             } @else {
-              Not detected
+              No detectada
             }
           </button>
         </div>
@@ -61,14 +50,13 @@ import type { Category, DomainRule } from '../../../services/api.service';
         }
         @if (!extensionAvailable()) {
           <p class="vm-hint">
-            <a routerLink="/setup" class="vm-hint-link">Install the extension</a> to map fields
-            visually.
+            <a routerLink="/setup" class="vm-hint-link">Instalá la extensión</a> para mapear campos visualmente.
           </p>
         }
       </div>
 
       <div class="vm-input-card vm-category-card">
-        <label class="vm-label" for="category-select">Category</label>
+        <label class="vm-label" for="category-select">Categoría</label>
         <div class="vm-category-row">
           <select
             id="category-select"
@@ -76,7 +64,7 @@ import type { Category, DomainRule } from '../../../services/api.service';
             [ngModel]="categoryId()"
             (ngModelChange)="categoryId.set($event)"
           >
-            <option value="">— No category —</option>
+            <option value="">— Seleccione categoría —</option>
             @for (cat of categories(); track cat.id) {
               <option [value]="cat.id">
                 {{ cat.name }}
@@ -91,14 +79,14 @@ import type { Category, DomainRule } from '../../../services/api.service';
           }
         </div>
         <p class="vm-hint">
-          Groups this domain under a category.
-          <a routerLink="/categories" class="vm-hint-link">Manage categories</a>
+          Agrupa este dominio bajo una categoría.
+          <a routerLink="/categories" class="vm-hint-link">Gestionar categorías</a>
         </p>
       </div>
 
       @if (domains().length > 0) {
         <div class="vm-saved">
-          <p class="vm-saved-label">Saved domains</p>
+          <p class="vm-saved-label">Dominios guardados</p>
           <div class="vm-chips">
             @for (d of domains(); track d.id) {
               <span class="vm-chip">

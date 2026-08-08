@@ -8,9 +8,9 @@
   reads as "not yet" instead of a flat grey block next to the two
   filled, colored badges.
 -->
-<div class="mx-auto flex w-full max-w-[1100px] flex-col px-8 pt-6 pb-12 min-h-full">
+<div class="mx-auto flex w-full max-w-[1100px] flex-col px-8 pt-6 pb-12 min-h-full font-sans">
   <header class="mb-6 flex items-baseline gap-2.5">
-    <h1 class="text-headline-md m-0 font-bold text-on-surface tracking-tight">Sources</h1>
+    <h1 class="text-headline-md m-0 font-bold text-on-surface tracking-tight">Fuentes</h1>
     @if (!loading() && !error()) {
       <mat-chip-set>
         <mat-chip class="!min-h-6 !text-xs font-semibold">{{ sources().length }}</mat-chip>
@@ -23,7 +23,7 @@
       class="flex flex-1 flex-col items-center justify-center gap-4 p-16 text-center text-body-md text-on-surface-variant"
     >
       <mat-spinner diameter="36"></mat-spinner>
-      <p class="m-0">Loading sources…</p>
+      <p class="m-0">Cargando fuentes…</p>
     </div>
   }
 
@@ -38,7 +38,7 @@
         color="warn"
         (click)="loadSources()"
       >
-        Retry
+        Reintentar
       </button>
     </div>
   }
@@ -91,10 +91,10 @@
             <div
               class="flex flex-wrap gap-3 rounded-md border border-outline-variant bg-surface-container-low p-2.5 text-body-md"
             >
-              <span class="text-success font-semibold">{{ result.totalScraped }} items</span>
+              <span class="text-success font-semibold">{{ result.totalScraped }} ítems</span>
               <span class="text-on-surface-variant">{{ result.durationMs }}ms</span>
               @if (result.errors.length > 0) {
-                <span class="text-danger font-semibold">{{ result.errors.length }} error(s)</span>
+                <span class="text-danger font-semibold">{{ result.errors.length }} error(es)</span>
               }
             </div>
           }
@@ -110,12 +110,12 @@
             @if (scraping()[source]) {
               <span class="flex items-center justify-center gap-2">
                 <mat-spinner diameter="18"></mat-spinner>
-                <span>Scraping…</span>
+                <span>Scrapeando…</span>
               </span>
             } @else {
               <span class="flex items-center justify-center gap-1">
                 <mat-icon>play_arrow</mat-icon>
-                <span>Scrape now</span>
+                <span>Scrapear ahora</span>
               </span>
             }
           </button>
@@ -129,7 +129,7 @@
       class="flex flex-1 flex-col items-center justify-center gap-4 p-16 text-center text-body-md text-on-surface-variant"
     >
       <mat-icon class="!size-12">settings</mat-icon>
-      <p class="m-0">No sources found.</p>
+      <p class="m-0">No se encontraron fuentes.</p>
     </div>
   }
 </div>

@@ -1,10 +1,10 @@
 <!--
   ProductsComponent template — Insight Flow variant with Infinite Scroll & Server Search.
 -->
-<div class="mx-auto flex w-full max-w-[1100px] flex-col px-8 pt-6 pb-12 min-h-full">
+<div class="mx-auto flex w-full max-w-[1100px] flex-col px-8 pt-6 pb-12 min-h-full font-sans">
   <header class="mb-4 flex flex-wrap items-center justify-between gap-4">
     <div class="flex items-baseline gap-2.5">
-      <h1 class="text-headline-md m-0 font-bold text-on-surface tracking-tight">Products</h1>
+      <h1 class="text-headline-md m-0 font-bold text-on-surface tracking-tight">Productos</h1>
       @if (!store.isLoading()) {
         <mat-chip-set data-testid="products-count-badge">
           <mat-chip class="!min-h-6 !text-xs font-semibold">{{ store.total() }}</mat-chip>
@@ -12,7 +12,7 @@
       }
     </div>
     <mat-form-field appearance="outline" class="w-64 max-w-full" subscriptSizing="dynamic">
-      <mat-label>Search products…</mat-label>
+      <mat-label>Buscar productos…</mat-label>
       <input
         matInput
         type="text"
@@ -50,7 +50,7 @@
         color="warn"
         (click)="fetchPage(1, store.searchTerm(), false)"
       >
-        Retry
+        Reintentar
       </button>
     </div>
   }
@@ -60,9 +60,9 @@
       class="flex flex-1 flex-col items-center justify-center gap-4 p-16 text-center text-body-md text-on-surface-variant"
     >
       <mat-icon class="!size-12 text-on-surface-variant">inventory_2</mat-icon>
-      <p class="m-0">No products tracked yet.</p>
+      <p class="m-0">Aún no hay productos registrados.</p>
       <a routerLink="/" class="text-body-md font-medium text-primary no-underline hover:underline"
-        >Scrape a URL to get started &rarr;</a
+        >Scrapeá una URL para comenzar &rarr;</a
       >
     </div>
   }
@@ -71,7 +71,7 @@
     <div
       class="flex flex-1 flex-col items-center justify-center gap-4 p-16 text-center text-body-md text-on-surface-variant"
     >
-      <p class="m-0">No results for "{{ store.searchTerm() }}"</p>
+      <p class="m-0">Sin resultados para «{{ store.searchTerm() }}»</p>
     </div>
   }
 
@@ -102,7 +102,7 @@
         @if (store.isLoadingMore()) {
           <div class="flex items-center gap-2 text-body-md text-on-surface-variant">
             <mat-spinner diameter="24"></mat-spinner>
-            <span>Loading more products...</span>
+            <span>Cargando más productos...</span>
           </div>
         } @else if (store.loadMoreError()) {
           <div class="flex items-center gap-3 text-body-md text-danger">
@@ -111,7 +111,7 @@
               mat-stroked-button
               (click)="retryLoadMore()"
             >
-              Retry
+              Reintentar
             </button>
           </div>
         }
@@ -142,12 +142,12 @@
             id="product-detail-title"
             class="text-label-caps m-0 font-bold tracking-wider text-on-surface-variant uppercase"
           >
-            Product Details
+            Detalles del producto
           </h2>
           <button
             mat-icon-button
             (click)="store.selectProduct(null)"
-            aria-label="Close"
+            aria-label="Cerrar"
           >
             <mat-icon>close</mat-icon>
           </button>
@@ -184,12 +184,12 @@
                   }}</span>
                   @if (selectedProduct.offers.length > 1) {
                     <mat-chip-set>
-                      <mat-chip class="!min-h-6 !text-xs">+{{ selectedProduct.offers.length - 1 }} more offer(s)</mat-chip>
+                      <mat-chip class="!min-h-6 !text-xs">+{{ selectedProduct.offers.length - 1 }} oferta(s) más</mat-chip>
                     </mat-chip-set>
                   }
                 </div>
                 <p class="text-body-md m-0 text-on-surface-variant">
-                  {{ offer.extractedAt | date: 'MMM d, y' }}
+                  {{ offer.extractedAt | date: 'd MMM, y' }}
                 </p>
               }
             </div>
@@ -201,7 +201,7 @@
               class="m-0 mb-4 flex items-center gap-1.5 border-b border-outline-variant pb-2 text-label-caps font-bold tracking-wider text-on-surface-variant uppercase"
             >
               <mat-icon class="!size-4 !text-base">sell</mat-icon>
-              Offers
+              Ofertas
             </h4>
             <table class="w-full border-collapse text-body-md">
               <thead>
@@ -209,12 +209,12 @@
                   <th
                     class="border-outline-variant text-label-caps text-on-surface-variant border-b px-3 py-2 text-left font-bold tracking-wider uppercase"
                   >
-                    Source
+                    Fuente
                   </th>
                   <th
                     class="border-outline-variant text-label-caps text-on-surface-variant border-b px-3 py-2 text-right font-bold tracking-wider uppercase"
                   >
-                    Price
+                    Precio
                   </th>
                   <th
                     class="border-outline-variant text-label-caps text-on-surface-variant w-32 border-b px-3 py-2 text-right font-bold tracking-wider uppercase"
@@ -242,7 +242,7 @@
                         [href]="offer.url"
                         target="_blank"
                         rel="noopener"
-                        >Visit Link ↗</a
+                        >Visitar enlace ↗</a
                       >
                     </td>
                   </tr>
@@ -257,7 +257,7 @@
               class="m-0 mb-4 flex items-center gap-1.5 border-b border-outline-variant pb-2 text-label-caps font-bold tracking-wider text-on-surface-variant uppercase"
             >
               <mat-icon class="!size-4 !text-base">show_chart</mat-icon>
-              Price History
+              Historial de precios
             </h4>
             @if (store.priceHistory().length > 0) {
               <div class="overflow-hidden rounded-md">
@@ -283,17 +283,17 @@
                             <th
                               class="border-outline-variant text-on-surface-variant w-[45%] border-b px-3 py-1.5 text-left font-normal"
                             >
-                              Date
+                              Fecha
                             </th>
                             <th
                               class="border-outline-variant text-on-surface-variant w-[30%] border-b px-3 py-1.5 text-right font-normal"
                             >
-                              Price
+                              Precio
                             </th>
                             <th
                               class="border-outline-variant text-on-surface-variant w-[25%] border-b px-3 py-1.5 text-right font-normal"
                             >
-                              Currency
+                              Moneda
                             </th>
                           </tr>
                         </thead>
@@ -322,11 +322,11 @@
                 class="flex flex-col items-center justify-center gap-4 p-4 text-center text-body-md text-on-surface-variant"
               >
                 <mat-spinner diameter="32"></mat-spinner>
-                <p class="m-0">Loading price history...</p>
+                <p class="m-0">Cargando historial de precios...</p>
               </div>
             } @else {
               <p class="text-body-md m-0 italic text-on-surface-variant">
-                No price history available yet.
+                Aún no hay historial de precios disponible.
               </p>
             }
           </div>

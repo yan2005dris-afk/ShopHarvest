@@ -57,14 +57,14 @@ import { Product } from '../../../services/api.service';
           @if (offerCount() > 1) {
             <mat-chip-set>
               <mat-chip class="!min-h-6 !text-[11px] font-bold uppercase">
-                {{ offerCount() }} offers
+                {{ offerCount() }} ofertas
               </mat-chip>
             </mat-chip-set>
           }
           @if (hasHistory()) {
             <mat-chip-set>
               <mat-chip class="!min-h-6 !text-[11px] font-bold uppercase text-success">
-                Has history
+                Con historial
               </mat-chip>
             </mat-chip-set>
           }
