@@ -305,9 +305,11 @@ body {
   transition: background-color 200ms ease, color 200ms ease;
 }
 
-/* Material Symbols (icon font) — outline variant by default */
+/* Material Symbols & Material Icons font mapping for <mat-icon> */
+mat-icon,
+.mat-icon,
 .material-symbols-outlined {
-  font-family: 'Material Symbols Outlined';
+  font-family: 'Material Symbols Outlined', 'Material Icons', sans-serif !important;
   font-weight: normal;
   font-style: normal;
   font-size: 24px;
