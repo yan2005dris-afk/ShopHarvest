@@ -1,20 +1,22 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { KeyValuePipe } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatCardModule } from '@angular/material/card';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatChipsModule } from '@angular/material/chips';
+
 import { EtlManagementStore } from './etl-management.store';
 import { ConfirmModalComponent, EtlSourceOption } from './components/confirm-modal.component';
 import { EtlLoadPreviewComponent } from './components/etl-load-preview.component';
 import { EtlRunsTableComponent } from './components/etl-runs-table.component';
-import { KeyValuePipe } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 
 /**
  * EtlManagementPage — operator surface for monitoring and manually
  * triggering ETL runs.
- *
- * Sprint 4: tokens migrated to Insight Flow (Material 3 + Tailwind v4
- * utility classes). The page keeps all logic intact — only the
- * template/styling changes. Components imported below still consume
- * legacy tokens and will be migrated in subsequent sprints.
  */
+
 @Component({
   selector: 'app-etl-management-page',
   standalone: true,
@@ -24,6 +26,11 @@ import { FormsModule } from '@angular/forms';
     EtlRunsTableComponent,
     KeyValuePipe,
     FormsModule,
+    MatButtonModule,
+    MatIconModule,
+    MatCardModule,
+    MatCheckboxModule,
+    MatChipsModule,
   ],
   template: `
     <div class="flex flex-col gap-5 p-6">
@@ -38,8 +45,8 @@ import { FormsModule } from '@angular/forms';
         </div>
         <div>
           <button
-            type="button"
-            class="flex items-center gap-2 rounded-md bg-primary px-4 py-2.5 text-body-md font-semibold text-on-primary transition-colors hover:bg-primary-container disabled:cursor-not-allowed disabled:opacity-50"
+            mat-flat-button
+            color="primary"
             [disabled]="store.loading()"
             [title]="
               selectedPendingSources().size === 0
@@ -54,7 +61,7 @@ import { FormsModule } from '@angular/forms';
             (click)="onOpenTriggerModal()"
             data-testid="btn-trigger"
           >
-            <span class="material-symbols-outlined" style="font-size: 18px">play_arrow</span>
+            <mat-icon>play_arrow</mat-icon>
             <span>Ejecutar ETL</span>
           </button>
         </div>
@@ -65,17 +72,15 @@ import { FormsModule } from '@angular/forms';
           class="flex items-center gap-3 rounded-md border border-outline-variant bg-danger-dim p-3 text-body-md text-danger relative"
           role="alert"
         >
-          <span class="material-symbols-outlined" style="font-size: 20px" aria-hidden="true"
-            >error</span
-          >
+          <mat-icon class="!size-5 text-danger" aria-hidden="true">error</mat-icon>
           <div><strong>Error:</strong> {{ err }}</div>
           <button
-            type="button"
-            class="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-danger transition-colors hover:bg-danger-dim"
+            mat-icon-button
+            class="!absolute !right-2 !top-1/2 !-translate-y-1/2"
             (click)="store.clearError()"
             aria-label="Cerrar alerta"
           >
-            <span class="material-symbols-outlined" style="font-size: 18px">close</span>
+            <mat-icon>close</mat-icon>
           </button>
         </div>
       }
@@ -91,23 +96,24 @@ import { FormsModule } from '@angular/forms';
               Lotes de Ingesta Pendientes
             </h3>
             <div class="flex items-center gap-3">
-              <span
-                class="rounded-full px-2.5 py-1 text-[11px] font-semibold tracking-wider uppercase"
-                [class.bg-success-dim]="selectedPendingSources().size === 0"
-                [class.text-success]="selectedPendingSources().size === 0"
-                [class.bg-warning-dim]="selectedPendingSources().size > 0"
-                [class.text-warning]="selectedPendingSources().size > 0"
-                [attr.data-state]="selectedPendingSources().size === 0 ? 'full' : 'scoped'"
-              >
-                {{
-                  selectedPendingSources().size === 0
-                    ? 'Pipeline completo'
-                    : selectedPendingSources().size +
-                      ' de ' +
-                      pending.total +
-                      ' fuentes seleccionadas'
-                }}
-              </span>
+              <mat-chip-set>
+                <mat-chip
+                  [class.bg-success-dim]="selectedPendingSources().size === 0"
+                  [class.text-success]="selectedPendingSources().size === 0"
+                  [class.bg-warning-dim]="selectedPendingSources().size > 0"
+                  [class.text-warning]="selectedPendingSources().size > 0"
+                  [attr.data-state]="selectedPendingSources().size === 0 ? 'full' : 'scoped'"
+                >
+                  {{
+                    selectedPendingSources().size === 0
+                      ? 'Pipeline completo'
+                      : selectedPendingSources().size +
+                        ' de ' +
+                        pending.total +
+                        ' fuentes seleccionadas'
+                  }}
+                </mat-chip>
+              </mat-chip-set>
             </div>
           </header>
           <div
@@ -123,12 +129,11 @@ import { FormsModule } from '@angular/forms';
                 [class.bg-primary-fixed]="selectedPendingSources().has(toKey(item.key))"
                 [attr.data-selected]="selectedPendingSources().has(toKey(item.key))"
               >
-                <input
-                  type="checkbox"
-                  class="mt-0.5 size-4 cursor-pointer accent-primary"
+                <mat-checkbox
+                  class="mt-0.5"
                   [checked]="selectedPendingSources().has(toKey(item.key))"
                   (change)="togglePendingSource(toKey(item.key))"
-                />
+                ></mat-checkbox>
                 <div class="flex flex-1 flex-col gap-3">
                   <div class="flex items-baseline justify-between">
                     <span class="text-body-md font-semibold text-on-surface">{{

@@ -1,6 +1,15 @@
 import { Component, input, output, signal, HostListener } from '@angular/core';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
+import { MatInputModule } from '@angular/material/input';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatChipsModule } from '@angular/material/chips';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatCardModule } from '@angular/material/card';
+
 import type {
   EtlRunDto,
   EtlRunFiltersDto,
@@ -15,7 +24,7 @@ import {
 @Component({
   selector: 'app-etl-run-detail-modal',
   standalone: true,
-  imports: [DatePipe, DecimalPipe],
+  imports: [DatePipe, DecimalPipe, MatButtonModule, MatIconModule, MatChipsModule, MatCardModule],
   template: `
     @if (run()) {
       @let r = run()!;
@@ -26,8 +35,9 @@ import {
         aria-modal="true"
         aria-labelledby="etl-modal-title"
       >
-        <div
-          class="flex w-full max-w-lg flex-col overflow-hidden rounded-xl border border-outline-variant bg-surface-container-low max-h-[85vh]"
+        <mat-card
+          appearance="outlined"
+          class="flex w-full max-w-lg flex-col overflow-hidden !p-0 max-h-[85vh]"
           (click)="$event.stopPropagation()"
         >
           <div class="flex items-center justify-between border-b border-outline-variant px-5 py-4">
@@ -35,12 +45,11 @@ import {
               Detalle de Ejecución: {{ r.source }}
             </h3>
             <button
-              type="button"
-              class="flex cursor-pointer items-center rounded-md border border-outline-variant bg-transparent px-2.5 py-1 text-body-md text-on-surface-variant transition-colors hover:bg-surface-container hover:text-on-surface"
+              mat-icon-button
               (click)="onClose()"
               aria-label="Cerrar modal"
             >
-              <span class="material-symbols-outlined" style="font-size: 18px">close</span>
+              <mat-icon>close</mat-icon>
             </button>
           </div>
           <div class="overflow-y-auto p-5">
@@ -49,18 +58,19 @@ import {
               <dd class="m-0 font-mono text-on-surface break-all">{{ r.id }}</dd>
               <dt class="font-semibold text-on-surface-variant">Estado</dt>
               <dd class="m-0">
-                <span
-                  class="rounded-xs px-2 py-0.5 text-[11px] font-bold tracking-wider uppercase"
-                  [class.bg-primary-fixed]="r.status === 'RUNNING'"
-                  [class.text-primary-container]="r.status === 'RUNNING'"
-                  [class.bg-success-dim]="r.status === 'SUCCESS'"
-                  [class.text-success]="r.status === 'SUCCESS'"
-                  [class.bg-danger-dim]="r.status === 'FAILED'"
-                  [class.text-danger]="r.status === 'FAILED'"
-                  [attr.data-status]="r.status"
-                >
-                  {{ r.status }}
-                </span>
+                <mat-chip-set>
+                  <mat-chip
+                    [class.bg-primary-fixed]="r.status === 'RUNNING'"
+                    [class.text-primary-container]="r.status === 'RUNNING'"
+                    [class.bg-success-dim]="r.status === 'SUCCESS'"
+                    [class.text-success]="r.status === 'SUCCESS'"
+                    [class.bg-danger-dim]="r.status === 'FAILED'"
+                    [class.text-danger]="r.status === 'FAILED'"
+                    [attr.data-status]="r.status"
+                  >
+                    {{ r.status }}
+                  </mat-chip>
+                </mat-chip-set>
               </dd>
               <dt class="font-semibold text-on-surface-variant">Inicio</dt>
               <dd class="m-0 text-on-surface">{{ r.startedAt | date: 'medium' }}</dd>
@@ -82,7 +92,7 @@ import {
               }
             </dl>
           </div>
-        </div>
+        </mat-card>
       </div>
     }
   `,
@@ -117,44 +127,39 @@ export class EtlRunDetailModalComponent {
     DecimalPipe,
     EtlRunDetailModalComponent,
     DateRangePickerComponent,
+    MatFormFieldModule,
+    MatSelectModule,
+    MatInputModule,
+    MatButtonModule,
+    MatIconModule,
+    MatChipsModule,
+    MatProgressSpinnerModule,
   ],
   template: `
     <div
-      class="mb-5 flex flex-wrap items-end gap-4 rounded-xl border border-outline-variant bg-surface-container-low p-4"
+      class="mb-5 flex flex-wrap items-center gap-4 rounded-xl border border-outline-variant bg-surface-container-low p-4"
     >
-      <div class="flex min-w-[140px] flex-1 flex-col gap-1.5">
-        <label for="status" class="text-label-caps font-semibold text-on-surface-variant uppercase"
-          >Estado</label
-        >
-        <select
-          id="status"
-          [(ngModel)]="statusVal"
-          class="w-full rounded-md border border-outline-variant bg-surface-container px-3 py-2 text-body-md text-on-surface outline-none transition-[border-color,box-shadow] duration-150 focus:border-primary focus:ring-2 focus:ring-primary"
-        >
-          <option value="">Todos</option>
-          <option value="RUNNING">RUNNING</option>
-          <option value="SUCCESS">SUCCESS</option>
-          <option value="FAILED">FAILED</option>
-        </select>
-      </div>
+      <mat-form-field appearance="outline" class="flex min-w-[140px] flex-1" subscriptSizing="dynamic">
+        <mat-label>Estado</mat-label>
+        <mat-select [(ngModel)]="statusVal">
+          <mat-option value="">Todos</mat-option>
+          <mat-option value="RUNNING">RUNNING</mat-option>
+          <mat-option value="SUCCESS">SUCCESS</mat-option>
+          <mat-option value="FAILED">FAILED</mat-option>
+        </mat-select>
+      </mat-form-field>
 
-      <div class="flex min-w-[140px] flex-1 flex-col gap-1.5">
-        <label for="source" class="text-label-caps font-semibold text-on-surface-variant uppercase"
-          >Fuente</label
-        >
-        <select
-          id="source"
-          [(ngModel)]="sourceVal"
-          class="w-full rounded-md border border-outline-variant bg-surface-container px-3 py-2 text-body-md text-on-surface outline-none transition-[border-color,box-shadow] duration-150 focus:border-primary focus:ring-2 focus:ring-primary"
-        >
-          <option value="">Todas</option>
-          <option value="mercadolibre">MercadoLibre</option>
-          <option value="aliexpress">AliExpress</option>
-          <option value="temu">Temu</option>
-          <option value="shein">SHEIN</option>
-          <option value="all">Todas (Lote)</option>
-        </select>
-      </div>
+      <mat-form-field appearance="outline" class="flex min-w-[140px] flex-1" subscriptSizing="dynamic">
+        <mat-label>Fuente</mat-label>
+        <mat-select [(ngModel)]="sourceVal">
+          <mat-option value="">Todas</mat-option>
+          <mat-option value="mercadolibre">MercadoLibre</mat-option>
+          <mat-option value="aliexpress">AliExpress</mat-option>
+          <mat-option value="temu">Temu</mat-option>
+          <mat-option value="shein">SHEIN</mat-option>
+          <mat-option value="all">Todas (Lote)</mat-option>
+        </mat-select>
+      </mat-form-field>
 
       <div class="flex min-w-[140px] flex-1 flex-col gap-1.5">
         <label for="from" class="text-label-caps font-semibold text-on-surface-variant uppercase"
@@ -182,15 +187,14 @@ export class EtlRunDetailModalComponent {
 
       <div class="flex items-center gap-2.5">
         <button
-          type="button"
-          class="cursor-pointer rounded-md border border-outline-variant bg-surface-container px-4 py-2 text-body-md font-medium text-on-surface-variant transition-colors hover:bg-surface-container-high hover:text-on-surface"
+          mat-stroked-button
           (click)="onClear()"
         >
           Limpiar
         </button>
         <button
-          type="button"
-          class="cursor-pointer rounded-md bg-primary px-4 py-2 text-body-md font-semibold text-on-primary transition-colors hover:bg-primary-container"
+          mat-flat-button
+          color="primary"
           (click)="onApply()"
         >
           Filtrar
@@ -205,10 +209,7 @@ export class EtlRunDetailModalComponent {
         <div
           class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-surface-container/85 text-body-md text-on-surface"
         >
-          <div
-            class="size-7 rounded-full border-3 border-outline-variant border-t-primary"
-            style="animation: spin 0.8s linear infinite"
-          ></div>
+          <mat-spinner diameter="32"></mat-spinner>
           <span>Cargando ejecuciones...</span>
         </div>
       }
@@ -258,18 +259,19 @@ export class EtlRunDetailModalComponent {
             >
               <td class="px-4 py-3 font-medium text-on-surface">{{ run.source }}</td>
               <td class="px-4 py-3">
-                <span
-                  class="rounded-xs px-2 py-0.5 text-[11px] font-bold tracking-wider uppercase"
-                  [class.bg-primary-fixed]="run.status === 'RUNNING'"
-                  [class.text-primary-container]="run.status === 'RUNNING'"
-                  [class.bg-success-dim]="run.status === 'SUCCESS'"
-                  [class.text-success]="run.status === 'SUCCESS'"
-                  [class.bg-danger-dim]="run.status === 'FAILED'"
-                  [class.text-danger]="run.status === 'FAILED'"
-                  [attr.data-status]="run.status"
-                >
-                  {{ run.status }}
-                </span>
+                <mat-chip-set>
+                  <mat-chip
+                    [class.bg-primary-fixed]="run.status === 'RUNNING'"
+                    [class.text-primary-container]="run.status === 'RUNNING'"
+                    [class.bg-success-dim]="run.status === 'SUCCESS'"
+                    [class.text-success]="run.status === 'SUCCESS'"
+                    [class.bg-danger-dim]="run.status === 'FAILED'"
+                    [class.text-danger]="run.status === 'FAILED'"
+                    [attr.data-status]="run.status"
+                  >
+                    {{ run.status }}
+                  </mat-chip>
+                </mat-chip-set>
               </td>
               <td class="px-4 py-3 text-on-surface-variant">
                 {{ run.startedAt | date: 'medium' }}
@@ -300,8 +302,7 @@ export class EtlRunDetailModalComponent {
         <div>Mostrando {{ runs().length }} de {{ pagination.total }} ejecuciones</div>
         <div class="flex items-center gap-3">
           <button
-            type="button"
-            class="cursor-pointer rounded-md border border-outline-variant bg-surface-container-low px-3 py-1.5 text-body-md font-medium text-on-surface-variant transition-colors hover:bg-surface-container hover:text-on-surface disabled:cursor-not-allowed disabled:opacity-50"
+            mat-stroked-button
             [disabled]="pagination.page <= 1"
             (click)="onPageChange(pagination.page - 1)"
           >
@@ -311,8 +312,7 @@ export class EtlRunDetailModalComponent {
             >Página {{ pagination.page }} de {{ pagination.totalPages || 1 }}</span
           >
           <button
-            type="button"
-            class="cursor-pointer rounded-md border border-outline-variant bg-surface-container-low px-3 py-1.5 text-body-md font-medium text-on-surface-variant transition-colors hover:bg-surface-container hover:text-on-surface disabled:cursor-not-allowed disabled:opacity-50"
+            mat-stroked-button
             [disabled]="pagination.page >= pagination.totalPages"
             (click)="onPageChange(pagination.page + 1)"
           >

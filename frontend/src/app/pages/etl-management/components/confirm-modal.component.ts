@@ -1,22 +1,19 @@
 import { Component, computed, effect, input, output, signal, HostListener } from '@angular/core';
+import { MatCardModule } from '@angular/material/card';
+import { MatRadioModule } from '@angular/material/radio';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 
 export interface EtlSourceOption {
   code: string;
   label: string;
 }
 
-/**
- * ConfirmModalComponent — modal dialog for triggering an ETL run.
- *
- * UX detail: when `isOpen` flips to true we pre-select every
- * available source so the operator can confirm with a single click
- * in the common case (full ETL run). They can still untick boxes
- * to narrow scope; the modal blocks confirmation (Confirm button
- * disabled) when zero sources are selected.
- */
 @Component({
   selector: 'app-confirm-modal',
   standalone: true,
+  imports: [MatCardModule, MatRadioModule, MatCheckboxModule, MatButtonModule, MatIconModule],
   template: `
     @if (isOpen()) {
       <div
@@ -24,8 +21,9 @@ export interface EtlSourceOption {
         (click)="onCancel()"
         data-testid="modal-backdrop"
       >
-        <div
-          class="mx-4 flex w-full max-w-md flex-col rounded-xl border border-outline-variant bg-surface text-on-surface shadow-2xl"
+        <mat-card
+          appearance="outlined"
+          class="mx-4 flex w-full max-w-md flex-col !p-0 shadow-2xl"
           (click)="$event.stopPropagation()"
           role="dialog"
           aria-modal="true"
@@ -37,12 +35,11 @@ export interface EtlSourceOption {
           >
             <h3 class="m-0 text-headline-sm font-semibold">{{ title() }}</h3>
             <button
-              type="button"
-              class="rounded-md p-1 text-on-surface-variant transition-colors hover:bg-surface-container-high hover:text-on-surface"
+              mat-icon-button
               aria-label="Cerrar"
               (click)="onCancel()"
             >
-              <span class="material-symbols-outlined" style="font-size: 20px">close</span>
+              <mat-icon>close</mat-icon>
             </button>
           </header>
 
@@ -51,7 +48,11 @@ export interface EtlSourceOption {
 
             <div class="flex flex-col gap-2">
               <span class="text-label-caps text-on-surface-variant">Tipo de Ejecución</span>
-              <div class="grid grid-cols-1 gap-2">
+              <mat-radio-group
+                [value]="action()"
+                (change)="onActionChange($event.value)"
+                class="flex flex-col gap-2"
+              >
                 <label
                   class="flex cursor-pointer items-start gap-3 rounded-md border p-3 transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary"
                   [class.border-outline-variant]="action() !== 'full'"
@@ -59,45 +60,33 @@ export interface EtlSourceOption {
                   [class.border-primary]="action() === 'full'"
                   [class.bg-primary-fixed]="action() === 'full'"
                 >
-                  <input
-                    type="radio"
-                    name="modal-action"
-                    class="mt-1 size-4 cursor-pointer accent-primary"
-                    value="full"
-                    [checked]="action() === 'full'"
-                    (change)="onActionChange('full')"
-                  />
-                  <div class="flex flex-col gap-0.5">
-                    <span class="text-body-md font-medium text-on-surface">Pipeline Completo</span>
-                    <span class="text-body-sm text-on-surface-variant">
-                      Scraping por navegador + ETL sobre las fuentes
-                      {{ preselectedSources().length > 0 ? 'seleccionadas' : 'disponibles' }}
-                    </span>
-                  </div>
+                  <mat-radio-button value="full" class="mt-1">
+                    <div class="flex flex-col gap-0.5">
+                      <span class="text-body-md font-medium text-on-surface">Pipeline Completo</span>
+                      <span class="text-body-sm text-on-surface-variant">
+                        Scraping por navegador + ETL sobre las fuentes
+                        {{ preselectedSources().length > 0 ? 'seleccionadas' : 'disponibles' }}
+                      </span>
+                    </div>
+                  </mat-radio-button>
                 </label>
                 <label
-                  class="flex cursor-pointer items-start gap-3 rounded-md border p-4 transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary"
+                  class="flex cursor-pointer items-start gap-3 rounded-md border p-3 transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary"
                   [class.border-outline-variant]="action() !== 'local'"
                   [class.bg-surface-container-low]="action() !== 'local'"
                   [class.border-primary]="action() === 'local'"
                   [class.bg-primary-fixed]="action() === 'local'"
                 >
-                  <input
-                    type="radio"
-                    name="action-type"
-                    class="mt-0.5 size-4 cursor-pointer accent-primary"
-                    value="local"
-                    [checked]="action() === 'local'"
-                    (change)="onActionChange('local')"
-                  />
-                  <div class="flex flex-col gap-0.5">
-                    <span class="text-body-md font-medium text-on-surface">ETL Local</span>
-                    <span class="text-body-sm text-on-surface-variant">
-                      Procesar solo las capturas pendientes de la base de datos (scraper local)
-                    </span>
-                  </div>
+                  <mat-radio-button value="local" class="mt-1">
+                    <div class="flex flex-col gap-0.5">
+                      <span class="text-body-md font-medium text-on-surface">ETL Local</span>
+                      <span class="text-body-sm text-on-surface-variant">
+                        Procesar solo las capturas pendientes de la base de datos (scraper local)
+                      </span>
+                    </div>
+                  </mat-radio-button>
                 </label>
-              </div>
+              </mat-radio-group>
             </div>
 
             <div class="flex flex-col gap-1.5 text-left">
@@ -111,12 +100,10 @@ export interface EtlSourceOption {
                   <label
                     class="flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 transition-colors hover:bg-surface-container"
                   >
-                    <input
-                      type="checkbox"
-                      class="size-4 cursor-pointer accent-primary"
+                    <mat-checkbox
                       [checked]="selectedSources().has(opt.code)"
                       (change)="toggleSource(opt.code)"
-                    />
+                    ></mat-checkbox>
                     <span class="text-body-md text-on-surface">{{ opt.label }}</span>
                   </label>
                 }
@@ -135,16 +122,15 @@ export interface EtlSourceOption {
 
           <footer class="flex justify-end gap-2.5 border-t border-outline-variant px-4 py-3">
             <button
-              type="button"
-              class="rounded-md border border-outline-variant bg-surface-container-low px-4 py-2 text-body-md font-medium text-on-surface-variant transition-colors hover:bg-surface-container hover:text-on-surface"
+              mat-stroked-button
               (click)="onCancel()"
               data-testid="btn-cancel"
             >
               {{ cancelText() }}
             </button>
             <button
-              type="button"
-              class="rounded-md bg-primary px-4 py-2 text-body-md font-medium text-on-primary transition-colors hover:bg-primary-container disabled:cursor-not-allowed disabled:opacity-50"
+              mat-flat-button
+              color="primary"
               [disabled]="selectedSources().size === 0"
               (click)="onConfirm()"
               data-testid="btn-confirm"
@@ -152,7 +138,7 @@ export interface EtlSourceOption {
               {{ confirmText() }}
             </button>
           </footer>
-        </div>
+        </mat-card>
       </div>
     }
   `,
