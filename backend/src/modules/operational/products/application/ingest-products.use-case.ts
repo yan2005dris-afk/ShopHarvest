@@ -70,29 +70,31 @@ export class IngestProductsUseCase {
 
     this.warnIfNoTitleMapping(dto.domain, effectiveMappings);
 
-    const items: IngestItem[] = dto.products.map((product, index) => {
-      const derived = this.mapProductByRule(product, effectiveMappings);
-      const titleSlug = derived.title
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .slice(0, 80);
-      // Disambiguate duplicates: `url` is the dedup key against
-      // (sourceId, url) on Offer, so two items with identical titles
-      // would otherwise collide and the second silently overwrites the
-      // first. Append the batch index as a stable suffix.
-      const url = `${dto.pageUrl ?? dto.domain}#${titleSlug}-${index}`;
+    const items: IngestItem[] = dto.products.map(
+      (product: Record<string, string | number | null>, index: number) => {
+        const derived = this.mapProductByRule(product, effectiveMappings);
+        const titleSlug = derived.title
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .slice(0, 80);
+        // Disambiguate duplicates: `url` is the dedup key against
+        // (sourceId, url) on Offer, so two items with identical titles
+        // would otherwise collide and the second silently overwrites the
+        // first. Append the batch index as a stable suffix.
+        const url = `${dto.pageUrl ?? dto.domain}#${titleSlug}-${index}`;
 
-      return {
-        url,
-        title: derived.title,
-        price: derived.price,
-        currency: 'USD',
-        sku: derived.sku,
-        imageUrl: derived.imageUrl,
-        description: derived.description,
-        raw: product,
-      };
-    });
+        return {
+          url,
+          title: derived.title,
+          price: derived.price,
+          currency: 'USD',
+          sku: derived.sku,
+          imageUrl: derived.imageUrl,
+          description: derived.description,
+          raw: product,
+        };
+      },
+    );
 
     return this.repository.ingest({
       domain: dto.domain,
