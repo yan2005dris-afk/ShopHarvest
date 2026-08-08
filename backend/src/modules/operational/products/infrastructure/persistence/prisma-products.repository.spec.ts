@@ -21,7 +21,9 @@ describe('PrismaProductsRepository', () => {
         delete: jest.fn(),
       },
     };
-    repository = new PrismaProductsRepository(prisma as unknown as OperationalPrismaService);
+    repository = new PrismaProductsRepository(
+      prisma as unknown as OperationalPrismaService,
+    );
   });
 
   describe('findAll', () => {
@@ -55,7 +57,11 @@ describe('PrismaProductsRepository', () => {
         },
       ]);
 
-      const result = await repository.findAll({ page: 2, limit: 2, q: undefined });
+      const result = await repository.findAll({
+        page: 2,
+        limit: 2,
+        q: undefined,
+      });
 
       expect(prisma.$queryRaw).toHaveBeenCalledTimes(2);
       expect(result.total).toBe(5);
@@ -69,7 +75,11 @@ describe('PrismaProductsRepository', () => {
         .mockResolvedValueOnce([])
         .mockResolvedValueOnce([{ total: 0 }]);
 
-      const result = await repository.findAll({ page: 1, limit: 24, q: 'nonexistent' });
+      const result = await repository.findAll({
+        page: 1,
+        limit: 24,
+        q: 'nonexistent',
+      });
 
       expect(result).toEqual({ items: [], total: 0 });
       expect(prisma.product.findMany).not.toHaveBeenCalled();

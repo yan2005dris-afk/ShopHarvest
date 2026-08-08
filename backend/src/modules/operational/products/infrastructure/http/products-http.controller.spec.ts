@@ -94,7 +94,11 @@ describe('ProductsHttpController', () => {
       const { controller, list } = buildController();
       list.execute.mockResolvedValue({ items: [], total: 0 });
 
-      const result = await controller.findAll({ page: 2, limit: 10, q: 'camisa' });
+      const result = await controller.findAll({
+        page: 2,
+        limit: 10,
+        q: 'camisa',
+      });
 
       expect(list.execute).toHaveBeenCalledWith({
         page: 2,

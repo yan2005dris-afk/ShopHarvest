@@ -26,7 +26,9 @@ export interface ProductsRepository {
    * Load paginated Products. Supports diacritic and case-insensitive search
    * via optional `q`. Returned products omit price history on offers.
    */
-  findAll(query: ProductListQuery): Promise<{ items: Product[]; total: number }>;
+  findAll(
+    query: ProductListQuery,
+  ): Promise<{ items: Product[]; total: number }>;
   findById(id: string, options?: ProductLoadOptions): Promise<Product | null>;
   /**
    * Returns every Product that has at least one Offer scoped to

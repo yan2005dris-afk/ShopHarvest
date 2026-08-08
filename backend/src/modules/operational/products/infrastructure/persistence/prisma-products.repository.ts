@@ -27,7 +27,9 @@ import type { PrismaProductWithOffers } from './product.mapper';
 export class PrismaProductsRepository implements ProductsRepository {
   constructor(private readonly prisma: OperationalPrismaService) {}
 
-  async findAll(query: ProductListQuery): Promise<{ items: Product[]; total: number }> {
+  async findAll(
+    query: ProductListQuery,
+  ): Promise<{ items: Product[]; total: number }> {
     const page = Math.max(1, query.page);
     const limit = Math.min(100, Math.max(1, query.limit));
     const skip = (page - 1) * limit;
