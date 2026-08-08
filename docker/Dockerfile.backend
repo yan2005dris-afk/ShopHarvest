@@ -130,4 +130,4 @@ EXPOSE 3000
 # Analytics moved from `db push` to `migrate deploy` (fix-analytics-db-wiring):
 # the analytics DB now has a tracked migration history (dw schema + views +
 # materialized view), so it deploys the same way the operational DB does.
-CMD ["sh", "-c", "npx prisma migrate deploy --config prisma.operational.config.ts && npx prisma migrate deploy --config prisma.analytics.config.ts && node dist/main.js"]
+CMD ["sh", "-c", "./node_modules/.bin/prisma migrate deploy --config prisma.operational.config.ts && ./node_modules/.bin/prisma migrate deploy --config prisma.analytics.config.ts && node dist/main.js"]
