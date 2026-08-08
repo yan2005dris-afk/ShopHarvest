@@ -74,21 +74,12 @@ import { ThemeService } from '../../../services/theme.service';
           </button>
 
           @if (auth.isAuthenticated()) {
-            <a
-              mat-stroked-button
-              routerLink="/mapper"
-              aria-label="Volver al scraper"
-            >
+            <a mat-stroked-button routerLink="/mapper" aria-label="Volver al scraper">
               <mat-icon>arrow_back</mat-icon>
               <span>Scraper</span>
             </a>
           } @else {
-            <a
-              mat-flat-button
-              color="primary"
-              routerLink="/login"
-              aria-label="Iniciar sesión"
-            >
+            <a mat-flat-button color="primary" routerLink="/login" aria-label="Iniciar sesión">
               <span>Iniciar sesión</span>
             </a>
           }

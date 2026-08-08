@@ -27,7 +27,8 @@ import { ApiService, Category } from '../../services/api.service';
       <header class="mb-8 flex flex-col gap-2">
         <h1 class="text-headline-lg m-0 font-bold text-on-surface tracking-tight">Categorías</h1>
         <p class="text-body-lg m-0 text-on-surface-variant">
-          Definí categorías para organizar los dominios scrapeados y establecer el mapeo de campos por defecto (ej. Ropa → title, image, price).
+          Definí categorías para organizar los dominios scrapeados y establecer el mapeo de campos
+          por defecto (ej. Ropa → title, image, price).
         </p>
         <button
           mat-flat-button
@@ -43,22 +44,14 @@ import { ApiService, Category } from '../../services/api.service';
 
       <!-- Formulario Crear / Editar -->
       @if (showForm()) {
-        <mat-card
-          appearance="outlined"
-          class="mb-6 !p-6"
-          aria-label="Formulario de categoría"
-        >
+        <mat-card appearance="outlined" class="mb-6 !p-6" aria-label="Formulario de categoría">
           <h3 class="text-body-lg m-0 mb-4 font-semibold text-on-surface">
             {{ editingId() ? 'Editar' : 'Nueva' }} categoría
           </h3>
           <div class="flex flex-col gap-4">
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>Nombre</mat-label>
-              <input
-                matInput
-                [(ngModel)]="formName"
-                placeholder="ej. Ropa, Electrónica"
-              />
+              <input matInput [(ngModel)]="formName" placeholder="ej. Ropa, Electrónica" />
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">
@@ -80,22 +73,14 @@ import { ApiService, Category } from '../../services/api.service';
                 placeholder="title:text&#10;image:image&#10;price:price"
               ></textarea>
               <mat-hint>
-                Uno por línea: campoCanonico:tipo (ej. title:text, image:text, price:text). El tipo puede ser text, attribute o html.
+                Uno por línea: campoCanonico:tipo (ej. title:text, image:text, price:text). El tipo
+                puede ser text, attribute o html.
               </mat-hint>
             </mat-form-field>
 
             <div class="flex justify-end gap-2 mt-2">
-              <button
-                mat-stroked-button
-                (click)="cancelForm()"
-              >
-                Cancelar
-              </button>
-              <button
-                mat-flat-button
-                color="primary"
-                (click)="saveCategory()"
-              >
+              <button mat-stroked-button (click)="cancelForm()">Cancelar</button>
+              <button mat-flat-button color="primary" (click)="saveCategory()">
                 {{ editingId() ? 'Guardar cambios' : 'Crear categoría' }}
               </button>
             </div>
@@ -118,17 +103,8 @@ import { ApiService, Category } from '../../services/api.service';
               <div class="flex items-center justify-between">
                 <h3 class="text-headline-sm m-0 font-bold text-on-surface">{{ cat.name }}</h3>
                 <div class="flex gap-2">
-                  <button
-                    mat-stroked-button
-                    (click)="startEdit(cat)"
-                  >
-                    Editar
-                  </button>
-                  <button
-                    mat-stroked-button
-                    color="warn"
-                    (click)="deleteCategory(cat.id)"
-                  >
+                  <button mat-stroked-button (click)="startEdit(cat)">Editar</button>
+                  <button mat-stroked-button color="warn" (click)="deleteCategory(cat.id)">
                     Eliminar
                   </button>
                 </div>
@@ -146,7 +122,9 @@ import { ApiService, Category } from '../../services/api.service';
                       @if (m.canonicalField) {
                         <mat-chip class="!min-h-7 !text-xs">
                           <span class="flex items-center gap-1">
-                            <mat-icon class="!size-3.5 !text-sm">{{ fieldIcon(m.canonicalField) }}</mat-icon>
+                            <mat-icon class="!size-3.5 !text-sm">{{
+                              fieldIcon(m.canonicalField)
+                            }}</mat-icon>
                             <span>{{ m.canonicalField }}</span>
                           </span>
                         </mat-chip>

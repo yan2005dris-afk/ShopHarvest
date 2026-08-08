@@ -51,7 +51,11 @@
 
 /* Filled icon variant when active — visually anchors the selection */
 .nav-item.active .nav-item__icon {
-  font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+  font-variation-settings:
+    'FILL' 1,
+    'wght' 500,
+    'GRAD' 0,
+    'opsz' 24;
 }
 
 /* ── Collapsed state ────────────────────────────────────── */

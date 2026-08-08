@@ -18,7 +18,8 @@ import type { Category, DomainRule } from '../../../services/api.service';
       </div>
       <h1 class="vm-hero-title">Mapear nueva tienda</h1>
       <p class="vm-hero-sub">
-        Ingresá una URL, luego hacé clic en la tarjeta que envuelve un producto; nosotros detectamos el resto
+        Ingresá una URL, luego hacé clic en la tarjeta que envuelve un producto; nosotros detectamos
+        el resto
       </p>
 
       <div class="vm-input-card">
@@ -50,7 +51,8 @@ import type { Category, DomainRule } from '../../../services/api.service';
         }
         @if (!extensionAvailable()) {
           <p class="vm-hint">
-            <a routerLink="/setup" class="vm-hint-link">Instalá la extensión</a> para mapear campos visualmente.
+            <a routerLink="/setup" class="vm-hint-link">Instalá la extensión</a> para mapear campos
+            visualmente.
           </p>
         }
       </div>

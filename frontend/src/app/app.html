@@ -18,10 +18,7 @@
     sidebar everywhere, dashboard included.
   -->
   @if (!isDashboardRoute() || auth.isAuthenticated()) {
-    <app-sidebar
-      [extensionAvailable]="extensionAvailable"
-      class="block"
-    />
+    <app-sidebar [extensionAvailable]="extensionAvailable" class="block" />
   }
 
   <!-- Main stage — host for the routed page. -->

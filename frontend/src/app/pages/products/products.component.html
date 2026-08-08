@@ -29,7 +29,7 @@
       style="grid-template-columns: repeat(auto-fill, minmax(260px, 1fr))"
       data-testid="products-loading-skeleton"
     >
-      @for (i of [1,2,3,4,5,6,7,8]; track i) {
+      @for (i of [1, 2, 3, 4, 5, 6, 7, 8]; track i) {
         <boneyard-skeleton
           name="card"
           [loading]="true"
@@ -45,11 +45,7 @@
     >
       <mat-icon class="text-danger !size-8">error</mat-icon>
       <p class="text-danger m-0">{{ store.error() }}</p>
-      <button
-        mat-stroked-button
-        color="warn"
-        (click)="fetchPage(1, store.searchTerm(), false)"
-      >
+      <button mat-stroked-button color="warn" (click)="fetchPage(1, store.searchTerm(), false)">
         Reintentar
       </button>
     </div>
@@ -76,10 +72,7 @@
   }
 
   @if (!store.isLoading() && !store.error() && store.products().length > 0) {
-    <div
-      class="grid gap-6"
-      style="grid-template-columns: repeat(auto-fill, minmax(260px, 1fr))"
-    >
+    <div class="grid gap-6" style="grid-template-columns: repeat(auto-fill, minmax(260px, 1fr))">
       @for (product of store.products(); track product.id) {
         <app-product-card
           [product]="product"
@@ -107,12 +100,7 @@
         } @else if (store.loadMoreError()) {
           <div class="flex items-center gap-3 text-body-md text-danger">
             <span>{{ store.loadMoreError() }}</span>
-            <button
-              mat-stroked-button
-              (click)="retryLoadMore()"
-            >
-              Reintentar
-            </button>
+            <button mat-stroked-button (click)="retryLoadMore()">Reintentar</button>
           </div>
         }
       </div>
@@ -135,20 +123,14 @@
         aria-modal="true"
         aria-labelledby="product-detail-title"
       >
-        <div
-          class="flex items-center justify-between border-b border-outline-variant px-6 py-4"
-        >
+        <div class="flex items-center justify-between border-b border-outline-variant px-6 py-4">
           <h2
             id="product-detail-title"
             class="text-label-caps m-0 font-bold tracking-wider text-on-surface-variant uppercase"
           >
             Detalles del producto
           </h2>
-          <button
-            mat-icon-button
-            (click)="store.selectProduct(null)"
-            aria-label="Cerrar"
-          >
+          <button mat-icon-button (click)="store.selectProduct(null)" aria-label="Cerrar">
             <mat-icon>close</mat-icon>
           </button>
         </div>
@@ -184,7 +166,9 @@
                   }}</span>
                   @if (selectedProduct.offers.length > 1) {
                     <mat-chip-set>
-                      <mat-chip class="!min-h-6 !text-xs">+{{ selectedProduct.offers.length - 1 }} oferta(s) más</mat-chip>
+                      <mat-chip class="!min-h-6 !text-xs"
+                        >+{{ selectedProduct.offers.length - 1 }} oferta(s) más</mat-chip
+                      >
                     </mat-chip-set>
                   }
                 </div>

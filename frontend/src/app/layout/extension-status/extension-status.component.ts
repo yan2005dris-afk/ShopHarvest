@@ -14,7 +14,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
       routerLinkActive="active"
       class="nav-item"
       [class.nav-item--collapsed]="collapsed()"
-      [matTooltip]="collapsed() ? ('Extensión: ' + (available() ? 'ON' : 'OFF')) : ''"
+      [matTooltip]="collapsed() ? 'Extensión: ' + (available() ? 'ON' : 'OFF') : ''"
       matTooltipPosition="right"
     >
       <mat-icon class="nav-item__icon" aria-hidden="true">extension</mat-icon>

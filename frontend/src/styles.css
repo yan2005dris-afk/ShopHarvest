@@ -43,8 +43,8 @@
  * utility classes are emitted.
  */
 
-@import "tailwindcss";
-@import "@angular/material/prebuilt-themes/indigo-pink.css";
+@import 'tailwindcss';
+@import '@angular/material/prebuilt-themes/indigo-pink.css';
 
 /* Tell Tailwind v4 exactly which files to scan for utility usage. */
 @source "./**/*.ts";
@@ -136,8 +136,8 @@
   --color-danger-border: rgba(239, 68, 68, 0.4);
 
   /* ── Typography — Hanken Grotesk single typeface ─────────── */
-  --font-sans: 'Hanken Grotesk', system-ui, -apple-system, BlinkMacSystemFont,
-    'Segoe UI', Roboto, sans-serif;
+  --font-sans:
+    'Hanken Grotesk', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
 
   --text-headline-lg: 32px;
@@ -302,7 +302,9 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  transition: background-color 200ms ease, color 200ms ease;
+  transition:
+    background-color 200ms ease,
+    color 200ms ease;
 }
 
 /* Material Symbols & Material Icons font mapping for <mat-icon> */

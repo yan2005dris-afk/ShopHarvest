@@ -62,7 +62,10 @@ function fromDate(date: Date | null): string | null {
         <mat-chip class="!min-h-7 !text-xs font-semibold">
           <span class="flex items-center gap-1.5">
             <span class="h-1.5 w-1.5 rounded-full bg-warning"></span>
-            <span>Serie temporal · UN SOLO DÍA ({{ store.snapshotDate() }}). La línea es representativa del snapshot.</span>
+            <span
+              >Serie temporal · UN SOLO DÍA ({{ store.snapshotDate() }}). La línea es representativa
+              del snapshot.</span
+            >
           </span>
         </mat-chip>
       </mat-chip-set>
@@ -217,11 +220,7 @@ function fromDate(date: Date | null): string | null {
           </mat-checkbox>
         </fieldset>
 
-        <button
-          mat-stroked-button
-          class="mt-2 w-full"
-          (click)="store.resetFilters()"
-        >
+        <button mat-stroked-button class="mt-2 w-full" (click)="store.resetFilters()">
           Limpiar filtros
         </button>
       </aside>

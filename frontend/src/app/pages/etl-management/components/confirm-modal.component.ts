@@ -34,11 +34,7 @@ export interface EtlSourceOption {
             class="flex items-center justify-between border-b border-outline-variant px-4 py-4"
           >
             <h3 class="m-0 text-headline-sm font-semibold">{{ title() }}</h3>
-            <button
-              mat-icon-button
-              aria-label="Cerrar"
-              (click)="onCancel()"
-            >
+            <button mat-icon-button aria-label="Cerrar" (click)="onCancel()">
               <mat-icon>close</mat-icon>
             </button>
           </header>
@@ -62,7 +58,9 @@ export interface EtlSourceOption {
                 >
                   <mat-radio-button value="full" class="mt-1">
                     <div class="flex flex-col gap-0.5">
-                      <span class="text-body-md font-medium text-on-surface">Pipeline Completo</span>
+                      <span class="text-body-md font-medium text-on-surface"
+                        >Pipeline Completo</span
+                      >
                       <span class="text-body-sm text-on-surface-variant">
                         Scraping por navegador + ETL sobre las fuentes
                         {{ preselectedSources().length > 0 ? 'seleccionadas' : 'disponibles' }}
@@ -121,11 +119,7 @@ export interface EtlSourceOption {
           </div>
 
           <footer class="flex justify-end gap-2.5 border-t border-outline-variant px-4 py-3">
-            <button
-              mat-stroked-button
-              (click)="onCancel()"
-              data-testid="btn-cancel"
-            >
+            <button mat-stroked-button (click)="onCancel()" data-testid="btn-cancel">
               {{ cancelText() }}
             </button>
             <button

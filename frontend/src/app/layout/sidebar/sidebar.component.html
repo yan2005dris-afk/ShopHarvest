@@ -24,18 +24,11 @@
     class="mb-3 flex items-center gap-2 border-b border-outline-variant px-3 pb-3"
     [class.justify-center]="themeService.sidebarCollapsed()"
   >
-    <mat-icon
-      class="text-primary"
-      aria-hidden="true"
-      >radar</mat-icon
-    >
+    <mat-icon class="text-primary" aria-hidden="true">radar</mat-icon>
     @if (!themeService.sidebarCollapsed()) {
       <div class="flex flex-col leading-tight">
-        <span class="text-headline-sm font-bold text-primary"
-          >Scraper Studio</span
-        >
-        <span
-          class="text-[10px] uppercase tracking-wider text-on-surface-variant/70"
+        <span class="text-headline-sm font-bold text-primary">Scraper Studio</span>
+        <span class="text-[10px] uppercase tracking-wider text-on-surface-variant/70"
           >BI Analytics Engine</span
         >
       </div>
@@ -47,18 +40,14 @@
     type="button"
     class="absolute right-2 top-3 hidden items-center justify-center rounded-md p-1 text-on-surface-variant transition-colors hover:bg-surface-container-high hover:text-on-surface lg:flex"
     (click)="themeService.toggleSidebar()"
-    [attr.aria-label]="
-      themeService.sidebarCollapsed() ? 'Expand sidebar' : 'Collapse sidebar'
-    "
+    [attr.aria-label]="themeService.sidebarCollapsed() ? 'Expand sidebar' : 'Collapse sidebar'"
     [attr.aria-expanded]="!themeService.sidebarCollapsed()"
     data-testid="btn-collapse-sidebar"
     [matTooltip]="themeService.sidebarCollapsed() ? 'Expandir menú' : 'Colapsar menú'"
     matTooltipPosition="right"
   >
     <mat-icon style="font-size: 18px">
-      {{
-        themeService.sidebarCollapsed() ? 'right_panel_open' : 'left_panel_close'
-      }}
+      {{ themeService.sidebarCollapsed() ? 'right_panel_open' : 'left_panel_close' }}
     </mat-icon>
   </button>
 
@@ -69,20 +58,14 @@
         <a
           [routerLink]="item.routerLink"
           routerLinkActive="active"
-          [routerLinkActiveOptions]="
-            item.exact ? { exact: true } : { exact: false }
-          "
+          [routerLinkActiveOptions]="item.exact ? { exact: true } : { exact: false }"
           class="nav-item group"
           [class.nav-item--collapsed]="themeService.sidebarCollapsed()"
           [attr.data-nav]="item.routerLink"
           [matTooltip]="themeService.sidebarCollapsed() ? item.label : ''"
           matTooltipPosition="right"
         >
-          <mat-icon
-            class="nav-item__icon"
-            aria-hidden="true"
-            >{{ item.icon }}</mat-icon
-          >
+          <mat-icon class="nav-item__icon" aria-hidden="true">{{ item.icon }}</mat-icon>
           @if (!themeService.sidebarCollapsed()) {
             <span class="nav-item__label">{{ item.label }}</span>
           }

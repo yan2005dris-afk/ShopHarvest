@@ -33,24 +33,18 @@
     >
       <mat-icon class="text-danger !size-8">error</mat-icon>
       <p class="text-danger m-0">{{ error() }}</p>
-      <button
-        mat-stroked-button
-        color="warn"
-        (click)="loadSources()"
-      >
-        Reintentar
-      </button>
+      <button mat-stroked-button color="warn" (click)="loadSources()">Reintentar</button>
     </div>
   }
 
   @if (!loading() && !error() && sources().length > 0) {
-    <div
-      class="grid gap-4"
-      style="grid-template-columns: repeat(auto-fill, minmax(300px, 1fr))"
-    >
+    <div class="grid gap-4" style="grid-template-columns: repeat(auto-fill, minmax(300px, 1fr))">
       @for (source of sources(); track source) {
         @let m = metaFor(source);
-        <mat-card appearance="outlined" class="!flex !flex-col !gap-3 !p-5 transition-[border-color,box-shadow] duration-150 hover:border-primary">
+        <mat-card
+          appearance="outlined"
+          class="!flex !flex-col !gap-3 !p-5 transition-[border-color,box-shadow] duration-150 hover:border-primary"
+        >
           <div class="flex items-center justify-between gap-3">
             <h3 class="text-body-lg m-0 font-bold text-on-surface">
               {{ m?.name ?? source }}

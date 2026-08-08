@@ -44,11 +44,7 @@ import {
             <h3 id="etl-modal-title" class="m-0 text-headline-sm font-bold text-on-surface">
               Detalle de Ejecución: {{ r.source }}
             </h3>
-            <button
-              mat-icon-button
-              (click)="onClose()"
-              aria-label="Cerrar modal"
-            >
+            <button mat-icon-button (click)="onClose()" aria-label="Cerrar modal">
               <mat-icon>close</mat-icon>
             </button>
           </div>
@@ -198,19 +194,8 @@ export class EtlRunDetailModalComponent {
       </div>
 
       <div class="flex items-center gap-2.5">
-        <button
-          mat-stroked-button
-          (click)="onClear()"
-        >
-          Limpiar
-        </button>
-        <button
-          mat-flat-button
-          color="primary"
-          (click)="onApply()"
-        >
-          Filtrar
-        </button>
+        <button mat-stroked-button (click)="onClear()">Limpiar</button>
+        <button mat-flat-button color="primary" (click)="onApply()">Filtrar</button>
       </div>
     </div>
 
