@@ -1,5 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatButtonModule } from '@angular/material/button';
+import { MatChipsModule } from '@angular/material/chips';
+import { MatIconModule } from '@angular/material/icon';
 import { DashboardStore } from '../../core/dashboard.store';
 import { DateRangePickerComponent } from '../../../../shared/date-range-picker/date-range-picker.component';
 import { PrecioPromedioFuenteCategoriaChartComponent } from '../../shared/charts/precio-promedio-fuente-categoria.chart';
@@ -25,26 +29,16 @@ function fromDate(date: Date | null): string | null {
   return `${y}-${m}-${d}`;
 }
 
-/**
- * Analisis page — 4 chart families + reactive filter sidebar.
- *
- * Family 1: grouped bar of AVG(precio_usd) by fuente × categoria
- * Family 2: line chart of precio promedio por trimestre × fuente
- * Family 3: scatter using the outliers endpoint
- * Family 4: box plot per fuente
- *
- * Sprint 6: tokens migrated to Insight Flow. The filter sidebar
- * keeps the same controls but uses the Insight Flow form-input
- * pattern (bg-surface-container-low, focus:border-primary +
- * focus:ring-2). The chart palette stays as literal hex values
- * because the chart components consume them as data attributes.
- */
 @Component({
   selector: 'app-analisis-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     FormsModule,
+    MatCheckboxModule,
+    MatButtonModule,
+    MatChipsModule,
+    MatIconModule,
     DateRangePickerComponent,
     PrecioPromedioFuenteCategoriaChartComponent,
     SerieTemporalPreciosChartComponent,
@@ -64,20 +58,14 @@ function fromDate(date: Date | null): string | null {
     </header>
 
     @if (store.isSnapshot()) {
-      <div
-        class="inline-flex items-center gap-2 rounded-full border bg-warning-dim mb-6 px-3 py-1.5 text-label-caps font-semibold text-warning"
-        style="border-color: color-mix(in srgb, var(--color-warning) 40%, transparent)"
-        role="status"
-      >
-        <span
-          class="h-1.5 w-1.5 rounded-full bg-warning"
-          style="box-shadow: 0 0 8px var(--color-warning)"
-        ></span>
-        <span>
-          Serie temporal · <strong>UN SOLO DÍA</strong> ({{ store.snapshotDate() }}). La línea es
-          representativa del snapshot, no de una tendencia real.
-        </span>
-      </div>
+      <mat-chip-set class="mb-6">
+        <mat-chip class="!min-h-7 !text-xs font-semibold">
+          <span class="flex items-center gap-1.5">
+            <span class="h-1.5 w-1.5 rounded-full bg-warning"></span>
+            <span>Serie temporal · UN SOLO DÍA ({{ store.snapshotDate() }}). La línea es representativa del snapshot.</span>
+          </span>
+        </mat-chip>
+      </mat-chip-set>
     }
 
     <div class="grid items-start gap-6" style="grid-template-columns: 260px 1fr">
@@ -87,28 +75,24 @@ function fromDate(date: Date | null): string | null {
       >
         <h3 class="text-body-lg text-on-surface m-0 font-bold tracking-tight">Filtros</h3>
 
-        <fieldset class="m-0 flex flex-col gap-1.5 border-none p-0">
+        <fieldset class="m-0 flex flex-col gap-1 border-none p-0">
           <legend
             class="text-label-caps text-on-surface-variant mb-2 font-semibold tracking-wider uppercase"
           >
             Fuentes
           </legend>
           @for (f of availableFuentes(); track f) {
-            <label
-              class="text-body-md text-on-surface-variant flex cursor-pointer items-center gap-2 py-1 transition-colors hover:text-on-surface"
+            <mat-checkbox
+              [checked]="isFuenteSelected(f)"
+              (change)="toggleFuente(f)"
+              color="primary"
             >
-              <input
-                type="checkbox"
-                class="size-4 cursor-pointer accent-primary"
-                [checked]="isFuenteSelected(f)"
-                (change)="toggleFuente(f)"
-              />
-              <span>{{ f }}</span>
-            </label>
+              {{ f }}
+            </mat-checkbox>
           }
         </fieldset>
 
-        <fieldset class="m-0 flex flex-col gap-1.5 border-none p-0">
+        <fieldset class="m-0 flex flex-col gap-1 border-none p-0">
           <legend
             class="text-label-caps text-on-surface-variant mb-2 font-semibold tracking-wider uppercase"
           >
@@ -118,17 +102,13 @@ function fromDate(date: Date | null): string | null {
             <p class="text-body-md text-on-surface-variant m-0 italic">Cargando categorías…</p>
           }
           @for (c of availableCategorias(); track c) {
-            <label
-              class="text-body-md text-on-surface-variant flex cursor-pointer items-center gap-2 py-1 transition-colors hover:text-on-surface"
+            <mat-checkbox
+              [checked]="isCategoriaSelected(c)"
+              (change)="toggleCategoria(c)"
+              color="primary"
             >
-              <input
-                type="checkbox"
-                class="size-4 cursor-pointer accent-primary"
-                [checked]="isCategoriaSelected(c)"
-                (change)="toggleCategoria(c)"
-              />
-              <span>{{ c }}</span>
-            </label>
+              {{ c }}
+            </mat-checkbox>
           }
         </fieldset>
 
@@ -215,39 +195,31 @@ function fromDate(date: Date | null): string | null {
           }
         </fieldset>
 
-        <fieldset class="m-0 flex flex-col gap-1.5 border-none p-0">
+        <fieldset class="m-0 flex flex-col gap-1 border-none p-0">
           <legend
             class="text-label-caps text-on-surface-variant mb-2 font-semibold tracking-wider uppercase"
           >
             Restricciones
           </legend>
-          <label
-            class="text-body-md text-on-surface-variant flex cursor-pointer items-center gap-2 py-1 transition-colors hover:text-on-surface"
+          <mat-checkbox
+            [ngModel]="store.filtros().soloConDisponibilidad"
+            (ngModelChange)="store.setSoloConDisponibilidad($event)"
+            color="primary"
           >
-            <input
-              type="checkbox"
-              class="size-4 cursor-pointer accent-primary"
-              [ngModel]="store.filtros().soloConDisponibilidad"
-              (ngModelChange)="store.setSoloConDisponibilidad($event)"
-            />
-            <span>Solo con disponibilidad</span>
-          </label>
-          <label
-            class="text-body-md text-on-surface-variant flex cursor-pointer items-center gap-2 py-1 transition-colors hover:text-on-surface"
+            Solo con disponibilidad
+          </mat-checkbox>
+          <mat-checkbox
+            [ngModel]="store.filtros().soloConCalificacion"
+            (ngModelChange)="store.setSoloConCalificacion($event)"
+            color="primary"
           >
-            <input
-              type="checkbox"
-              class="size-4 cursor-pointer accent-primary"
-              [ngModel]="store.filtros().soloConCalificacion"
-              (ngModelChange)="store.setSoloConCalificacion($event)"
-            />
-            <span>Solo con calificación</span>
-          </label>
+            Solo con calificación
+          </mat-checkbox>
         </fieldset>
 
         <button
-          type="button"
-          class="mt-2 cursor-pointer rounded-md border border-outline-variant bg-surface-container-low px-4 py-2 text-body-md font-semibold text-on-surface-variant transition-colors hover:bg-primary-dim hover:text-on-surface"
+          mat-stroked-button
+          class="mt-2 w-full"
           (click)="store.resetFilters()"
         >
           Limpiar filtros

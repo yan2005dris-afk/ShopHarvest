@@ -1,33 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { MatIconModule } from '@angular/material/icon';
+import { MatCardModule } from '@angular/material/card';
 
-/**
- * Reusable KPI summary card — Insight Flow variant.
- *
- * Design system references (DESIGN.md §Components/Data Cards):
- *   - Title in `text-headline-sm` (18px / 600)
- *   - Subtitle in `text-label-caps` (11px / 700 / tracked 0.08em /
- *     uppercase / muted) — replaces the old "kpi-label" usage.
- *   - KPI value in `text-metric-value` (40px / 700 / tracking -0.03em)
- *   - Colored 2px top border corresponding to the metric's category
- *     or status — mapped from the `accent` input.
- *   - Card padding 1.5rem per `--spacing-card-padding`.
- *   - Card surface is `--color-surface-container-low` (M3 "container"
- *     tone, one elevation step above the page background).
- *   - Status chips / delta line use `--color-success` / `--color-danger`.
- *
- * Inputs (kept signal-based for Angular 22 + zoneless):
- *   - `label`     required short uppercase string
- *   - `value`     required headline number or pre-formatted string
- *   - `delta`     optional secondary line for trend / extra context
- *   - `trend`     'up' | 'down' — colour of the delta line
- *   - `icon`      optional Material Symbols icon name (e.g. 'trending_up')
- *   - `accent`    optional token key — one of 'primary' | 'success' |
- *                 'warning' | 'danger' | 'secondary'. Defaults to
- *                 'primary'. Replaces the previous free-form CSS
- *                 color input — the system is the only source of truth
- *                 for what "indigo for category X" means.
- *   - `loading`   flips the card into a skeleton state
- */
 type AccentToken = 'primary' | 'secondary' | 'success' | 'warning' | 'danger';
 
 const ACCENT_VAR: Record<AccentToken, string> = {
@@ -42,15 +16,16 @@ const ACCENT_VAR: Record<AccentToken, string> = {
   selector: 'app-kpi-card',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [MatIconModule, MatCardModule],
   template: `
-    <article
-      class="kpi-card relative flex flex-col gap-2 overflow-hidden rounded-xl border border-outline-variant bg-surface-container-low p-6 font-sans transition-[border-color,transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:border-primary"
+    <mat-card
+      appearance="outlined"
+      class="kpi-card !relative !flex !flex-col !gap-2 !overflow-hidden !rounded-xl !border-outline-variant !bg-surface-container-low !p-6 font-sans transition-[border-color,transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:border-primary"
       [class.kpi-card--loading]="loading()"
       [attr.aria-busy]="loading()"
       [style.--accent]="accentVar()"
     >
-      <!-- 2px top accent bar — DESIGN.md §Components/Data Cards
-           "colored top-border corresponding to the metric's category" -->
+      <!-- 2px top accent bar -->
       <span
         class="absolute inset-x-0 top-0 h-0.5"
         [style.background-color]="'var(--accent)'"
@@ -64,11 +39,10 @@ const ACCENT_VAR: Record<AccentToken, string> = {
       } @else {
         <header class="flex items-center gap-2">
           @if (icon()) {
-            <span
-              class="material-symbols-outlined text-on-surface-variant"
-              style="font-size: 18px"
+            <mat-icon
+              class="material-symbols-outlined text-on-surface-variant !size-4.5 !text-lg"
               aria-hidden="true"
-              >{{ icon() }}</span
+              >{{ icon() }}</mat-icon
             >
           }
           <span class="text-label-caps text-on-surface-variant" data-testid="kpi-label">
@@ -89,16 +63,16 @@ const ACCENT_VAR: Record<AccentToken, string> = {
             data-testid="kpi-delta"
           >
             @if (trend() === 'up') {
-              <span class="material-symbols-outlined" style="font-size: 14px">trending_up</span>
+              <mat-icon class="!size-3.5 !text-sm">trending_up</mat-icon>
             }
             @if (trend() === 'down') {
-              <span class="material-symbols-outlined" style="font-size: 14px">trending_down</span>
+              <mat-icon class="!size-3.5 !text-sm">trending_down</mat-icon>
             }
             <span>{{ delta() }}</span>
           </div>
         }
       }
-    </article>
+    </mat-card>
   `,
   styles: [
     `

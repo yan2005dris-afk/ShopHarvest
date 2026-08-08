@@ -1,31 +1,33 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatChipsModule } from '@angular/material/chips';
+
 import { DashboardStore } from '../core/dashboard.store';
 import { AuthService } from '../../../services/auth.service';
 import { ThemeService } from '../../../services/theme.service';
 
-/**
- * Dashboard shell — inline tab nav + content outlet for the 3 dashboard
- * pages (resumen, analisis, encuesta).
- *
- * Visual: glass header with accent on the active tab, full-bleed
- * content background, max-width gutter so the chart cards keep
- * a comfortable line length even on wide monitors. Uses the same
- * Insight Flow `--color-*` tokens (styles.css) and the shared
- * `ThemeService` (`.dark` class on <html>) as the rest of the app —
- * toggling theme here stays in sync with the sidebar toggle.
- */
 @Component({
   selector: 'app-dashboard-shell',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, RouterLinkActive, RouterOutlet],
+  imports: [
+    RouterLink,
+    RouterLinkActive,
+    RouterOutlet,
+    MatIconModule,
+    MatButtonModule,
+    MatTooltipModule,
+    MatChipsModule,
+  ],
   template: `
     <div class="dashboard-shell">
       <header class="dashboard-header">
         <div class="dashboard-header__brand">
           <div class="dashboard-header__logo" aria-hidden="true">
-            <span class="dashboard-header__logo-dot"></span>
+            <mat-icon class="text-white !size-5 !text-xl">analytics</mat-icon>
           </div>
           <div class="dashboard-header__titles">
             <h2>BI Dashboard</h2>
@@ -34,43 +36,60 @@ import { ThemeService } from '../../../services/theme.service';
         </div>
 
         <nav class="dashboard-tabs" aria-label="Navegación del dashboard">
-          <a routerLink="resumen" routerLinkActive="active">Resumen</a>
-          <a routerLink="analisis" routerLinkActive="active">Análisis</a>
-          <a routerLink="encuesta" routerLinkActive="active">Encuesta</a>
+          <a routerLink="resumen" routerLinkActive="active" class="flex items-center gap-1.5">
+            <mat-icon class="!size-4 !text-base">dashboard</mat-icon>
+            <span>Resumen</span>
+          </a>
+          <a routerLink="analisis" routerLinkActive="active" class="flex items-center gap-1.5">
+            <mat-icon class="!size-4 !text-base">query_stats</mat-icon>
+            <span>Análisis</span>
+          </a>
+          <a routerLink="encuesta" routerLinkActive="active" class="flex items-center gap-1.5">
+            <mat-icon class="!size-4 !text-base">poll</mat-icon>
+            <span>Encuesta</span>
+          </a>
         </nav>
 
         <div class="dashboard-header__footer">
           @if (store.isSnapshot()) {
-            <p class="snapshot-line" title="Datos de un único día">
-              <span class="snapshot-line__dot"></span>
-              <span class="snapshot-line__label">Snapshot</span>
-              <span class="snapshot-line__value">{{ snapshot() }}</span>
-            </p>
+            <mat-chip-set title="Datos de un único día">
+              <mat-chip class="!min-h-7 !text-xs font-semibold">
+                <span class="flex items-center gap-1.5">
+                  <span class="h-1.5 w-1.5 rounded-full bg-warning"></span>
+                  <span>Snapshot · {{ snapshot() }}</span>
+                </span>
+              </mat-chip>
+            </mat-chip-set>
           }
 
           <button
             type="button"
-            class="theme-toggle"
+            mat-icon-button
             (click)="themeService.toggleTheme()"
-            [attr.aria-label]="
-              themeService.isDark() ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'
-            "
-            [title]="themeService.isDark() ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'"
+            [matTooltip]="themeService.isDark() ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'"
           >
-            @if (themeService.isDark()) {
-              <span aria-hidden="true">☀</span>
-            } @else {
-              <span aria-hidden="true">☾</span>
-            }
+            <mat-icon>
+              {{ themeService.isDark() ? 'light_mode' : 'dark_mode' }}
+            </mat-icon>
           </button>
 
           @if (auth.isAuthenticated()) {
-            <a class="dashboard-back" routerLink="/mapper" aria-label="Volver al scraper">
-              ← Scraper
+            <a
+              mat-stroked-button
+              routerLink="/mapper"
+              aria-label="Volver al scraper"
+            >
+              <mat-icon>arrow_back</mat-icon>
+              <span>Scraper</span>
             </a>
           } @else {
-            <a class="dashboard-login" routerLink="/login" aria-label="Iniciar sesión">
-              Iniciar sesión
+            <a
+              mat-flat-button
+              color="primary"
+              routerLink="/login"
+              aria-label="Iniciar sesión"
+            >
+              <span>Iniciar sesión</span>
             </a>
           }
         </div>
