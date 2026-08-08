@@ -44,6 +44,7 @@
  */
 
 @import "tailwindcss";
+@import "@angular/material/prebuilt-themes/indigo-pink.css";
 
 /* Tell Tailwind v4 exactly which files to scan for utility usage. */
 @source "./**/*.ts";
