@@ -16,10 +16,7 @@ import type { EtlRunDto } from '@web-scraping/contracts/pipeline';
         >
           <div class="flex items-center gap-2">
             @if (r.status === 'RUNNING') {
-              <span
-                class="size-2 animate-pulse rounded-full bg-primary"
-                aria-hidden="true"
-              ></span>
+              <span class="size-2 animate-pulse rounded-full bg-primary" aria-hidden="true"></span>
             } @else if (r.status === 'SUCCESS') {
               <span class="font-bold text-success" aria-hidden="true">✓</span>
             } @else if (r.status === 'FAILED') {
@@ -58,9 +55,7 @@ import type { EtlRunDto } from '@web-scraping/contracts/pipeline';
             <div
               class="flex flex-col items-center gap-1 rounded-md border border-outline-variant bg-primary-fixed/20 p-3"
             >
-              <span class="text-xl font-extrabold text-primary">{{
-                r.rowsScraped | number
-              }}</span>
+              <span class="text-xl font-extrabold text-primary">{{ r.rowsScraped | number }}</span>
               <span
                 class="text-[11px] font-semibold tracking-wider text-on-surface-variant uppercase"
                 >Extraídas</span
@@ -80,9 +75,7 @@ import type { EtlRunDto } from '@web-scraping/contracts/pipeline';
             <div
               class="flex flex-col items-center gap-1 rounded-md border border-outline-variant bg-danger-dim p-3"
             >
-              <span class="text-xl font-extrabold text-danger">{{
-                failedCount() | number
-              }}</span>
+              <span class="text-xl font-extrabold text-danger">{{ failedCount() | number }}</span>
               <span
                 class="text-[11px] font-semibold tracking-wider text-on-surface-variant uppercase"
                 >Fallidas</span
@@ -136,4 +129,3 @@ export class EtlLoadPreviewComponent {
     return Math.max(0, r.rowsScraped - r.rowsPersisted);
   });
 }
-

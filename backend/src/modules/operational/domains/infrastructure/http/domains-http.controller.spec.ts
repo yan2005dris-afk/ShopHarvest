@@ -135,7 +135,7 @@ describe('DomainsHttpController', () => {
           fieldMappings: [
             { canonicalField: 'title', selector: '.t', type: 'text' },
           ],
-        } as never),
+        }),
       ).rejects.toBeInstanceOf(NotFoundException);
     });
 
@@ -152,7 +152,7 @@ describe('DomainsHttpController', () => {
           fieldMappings: [
             { canonicalField: 'title', selector: '.t', type: 'text' },
           ],
-        } as never),
+        }),
       ).rejects.toMatchObject({ status: 409 });
     });
 
@@ -175,7 +175,7 @@ describe('DomainsHttpController', () => {
           fieldMappings: [
             { canonicalField: 'title', selector: '.t', type: 'text' },
           ],
-        } as never),
+        }),
       ).rejects.toBe(prismaError);
     });
 
@@ -192,7 +192,7 @@ describe('DomainsHttpController', () => {
           fieldMappings: [
             { canonicalField: 'title', selector: '.t', type: 'text' },
           ],
-        } as never);
+        });
       } catch (error) {
         caught = error;
       }

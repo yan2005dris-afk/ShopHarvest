@@ -51,7 +51,9 @@ export class ProductsHttpController {
     private readonly deleteUseCase: DeleteProductUseCase,
   ) {}
 
-  @ApiOperation({ summary: 'List extracted products with pagination and search' })
+  @ApiOperation({
+    summary: 'List extracted products with pagination and search',
+  })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'q', required: false, type: String })

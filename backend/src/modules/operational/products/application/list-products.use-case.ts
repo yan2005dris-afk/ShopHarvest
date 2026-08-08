@@ -21,7 +21,9 @@ export class ListProductsUseCase {
     private readonly repository: ProductsRepository,
   ) {}
 
-  async execute(query: ListProductsQuery = {}): Promise<{ items: Product[]; total: number }> {
+  async execute(
+    query: ListProductsQuery = {},
+  ): Promise<{ items: Product[]; total: number }> {
     const page = Math.max(1, query.page ?? 1);
     const limit = Math.min(100, Math.max(1, query.limit ?? 24));
     const q = query.q?.trim();

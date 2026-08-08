@@ -7,9 +7,7 @@ import { IntersectionObserverDirective } from './intersection-observer.directive
 @Component({
   standalone: true,
   imports: [IntersectionObserverDirective],
-  template: `
-    <div appIntersectionObserver (appIntersectionObserver)="onVisible()">Sentinel</div>
-  `,
+  template: ` <div appIntersectionObserver (appIntersectionObserver)="onVisible()">Sentinel</div> `,
 })
 class TestHostComponent {
   visibleCount = 0;
