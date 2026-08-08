@@ -1,44 +1,42 @@
 import 'reflect-metadata';
 import { plainToInstance } from 'class-transformer';
+import { validate } from 'class-validator';
 import { ProductQueryDto } from '../product-query.dto';
 
 /**
  * Wire-shape contract for `ProductQueryDto`.
  *
- * Spec coverage (D3):
- *   - `includeHistory` accepts 'true' / 'false' string and a real boolean
- *   - **a missing param stays `undefined`** so the controller's
- *     `?? true` default applies (CodeRabbit polish from Slice 2 — fixing
- *     a regression where the @Transform was coercing undefined → false).
- *   - `domainRuleId` rejects non-UUID strings.
+ * `includeHistory` was replaced by `page`/`limit` pagination in the
+ * paginated product list feature — this spec covers the current fields.
  */
-describe('ProductQueryDto (@Transform undefined preservation)', () => {
-  it('coerces "true" to true', () => {
-    const dto = plainToInstance(ProductQueryDto, { includeHistory: 'true' });
-    expect(dto.includeHistory).toBe(true);
-  });
-
-  it('coerces "false" to false', () => {
-    const dto = plainToInstance(ProductQueryDto, { includeHistory: 'false' });
-    expect(dto.includeHistory).toBe(false);
-  });
-
-  it('keeps a missing includeHistory as undefined (CodeRabbit fix)', () => {
-    // The controller's `?? true` default must apply when the param is
-    // absent. Coercing it to false here would silently flip every list
-    // call to skip priceHistory.
+describe('ProductQueryDto', () => {
+  it('defaults page to 1 and limit to 24 when omitted', () => {
     const dto = plainToInstance(ProductQueryDto, {});
-    expect(dto.includeHistory).toBeUndefined();
+    expect(dto.page).toBe(1);
+    expect(dto.limit).toBe(24);
   });
 
-  it('keeps a boolean true', () => {
-    const dto = plainToInstance(ProductQueryDto, { includeHistory: true });
-    expect(dto.includeHistory).toBe(true);
+  it('coerces string page/limit to numbers', () => {
+    const dto = plainToInstance(ProductQueryDto, { page: '3', limit: '50' });
+    expect(dto.page).toBe(3);
+    expect(dto.limit).toBe(50);
   });
 
-  it('keeps a boolean false', () => {
-    const dto = plainToInstance(ProductQueryDto, { includeHistory: false });
-    expect(dto.includeHistory).toBe(false);
+  it('rejects limit above 100', async () => {
+    const dto = plainToInstance(ProductQueryDto, { limit: '200' });
+    const errors = await validate(dto);
+    expect(errors.some((e) => e.property === 'limit')).toBe(true);
+  });
+
+  it('trims the search term', () => {
+    const dto = plainToInstance(ProductQueryDto, { q: '  camisa  ' });
+    expect(dto.q).toBe('camisa');
+  });
+
+  it('rejects a search term shorter than 2 characters after trim', async () => {
+    const dto = plainToInstance(ProductQueryDto, { q: ' a ' });
+    const errors = await validate(dto);
+    expect(errors.some((e) => e.property === 'q')).toBe(true);
   });
 
   it('passes domainRuleId through when a valid UUID is provided', () => {
@@ -46,5 +44,11 @@ describe('ProductQueryDto (@Transform undefined preservation)', () => {
       domainRuleId: '550e8400-e29b-41d4-a716-446655440000',
     });
     expect(dto.domainRuleId).toBe('550e8400-e29b-41d4-a716-446655440000');
+  });
+
+  it('rejects domainRuleId when not a valid UUID', async () => {
+    const dto = plainToInstance(ProductQueryDto, { domainRuleId: 'not-a-uuid' });
+    const errors = await validate(dto);
+    expect(errors.some((e) => e.property === 'domainRuleId')).toBe(true);
   });
 });
