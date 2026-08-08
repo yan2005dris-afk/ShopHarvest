@@ -163,7 +163,8 @@ export class PrismaProductsRepository implements ProductsRepository {
             where: { id: domainRule.id },
             data: {
               ...(needsMappingsBackfill && {
-                fieldMappings: command.fieldMappings,
+                fieldMappings:
+                  command.fieldMappings as unknown as Prisma.InputJsonValue,
               }),
               ...(needsSourceBackfill && { sourceId: source.id }),
               ...(needsCategoryBackfill && {

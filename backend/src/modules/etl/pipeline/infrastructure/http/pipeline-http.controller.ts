@@ -105,7 +105,9 @@ export class PipelineController {
     @Param('source') source: string,
     @Body() config: ScrapeOneDto,
   ): Promise<ScrapeResult> {
-    const validSource = Object.values(PipelineSource).includes(source)
+    const validSource = (Object.values(PipelineSource) as string[]).includes(
+      source,
+    )
       ? (source as PipelineSource)
       : (() => {
           throw new BadRequestException(
