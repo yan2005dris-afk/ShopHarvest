@@ -1,5 +1,9 @@
 import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatListModule } from '@angular/material/list';
 import { ThemeService } from '../../services/theme.service';
 import { AuthService } from '../../services/auth.service';
 import { NAV_ITEMS, type SidebarNavItem } from '../layout.types';
@@ -10,19 +14,6 @@ import { LogoutComponent } from '../logout/logout.component';
 /**
  * SidebarComponent — the app's left side-nav. Reusable, standalone,
  * and owned by the <app-root> shell.
- *
- * Structure (top → bottom):
- *   1. Brand row       — logo icon + "Scraper Studio / BI Analytics
- *                        Engine" caption (caption hides when collapsed).
- *   2. Collapse toggle — top-right of the brand row.
- *   3. Nav            — <app-sidebar> renders each NAV_ITEM as a
- *                        routerLink with the Material Symbols icon
- *                        and label. Filtered by `requiresAuth` and
- *                        `auth.isAuthenticated()`.
- *   4. Footer         — theme toggle + extension status.
- *
- * The collapse/expand state lives in ThemeService (signal-driven
- * + localStorage-persisted) so other components can react to it.
  */
 @Component({
   selector: 'app-sidebar',
@@ -31,6 +22,10 @@ import { LogoutComponent } from '../logout/logout.component';
   imports: [
     RouterLink,
     RouterLinkActive,
+    MatIconModule,
+    MatButtonModule,
+    MatTooltipModule,
+    MatListModule,
     ThemeToggleComponent,
     ExtensionStatusComponent,
     LogoutComponent,

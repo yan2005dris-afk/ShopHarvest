@@ -24,11 +24,10 @@
     class="mb-3 flex items-center gap-2 border-b border-outline-variant px-3 pb-3"
     [class.justify-center]="themeService.sidebarCollapsed()"
   >
-    <span
-      class="material-symbols-outlined text-primary"
-      style="font-size: 22px"
+    <mat-icon
+      class="text-primary"
       aria-hidden="true"
-      >radar</span
+      >radar</mat-icon
     >
     @if (!themeService.sidebarCollapsed()) {
       <div class="flex flex-col leading-tight">
@@ -45,27 +44,31 @@
 
   <!-- Collapse toggle (top-right of the brand row, always visible on lg+) -->
   <button
+    mat-icon-button
     type="button"
-    class="absolute right-2 top-3 hidden items-center justify-center rounded-md p-1 text-on-surface-variant transition-colors hover:bg-surface-container-high hover:text-on-surface lg:flex"
+    class="!absolute !right-2 !top-2 !hidden lg:!flex"
     (click)="themeService.toggleSidebar()"
     [attr.aria-label]="
       themeService.sidebarCollapsed() ? 'Expand sidebar' : 'Collapse sidebar'
     "
     [attr.aria-expanded]="!themeService.sidebarCollapsed()"
     data-testid="btn-collapse-sidebar"
+    [matTooltip]="themeService.sidebarCollapsed() ? 'Expandir menú' : 'Colapsar menú'"
+    matTooltipPosition="right"
   >
-    <span class="material-symbols-outlined" style="font-size: 18px">
+    <mat-icon>
       {{
         themeService.sidebarCollapsed() ? 'right_panel_open' : 'left_panel_close'
       }}
-    </span>
+    </mat-icon>
   </button>
 
   <!-- Primary navigation -->
-  <nav class="flex-1 space-y-1 px-2" aria-label="Main">
+  <mat-nav-list class="flex-1 !space-y-1 !px-2 !pt-0" aria-label="Main">
     @for (item of navItems; track item.routerLink) {
       @if (isVisible(item)) {
         <a
+          mat-list-item
           [routerLink]="item.routerLink"
           routerLinkActive="active"
           [routerLinkActiveOptions]="
@@ -74,19 +77,22 @@
           class="nav-item group"
           [class.nav-item--collapsed]="themeService.sidebarCollapsed()"
           [attr.data-nav]="item.routerLink"
+          [matTooltip]="themeService.sidebarCollapsed() ? item.label : ''"
+          matTooltipPosition="right"
         >
-          <span
-            class="material-symbols-outlined nav-item__icon"
+          <mat-icon
+            matListItemIcon
+            class="nav-item__icon"
             aria-hidden="true"
-            >{{ item.icon }}</span
+            >{{ item.icon }}</mat-icon
           >
           @if (!themeService.sidebarCollapsed()) {
-            <span class="nav-item__label">{{ item.label }}</span>
+            <span class="nav-item__label" matListItemTitle>{{ item.label }}</span>
           }
         </a>
       }
     }
-  </nav>
+  </mat-nav-list>
 
   <!--
     Footer: extension status + theme toggle + logout.

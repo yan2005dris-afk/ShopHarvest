@@ -1,24 +1,15 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { Router } from '@angular/router';
+import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { AuthService } from '../../services/auth.service';
 import { ThemeService } from '../../services/theme.service';
 
-/**
- * LogoutComponent — sidebar footer entry shown only when the user
- * is authenticated. One click:
- *   1. clears localStorage (token) and resets AuthService.user
- *   2. navigates to /login
- *
- * Inputs:
- *   - collapsed — sidebar collapse state (icon-only when true)
- *
- * We keep the click handler local (no output) so the sidebar stays
- * free of router/auth wiring — this component owns all of that.
- */
 @Component({
   selector: 'app-logout',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [MatIconModule, MatTooltipModule],
   template: `
     <button
       type="button"
@@ -27,8 +18,10 @@ import { ThemeService } from '../../services/theme.service';
       (click)="onClick()"
       data-testid="btn-logout"
       [attr.aria-label]="'Cerrar sesión'"
+      [matTooltip]="collapsed() ? 'Cerrar sesión' : ''"
+      matTooltipPosition="right"
     >
-      <span class="material-symbols-outlined nav-item__icon" aria-hidden="true">logout</span>
+      <mat-icon class="nav-item__icon" aria-hidden="true">logout</mat-icon>
       @if (!collapsed()) {
         <span class="nav-item__label">Cerrar sesión</span>
       }

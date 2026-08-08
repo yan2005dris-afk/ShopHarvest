@@ -76,7 +76,7 @@ describe('App', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     // Sprint 2: brand uses a Material Symbols 'radar' icon + text,
     // no more .brand-icon SVG.
-    expect(compiled.querySelector('.material-symbols-outlined')).toBeTruthy();
+    expect(compiled.querySelector('mat-icon, .material-symbols-outlined')).toBeTruthy();
     expect(compiled.textContent).toContain('Scraper Studio');
   });
 

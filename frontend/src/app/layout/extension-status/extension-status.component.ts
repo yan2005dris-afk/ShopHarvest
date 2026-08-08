@@ -1,20 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
+import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
-/**
- * ExtensionStatusComponent — sidebar footer entry that links to
- * `/setup` (the Chrome-extension installer page) and shows an
- * ON/OFF badge next to the label, or a tiny dot when collapsed.
- *
- * Inputs:
- *   - collapsed — true when the sidebar is collapsed (icons-only).
- *     When true, the label hides and the badge collapses to a
- *     8px status dot.
- */
 @Component({
   selector: 'app-extension-status',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive],
+  imports: [RouterLink, RouterLinkActive, MatIconModule, MatTooltipModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <a
@@ -22,8 +14,10 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
       routerLinkActive="active"
       class="nav-item"
       [class.nav-item--collapsed]="collapsed()"
+      [matTooltip]="collapsed() ? ('Extensión: ' + (available() ? 'ON' : 'OFF')) : ''"
+      matTooltipPosition="right"
     >
-      <span class="material-symbols-outlined nav-item__icon" aria-hidden="true">extension</span>
+      <mat-icon class="nav-item__icon" aria-hidden="true">extension</mat-icon>
       @if (!collapsed()) {
         <span class="nav-item__label">Extensión</span>
         <span

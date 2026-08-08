@@ -1,23 +1,13 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { ThemeService } from '../../services/theme.service';
 
-/**
- * ThemeToggleComponent — small button that flips light↔dark by
- * toggling class="dark" on <html>. Self-contained: pulls
- * `themeService` from the root injector and exposes signals so the
- * template can react to state.
- *
- * Lives under the sidebar's footer (sidebar/theme-toggle/). The
- * sidebar decides layout/positioning; this component only owns the
- * click handler and the label/icon.
- *
- * Input: `collapsed` — the sidebar's collapse state. Forwarded to
- * the parent's grid layout so the icon aligns with siblings.
- */
 @Component({
   selector: 'app-theme-toggle',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [MatIconModule, MatTooltipModule],
   template: `
     <button
       type="button"
@@ -25,8 +15,10 @@ import { ThemeService } from '../../services/theme.service';
       [class.nav-item--collapsed]="collapsed()"
       (click)="theme.toggleTheme()"
       [attr.aria-label]="theme.isDark() ? 'Switch to light mode' : 'Switch to dark mode'"
+      [matTooltip]="collapsed() ? label() : ''"
+      matTooltipPosition="right"
     >
-      <span class="material-symbols-outlined nav-item__icon" aria-hidden="true">{{ icon() }}</span>
+      <mat-icon class="nav-item__icon" aria-hidden="true">{{ icon() }}</mat-icon>
       @if (!collapsed()) {
         <span class="nav-item__label">{{ label() }}</span>
       }
