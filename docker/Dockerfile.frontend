@@ -20,17 +20,15 @@ RUN corepack enable && corepack prepare pnpm@11 --activate
 
 WORKDIR /app
 
-# Cache layers: copy manifests first so `pnpm fetch` only re-runs when they change
+# Copy workspace manifests, config, and workspace package.json files
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc ./
-RUN pnpm fetch
-
 COPY frontend/package.json ./frontend/
 COPY packages/contracts/package.json ./packages/contracts/
 
 # --ignore-scripts: packages/contracts has a "prepare" script (tsc build) that
 # would run here, before its source is copied in (next COPY below), and fail
 # looking for tsconfig.build.json. Same fix as Dockerfile.backend.
-RUN pnpm install --frozen-lockfile --offline --ignore-scripts
+RUN pnpm install --frozen-lockfile --ignore-scripts
 
 COPY packages/contracts/ ./packages/contracts/
 RUN pnpm --filter @web-scraping/contracts run build
