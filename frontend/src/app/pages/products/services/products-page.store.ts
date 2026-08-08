@@ -1,5 +1,10 @@
 import { Injectable, computed, signal } from '@angular/core';
-import type { Product, PriceObservation, Source, PaginationMeta } from '../../../services/api.service';
+import type {
+  Product,
+  PriceObservation,
+  Source,
+  PaginationMeta,
+} from '../../../services/api.service';
 
 /**
  * Products page state management.

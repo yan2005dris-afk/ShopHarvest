@@ -105,7 +105,9 @@ export class ProductsComponent implements OnInit {
           this.store.setLoadMoreError('Error al cargar más productos.');
         } else {
           this.store.setLoading(false);
-          this.store.setError('Error al cargar productos. Verificá que el backend esté funcionando.');
+          this.store.setError(
+            'Error al cargar productos. Verificá que el backend esté funcionando.',
+          );
         }
         console.error('Failed to fetch page', err);
       },

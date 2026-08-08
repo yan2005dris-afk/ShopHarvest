@@ -262,10 +262,12 @@ describe('ProductsComponent (offer-level model)', () => {
     fixture.detectChanges();
 
     httpMock.expectOne((r) => r.url === '/api/sources' && r.method === 'GET').flush([]);
-    httpMock.expectOne((r) => r.url === '/api/products' && r.method === 'GET').flush({
-      data: [],
-      meta: { page: 1, limit: 24, total: 0, totalPages: 0 },
-    });
+    httpMock
+      .expectOne((r) => r.url === '/api/products' && r.method === 'GET')
+      .flush({
+        data: [],
+        meta: { page: 1, limit: 24, total: 0, totalPages: 0 },
+      });
     fixture.detectChanges();
 
     expect(() =>

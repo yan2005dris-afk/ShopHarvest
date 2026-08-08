@@ -30,9 +30,7 @@ import {
           class="flex w-full max-w-lg flex-col overflow-hidden rounded-xl border border-outline-variant bg-surface-container-low max-h-[85vh]"
           (click)="$event.stopPropagation()"
         >
-          <div
-            class="flex items-center justify-between border-b border-outline-variant px-5 py-4"
-          >
+          <div class="flex items-center justify-between border-b border-outline-variant px-5 py-4">
             <h3 id="etl-modal-title" class="m-0 text-headline-sm font-bold text-on-surface">
               Detalle de Ejecución: {{ r.source }}
             </h3>
@@ -273,7 +271,9 @@ export class EtlRunDetailModalComponent {
                   {{ run.status }}
                 </span>
               </td>
-              <td class="px-4 py-3 text-on-surface-variant">{{ run.startedAt | date: 'medium' }}</td>
+              <td class="px-4 py-3 text-on-surface-variant">
+                {{ run.startedAt | date: 'medium' }}
+              </td>
               <td class="px-4 py-3 text-on-surface-variant">
                 {{ run.durationMs ? (run.durationMs / 1000 | number: '1.1-2') + 's' : '—' }}
               </td>
