@@ -20,6 +20,15 @@ import { ProductCardComponent } from './components/product-card.component';
 import { IntersectionObserverDirective } from '../../shared/directives/intersection-observer.directive';
 import { SkeletonComponent } from 'boneyard-js/angular';
 
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatChipsModule } from '@angular/material/chips';
+import { MatTableModule } from '@angular/material/table';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+
 @Component({
   selector: 'app-products',
   standalone: true,
@@ -28,6 +37,14 @@ import { SkeletonComponent } from 'boneyard-js/angular';
     CurrencyPipe,
     RouterLink,
     FormsModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatIconModule,
+    MatButtonModule,
+    MatCardModule,
+    MatChipsModule,
+    MatTableModule,
+    MatProgressSpinnerModule,
     PriceHistoryChartComponent,
     ProductCardComponent,
     IntersectionObserverDirective,

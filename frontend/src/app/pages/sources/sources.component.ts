@@ -1,4 +1,9 @@
 import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
+import { MatCardModule } from '@angular/material/card';
+import { MatChipsModule } from '@angular/material/chips';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ApiService } from '../../services/api.service';
 import type { ScrapeResult } from '@web-scraping/contracts/pipeline';
 
@@ -65,7 +70,13 @@ const SOURCE_METADATA: SourceMeta[] = [
 @Component({
   selector: 'app-sources',
   standalone: true,
-  imports: [],
+  imports: [
+    MatCardModule,
+    MatChipsModule,
+    MatButtonModule,
+    MatIconModule,
+    MatProgressSpinnerModule,
+  ],
   templateUrl: './sources.component.html',
   styleUrl: './sources.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

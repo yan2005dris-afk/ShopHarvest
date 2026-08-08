@@ -12,11 +12,9 @@
   <header class="mb-6 flex items-baseline gap-2.5">
     <h1 class="text-headline-md m-0 font-bold text-on-surface tracking-tight">Sources</h1>
     @if (!loading() && !error()) {
-      <span
-        class="rounded-full border border-outline-variant bg-surface-container px-2 py-0.5 text-body-md font-semibold text-on-surface-variant"
-      >
-        {{ sources().length }}
-      </span>
+      <mat-chip-set>
+        <mat-chip class="!min-h-6 !text-xs font-semibold">{{ sources().length }}</mat-chip>
+      </mat-chip-set>
     }
   </header>
 
@@ -24,10 +22,7 @@
     <div
       class="flex flex-1 flex-col items-center justify-center gap-4 p-16 text-center text-body-md text-on-surface-variant"
     >
-      <span
-        class="inline-block h-8 w-8 rounded-full border-[3px] border-outline-variant border-t-primary"
-        style="animation: spin 0.7s linear infinite"
-      ></span>
+      <mat-spinner diameter="36"></mat-spinner>
       <p class="m-0">Loading sources…</p>
     </div>
   }
@@ -36,13 +31,11 @@
     <div
       class="flex flex-1 flex-col items-center justify-center gap-4 p-16 text-center text-body-md"
     >
-      <span class="flex text-danger">
-        <span class="material-symbols-outlined" style="font-size: 24px">error</span>
-      </span>
+      <mat-icon class="text-danger !size-8">error</mat-icon>
       <p class="text-danger m-0">{{ error() }}</p>
       <button
-        type="button"
-        class="cursor-pointer rounded-md border border-outline bg-transparent px-5 py-2 text-body-md text-on-surface-variant transition-colors hover:border-outline hover:text-on-surface"
+        mat-stroked-button
+        color="warn"
         (click)="loadSources()"
       >
         Retry
@@ -57,9 +50,7 @@
     >
       @for (source of sources(); track source) {
         @let m = metaFor(source);
-        <article
-          class="flex flex-col gap-3 rounded-xl border border-outline-variant bg-surface p-5 transition-[border-color,box-shadow] duration-150 hover:border-primary"
-        >
+        <mat-card appearance="outlined" class="!flex !flex-col !gap-3 !p-5 transition-[border-color,box-shadow] duration-150 hover:border-primary">
           <div class="flex items-center justify-between gap-3">
             <h3 class="text-body-lg m-0 font-bold text-on-surface">
               {{ m?.name ?? source }}
@@ -74,7 +65,7 @@
               [class.border-outline-variant]="m?.status === 'pending'"
               [class.text-on-surface-variant]="m?.status === 'pending'"
             >
-              <span class="material-symbols-outlined" style="font-size: 14px">
+              <mat-icon class="!size-3.5 !text-sm">
                 @switch (m?.status ?? 'pending') {
                   @case ('active') {
                     check_circle
@@ -86,7 +77,7 @@
                     schedule
                   }
                 }
-              </span>
+              </mat-icon>
               {{ statusLabel(m?.status ?? 'pending') }}
             </span>
           </div>
@@ -109,24 +100,26 @@
           }
 
           <button
-            type="button"
-            class="mt-auto flex cursor-pointer items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-body-md font-semibold text-on-primary transition-colors hover:bg-primary-container disabled:cursor-not-allowed disabled:opacity-60"
+            mat-flat-button
+            color="primary"
+            class="mt-auto w-full"
             [disabled]="scraping()[source]"
             (click)="scrape(source)"
             data-testid="btn-scrape"
           >
             @if (scraping()[source]) {
-              <span
-                class="inline-block h-3.5 w-3.5 rounded-full border-2 border-on-primary/30 border-t-on-primary"
-                style="animation: spin 0.6s linear infinite"
-              ></span>
-              <span>Scraping…</span>
+              <span class="flex items-center justify-center gap-2">
+                <mat-spinner diameter="18"></mat-spinner>
+                <span>Scraping…</span>
+              </span>
             } @else {
-              <span class="material-symbols-outlined" style="font-size: 16px">play_arrow</span>
-              <span>Scrape now</span>
+              <span class="flex items-center justify-center gap-1">
+                <mat-icon>play_arrow</mat-icon>
+                <span>Scrape now</span>
+              </span>
             }
           </button>
-        </article>
+        </mat-card>
       }
     </div>
   }
@@ -135,7 +128,7 @@
     <div
       class="flex flex-1 flex-col items-center justify-center gap-4 p-16 text-center text-body-md text-on-surface-variant"
     >
-      <span class="material-symbols-outlined" style="font-size: 40px">settings</span>
+      <mat-icon class="!size-12">settings</mat-icon>
       <p class="m-0">No sources found.</p>
     </div>
   }
