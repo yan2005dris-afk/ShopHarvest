@@ -580,9 +580,11 @@ function isNonPriceAmountElement(el: Element): boolean {
  * multi-span scenarios. Returns all matched prices in ascending order.
  * Handles fragmented prices like Temu's: $ | 267 | ,88 in separate spans.
  *
- * Search strategy: look in nested price containers first (data-type="price",
- * hidden divs with _382YgpSF class), then fall back to entire container.
- * This handles both visible and aria-hidden price elements on Temu.
+ * Only runs inside an explicit price container (data-type="price", or the
+ * hidden Temu _382YgpSF div) — it deliberately does NOT fall back to
+ * scanning the whole product card, since that would match any stray
+ * "$X off" promo/coupon text in the card as if it were the price. Callers
+ * fall back to the class-gated selector passes when this returns [].
  */
 function detectPriceByPattern(container: Element): number[] {
   // Priority 1: Look inside explicit price containers (usually found and sufficient)
@@ -592,8 +594,10 @@ function detectPriceByPattern(container: Element): number[] {
     priceContainer = container.querySelector('[class*="382YgpSF"]');
   }
   if (!priceContainer) {
-    // Priority 3: Fall back to entire container
-    priceContainer = container;
+    // No dedicated price container found — bail out rather than scanning
+    // the entire card for stray "$"-prefixed numbers (coupons, shipping
+    // banners, etc). Let the caller's class-gated passes handle it.
+    return [];
   }
 
   // Collect all text nodes (skipping rating/non-price elements)
