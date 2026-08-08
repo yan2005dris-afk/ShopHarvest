@@ -44,9 +44,8 @@
 
   <!-- Collapse toggle (top-right of the brand row, always visible on lg+) -->
   <button
-    mat-icon-button
     type="button"
-    class="!absolute !right-2 !top-2 !hidden lg:!flex"
+    class="absolute right-2 top-3 hidden items-center justify-center rounded-md p-1 text-on-surface-variant transition-colors hover:bg-surface-container-high hover:text-on-surface lg:flex"
     (click)="themeService.toggleSidebar()"
     [attr.aria-label]="
       themeService.sidebarCollapsed() ? 'Expand sidebar' : 'Collapse sidebar'
@@ -56,7 +55,7 @@
     [matTooltip]="themeService.sidebarCollapsed() ? 'Expandir menú' : 'Colapsar menú'"
     matTooltipPosition="right"
   >
-    <mat-icon>
+    <mat-icon style="font-size: 18px">
       {{
         themeService.sidebarCollapsed() ? 'right_panel_open' : 'left_panel_close'
       }}
@@ -64,11 +63,10 @@
   </button>
 
   <!-- Primary navigation -->
-  <mat-nav-list class="flex-1 !space-y-1 !px-2 !pt-0" aria-label="Main">
+  <nav class="flex-1 space-y-1 px-2" aria-label="Main">
     @for (item of navItems; track item.routerLink) {
       @if (isVisible(item)) {
         <a
-          mat-list-item
           [routerLink]="item.routerLink"
           routerLinkActive="active"
           [routerLinkActiveOptions]="
@@ -81,18 +79,17 @@
           matTooltipPosition="right"
         >
           <mat-icon
-            matListItemIcon
             class="nav-item__icon"
             aria-hidden="true"
             >{{ item.icon }}</mat-icon
           >
           @if (!themeService.sidebarCollapsed()) {
-            <span class="nav-item__label" matListItemTitle>{{ item.label }}</span>
+            <span class="nav-item__label">{{ item.label }}</span>
           }
         </a>
       }
     }
-  </mat-nav-list>
+  </nav>
 
   <!--
     Footer: extension status + theme toggle + logout.

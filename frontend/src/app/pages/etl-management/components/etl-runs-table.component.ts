@@ -137,29 +137,41 @@ export class EtlRunDetailModalComponent {
   ],
   template: `
     <div
-      class="mb-5 flex flex-wrap items-center gap-4 rounded-xl border border-outline-variant bg-surface-container-low p-4"
+      class="mb-5 flex flex-wrap items-end gap-4 rounded-xl border border-outline-variant bg-surface-container-low p-4"
     >
-      <mat-form-field appearance="outline" class="flex min-w-[140px] flex-1" subscriptSizing="dynamic">
-        <mat-label>Estado</mat-label>
-        <mat-select [(ngModel)]="statusVal">
-          <mat-option value="">Todos</mat-option>
-          <mat-option value="RUNNING">RUNNING</mat-option>
-          <mat-option value="SUCCESS">SUCCESS</mat-option>
-          <mat-option value="FAILED">FAILED</mat-option>
-        </mat-select>
-      </mat-form-field>
+      <div class="flex min-w-[140px] flex-1 flex-col gap-1.5">
+        <label for="status" class="text-label-caps font-semibold text-on-surface-variant uppercase"
+          >Estado</label
+        >
+        <select
+          id="status"
+          [(ngModel)]="statusVal"
+          class="w-full rounded-md border border-outline-variant bg-surface-container-low px-3 py-2 text-body-md text-on-surface outline-none transition-[border-color,box-shadow] duration-150 focus:border-primary focus:ring-2 focus:ring-primary"
+        >
+          <option value="">Todos</option>
+          <option value="RUNNING">RUNNING</option>
+          <option value="SUCCESS">SUCCESS</option>
+          <option value="FAILED">FAILED</option>
+        </select>
+      </div>
 
-      <mat-form-field appearance="outline" class="flex min-w-[140px] flex-1" subscriptSizing="dynamic">
-        <mat-label>Fuente</mat-label>
-        <mat-select [(ngModel)]="sourceVal">
-          <mat-option value="">Todas</mat-option>
-          <mat-option value="mercadolibre">MercadoLibre</mat-option>
-          <mat-option value="aliexpress">AliExpress</mat-option>
-          <mat-option value="temu">Temu</mat-option>
-          <mat-option value="shein">SHEIN</mat-option>
-          <mat-option value="all">Todas (Lote)</mat-option>
-        </mat-select>
-      </mat-form-field>
+      <div class="flex min-w-[140px] flex-1 flex-col gap-1.5">
+        <label for="source" class="text-label-caps font-semibold text-on-surface-variant uppercase"
+          >Fuente</label
+        >
+        <select
+          id="source"
+          [(ngModel)]="sourceVal"
+          class="w-full rounded-md border border-outline-variant bg-surface-container-low px-3 py-2 text-body-md text-on-surface outline-none transition-[border-color,box-shadow] duration-150 focus:border-primary focus:ring-2 focus:ring-primary"
+        >
+          <option value="">Todas</option>
+          <option value="mercadolibre">MercadoLibre</option>
+          <option value="aliexpress">AliExpress</option>
+          <option value="temu">Temu</option>
+          <option value="shein">SHEIN</option>
+          <option value="all">Todas (Lote)</option>
+        </select>
+      </div>
 
       <div class="flex min-w-[140px] flex-1 flex-col gap-1.5">
         <label for="from" class="text-label-caps font-semibold text-on-surface-variant uppercase"
