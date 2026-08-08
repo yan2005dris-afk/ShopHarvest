@@ -7,7 +7,10 @@ RUN apk add --no-cache openssl libc6-compat
 
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-ENV PNPM_CONFIG_PACKAGE_IMPORT_METHOD=copy
+ENV PNPM_CONFIG_PACKAGE_IMPORT_METHOD=copy \
+    PNPM_CONFIG_FETCH_RETRIES=5 \
+    PNPM_CONFIG_FETCH_RETRY_MAXTIMEOUT=120000 \
+    PNPM_CONFIG_FETCH_TIMEOUT=300000
 ENV PRISMA_SKIP_POSTINSTALL_GENERATE=true
 ENV SCARF_NO_ANALYTICS=true
 ENV DO_NOT_TRACK=1
@@ -28,7 +31,7 @@ COPY packages/contracts/package.json ./packages/contracts/
 # pnpm 11 requires build-script approval for packages with postinstall hooks.
 # --frozen-lockfile + --ignore-scripts lets us install with the locked
 # resolution while deferring the allowed builds to a separate step.
-RUN pnpm install --frozen-lockfile --ignore-scripts
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile --ignore-scripts
 
 # Re-run only the approved build scripts (same list as pnpm.onlyBuiltDependencies
 # in package.json). @scarf/scarf is intentionally excluded — it is telemetry-only
