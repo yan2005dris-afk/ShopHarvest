@@ -14,65 +14,85 @@
   legacy accent was already reddish; the system token is what binds
   this to "error / required attention".
 -->
-<div class="grid min-h-dvh place-items-center p-6">
-  <form
-    class="flex w-full max-w-sm flex-col gap-3.5 rounded-xl border border-outline-variant bg-surface p-7"
-    (ngSubmit)="submit()"
-  >
-    <h1 class="text-headline-md m-0 text-on-surface">{{ title }}</h1>
-    <p class="text-body-md -mt-2 mb-1.5 text-on-surface-variant">Visual Scraper</p>
+<div class="grid min-h-dvh place-items-center p-6 bg-background">
+  <mat-card appearance="outlined" class="w-full max-w-sm !p-6">
+    <mat-card-header class="!px-0 !pt-0 mb-4">
+      <mat-card-title class="!text-2xl !font-bold text-on-surface">{{ title }}</mat-card-title>
+      <mat-card-subtitle class="text-on-surface-variant">Visual Scraper</mat-card-subtitle>
+    </mat-card-header>
 
-    <label class="flex flex-col gap-1.5 text-body-md text-on-surface-variant">
-      <span>Email</span>
-      <input
-        type="email"
-        name="email"
-        autocomplete="username"
-        class="rounded-md border border-outline-variant bg-surface-container-low px-3 py-2.5 text-body-lg text-on-surface outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary"
-        [(ngModel)]="email"
-        required
-      />
-    </label>
+    <mat-card-content class="!px-0">
+      <form (ngSubmit)="submit()" class="flex flex-col gap-4">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Email</mat-label>
+          <input
+            matInput
+            type="email"
+            name="email"
+            autocomplete="username"
+            [(ngModel)]="email"
+            required
+          />
+          <mat-icon matPrefix class="mr-2 text-on-surface-variant">email</mat-icon>
+        </mat-form-field>
 
-    <label class="flex flex-col gap-1.5 text-body-md text-on-surface-variant">
-      <span>Password</span>
-      <input
-        type="password"
-        name="password"
-        [attr.autocomplete]="mode === 'login' ? 'current-password' : 'new-password'"
-        class="rounded-md border border-outline-variant bg-surface-container-low px-3 py-2.5 text-body-lg text-on-surface outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary"
-        [(ngModel)]="password"
-        required
-      />
-    </label>
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Password</mat-label>
+          <input
+            matInput
+            [type]="hidePassword ? 'password' : 'text'"
+            name="password"
+            [attr.autocomplete]="mode === 'login' ? 'current-password' : 'new-password'"
+            [(ngModel)]="password"
+            required
+          />
+          <mat-icon matPrefix class="mr-2 text-on-surface-variant">lock</mat-icon>
+          <button
+            type="button"
+            mat-icon-button
+            matSuffix
+            (click)="hidePassword = !hidePassword"
+            [attr.aria-label]="'Toggle password visibility'"
+          >
+            <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+        </mat-form-field>
 
-    @if (error) {
-      <p class="text-body-md m-0 text-danger" data-testid="login-error">{{ error }}</p>
-    }
+        @if (error) {
+          <p class="text-body-md m-0 text-danger" data-testid="login-error">{{ error }}</p>
+        }
 
-    <button
-      type="submit"
-      class="bg-primary text-on-primary hover:bg-primary-container mt-1 cursor-pointer rounded-md px-3.5 py-2.5 text-body-lg font-semibold transition-colors disabled:cursor-default disabled:opacity-60"
-      [disabled]="submitting"
-      data-testid="login-submit"
-    >
-      @if (submitting) {
-        Please wait…
-      } @else {
-        {{ title }}
-      }
-    </button>
+        <button
+          mat-flat-button
+          color="primary"
+          type="submit"
+          class="w-full !py-6 !text-base"
+          [disabled]="submitting"
+          data-testid="login-submit"
+        >
+          @if (submitting) {
+            <span class="flex items-center justify-center gap-2">
+              <mat-spinner diameter="20"></mat-spinner>
+              <span>Please wait…</span>
+            </span>
+          } @else {
+            {{ title }}
+          }
+        </button>
 
-    <button
-      type="button"
-      class="text-body-md cursor-pointer bg-transparent text-on-surface-variant transition-colors hover:text-on-surface"
-      (click)="toggleMode()"
-    >
-      @if (mode === 'login') {
-        Need an account? Register
-      } @else {
-        Already have an account? Sign in
-      }
-    </button>
-  </form>
+        <button
+          type="button"
+          mat-button
+          class="w-full text-on-surface-variant"
+          (click)="toggleMode()"
+        >
+          @if (mode === 'login') {
+            Need an account? Register
+          } @else {
+            Already have an account? Sign in
+          }
+        </button>
+      </form>
+    </mat-card-content>
+  </mat-card>
 </div>
