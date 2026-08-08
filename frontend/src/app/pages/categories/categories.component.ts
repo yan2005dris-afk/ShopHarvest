@@ -1,24 +1,29 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatIconModule } from '@angular/material/icon';
+import { MatChipsModule } from '@angular/material/chips';
 import { catchError, of } from 'rxjs';
 import { ApiService, Category } from '../../services/api.service';
 
-/**
- * CategoriesComponent — operator surface for managing category
- * presets that link domains to default field mappings.
- *
- * Sprint 5: tokens migrated to Insight Flow (Material 3 + Tailwind
- * v4 utility classes). Form layout follows the LoginComponent
- * precedent — bg-surface-container-low input fill, focus:border-
- * primary + focus:ring-2.
- */
 @Component({
   selector: 'app-categories',
   standalone: true,
-  imports: [FormsModule],
+  imports: [
+    FormsModule,
+    MatButtonModule,
+    MatCardModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatIconModule,
+    MatChipsModule,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="mx-auto block max-w-3xl p-8">
+    <div class="mx-auto block max-w-3xl p-8 font-sans">
       <header class="mb-8 flex flex-col gap-2">
         <h1 class="text-headline-lg m-0 font-bold text-on-surface tracking-tight">Categories</h1>
         <p class="text-body-lg m-0 text-on-surface-variant">
@@ -26,93 +31,77 @@ import { ApiService, Category } from '../../services/api.service';
           title, image, price).
         </p>
         <button
-          type="button"
-          class="bg-primary text-on-primary hover:bg-primary-container mt-2 w-fit cursor-pointer self-start rounded-md px-4 py-2 text-body-md font-semibold transition-colors"
+          mat-flat-button
+          color="primary"
+          class="mt-2 w-fit"
           (click)="startCreate()"
           data-testid="btn-new-category"
         >
-          <span class="material-symbols-outlined mr-1.5 align-middle" style="font-size: 18px"
-            >add</span
-          >
-          New Category
+          <mat-icon>add</mat-icon>
+          <span>New Category</span>
         </button>
       </header>
 
       <!-- Create / Edit form -->
       @if (showForm()) {
-        <section
-          class="mb-6 rounded-xl border border-outline-variant bg-surface p-6"
+        <mat-card
+          appearance="outlined"
+          class="mb-6 !p-6"
           aria-label="Category form"
         >
           <h3 class="text-body-lg m-0 mb-4 font-semibold text-on-surface">
             {{ editingId() ? 'Edit' : 'New' }} Category
           </h3>
           <div class="flex flex-col gap-4">
-            <label class="flex flex-col gap-1.5 text-body-md font-semibold text-on-surface">
-              Name
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Name</mat-label>
               <input
-                class="rounded-md border border-outline-variant bg-surface-container-low px-3 py-2.5 text-body-lg text-on-surface outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary"
+                matInput
                 [(ngModel)]="formName"
                 placeholder="e.g. Ropa, Electrónica"
               />
-            </label>
-            <label class="flex flex-col gap-1.5 text-body-md font-semibold text-on-surface">
-              Description
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Description</mat-label>
               <textarea
-                class="min-h-15 resize-y rounded-md border border-outline-variant bg-surface-container-low px-3 py-2.5 text-body-lg text-on-surface outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary"
+                matInput
+                rows="3"
                 [(ngModel)]="formDescription"
                 placeholder="What type of products go here?"
               ></textarea>
-            </label>
-            <label class="flex flex-col gap-1.5 text-body-md font-semibold text-on-surface">
-              Default Field Mappings
-              <span class="text-label-caps font-normal text-on-surface-variant"
-                >One per line:
-                <code class="rounded-xs bg-surface-container-low px-1.5 py-0.5 font-mono"
-                  >canonicalField:type</code
-                >
-                (e.g.
-                <code class="rounded-xs bg-surface-container-low px-1.5 py-0.5 font-mono"
-                  >title:text</code
-                >,
-                <code class="rounded-xs bg-surface-container-low px-1.5 py-0.5 font-mono"
-                  >image:text</code
-                >,
-                <code class="rounded-xs bg-surface-container-low px-1.5 py-0.5 font-mono"
-                  >price:text</code
-                >). Type can be
-                <code class="rounded-xs bg-surface-container-low px-1.5 py-0.5 font-mono">text</code
-                >,
-                <code class="rounded-xs bg-surface-container-low px-1.5 py-0.5 font-mono"
-                  >attribute</code
-                >, or
-                <code class="rounded-xs bg-surface-container-low px-1.5 py-0.5 font-mono">html</code
-                >.</span
-              >
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Default Field Mappings</mat-label>
               <textarea
-                class="min-h-15 resize-y rounded-md border border-outline-variant bg-surface-container-low px-3 py-2.5 font-mono text-body-md text-on-surface outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary"
+                matInput
+                rows="4"
                 [(ngModel)]="formMappings"
                 placeholder="title:text&#10;image:image&#10;price:price"
               ></textarea>
-            </label>
-            <div class="flex justify-end gap-2">
+              <mat-hint>
+                One per line: canonicalField:type (e.g. title:text, image:text, price:text). Type can be text, attribute, or html.
+              </mat-hint>
+            </mat-form-field>
+
+            <div class="flex justify-end gap-2 mt-2">
               <button
-                type="button"
-                class="cursor-pointer rounded-md border border-outline-variant bg-surface px-4 py-2 text-body-md text-on-surface transition-colors hover:bg-surface-container"
+                mat-stroked-button
                 (click)="cancelForm()"
               >
                 Cancel
               </button>
               <button
-                type="button"
-                class="bg-primary text-on-primary hover:bg-primary-container cursor-pointer rounded-md px-4 py-2 text-body-md font-semibold transition-colors"
+                mat-flat-button
+                color="primary"
                 (click)="saveCategory()"
               >
                 {{ editingId() ? 'Update' : 'Create' }}
               </button>
             </div>
           </div>
-        </section>
+        </mat-card>
       }
 
       <!-- List -->
@@ -125,21 +114,20 @@ import { ApiService, Category } from '../../services/api.service';
           </div>
         }
         @for (cat of categories(); track cat.id) {
-          <article class="overflow-hidden rounded-xl border border-outline-variant bg-surface">
+          <mat-card appearance="outlined" class="!overflow-hidden">
             <div class="px-5 py-4">
               <div class="flex items-center justify-between">
                 <h3 class="text-headline-sm m-0 font-bold text-on-surface">{{ cat.name }}</h3>
-                <div class="flex gap-1.5">
+                <div class="flex gap-2">
                   <button
-                    type="button"
-                    class="cursor-pointer rounded-md border border-outline-variant bg-surface px-2.5 py-1 text-label-caps text-on-surface transition-colors hover:bg-surface-container"
+                    mat-stroked-button
                     (click)="startEdit(cat)"
                   >
                     Edit
                   </button>
                   <button
-                    type="button"
-                    class="cursor-pointer rounded-md border border-danger/30 bg-surface px-2.5 py-1 text-label-caps text-danger transition-colors hover:bg-danger-dim"
+                    mat-stroked-button
+                    color="warn"
                     (click)="deleteCategory(cat.id)"
                   >
                     Delete
@@ -151,27 +139,25 @@ import { ApiService, Category } from '../../services/api.service';
               }
               @if (cat.defaultFieldMappings && cat.defaultFieldMappings.length > 0) {
                 <div
-                  class="mt-3 flex flex-wrap items-center gap-1.5 border-t border-outline-variant pt-3"
+                  class="mt-3 flex flex-wrap items-center gap-2 border-t border-outline-variant pt-3"
                 >
                   <span class="text-label-caps text-on-surface-variant">Default fields:</span>
-                  @for (m of cat.defaultFieldMappings; track m.canonicalField) {
-                    @if (m.canonicalField) {
-                      <span
-                        class="flex items-center gap-1 rounded-full bg-surface-container px-2 py-0.5 text-body-md text-on-surface"
-                      >
-                        <span
-                          class="material-symbols-outlined text-on-surface-variant"
-                          style="font-size: 14px"
-                          >{{ fieldIcon(m.canonicalField) }}</span
-                        >
-                        {{ m.canonicalField }}
-                      </span>
+                  <mat-chip-set>
+                    @for (m of cat.defaultFieldMappings; track m.canonicalField) {
+                      @if (m.canonicalField) {
+                        <mat-chip class="!min-h-7 !text-xs">
+                          <span class="flex items-center gap-1">
+                            <mat-icon class="!size-3.5 !text-sm">{{ fieldIcon(m.canonicalField) }}</mat-icon>
+                            <span>{{ m.canonicalField }}</span>
+                          </span>
+                        </mat-chip>
+                      }
                     }
-                  }
+                  </mat-chip-set>
                 </div>
               }
             </div>
-          </article>
+          </mat-card>
         }
       </div>
     </div>
